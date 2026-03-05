@@ -1,14 +1,16 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import StatsCards from "@/components/dashboard/StatsCards";
+import WalletTopUp from "@/components/dashboard/WalletTopUp";
+import DataBundles from "@/components/dashboard/DataBundles";
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <DashboardLayout title="Dashboard">
+      <div className="space-y-6">
+        <StatsCards />
+        <WalletTopUp />
+        <DataBundles />
       </div>
-    </div>
+    </DashboardLayout>
   );
-};
-
-export default Index;
+}
