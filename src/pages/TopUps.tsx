@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { sampleTopUps, formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,19 +8,30 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TopUps() {
+  const { user } = useAuth();
+  const [topups, setTopups] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("wallet_topups").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      .then(({ data }) => setTopups(data || []));
+  }, [user]);
+
   const filtered = useMemo(() => {
-    if (!selectedDate) return sampleTopUps;
-    return sampleTopUps.filter((t) => isSameDay(parseISO(t.date), selectedDate));
-  }, [selectedDate]);
+    if (!selectedDate) return topups;
+    return topups.filter((t) => isSameDay(parseISO(t.created_at), selectedDate));
+  }, [topups, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
       case "completed": return "bg-success/10 text-success border-success/20";
       case "pending": return "bg-warning/10 text-warning border-warning/20";
+      case "failed": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "";
     }
   };
@@ -50,7 +61,6 @@ export default function TopUps() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Method</TableHead>
               <TableHead>Amount</TableHead>
@@ -60,14 +70,13 @@ export default function TopUps() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No top-ups found</TableCell>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No top-ups found</TableCell>
               </TableRow>
             ) : (
               filtered.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="font-medium">{t.id}</TableCell>
-                  <TableCell>{format(parseISO(t.date), "MMM dd, yyyy")}</TableCell>
-                  <TableCell>{t.method}</TableCell>
+                  <TableCell>{format(parseISO(t.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell className="capitalize">{t.method}</TableCell>
                   <TableCell className="font-semibold text-success">{formatCurrency(t.amount)}</TableCell>
                   <TableCell><Badge variant="outline" className={statusColor(t.status)}>{t.status}</Badge></TableCell>
                 </TableRow>

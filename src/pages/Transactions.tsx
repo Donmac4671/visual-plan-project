@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { sampleTransactions, formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,14 +8,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Transactions() {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      .then(({ data }) => setTransactions(data || []));
+  }, [user]);
+
   const filtered = useMemo(() => {
-    if (!selectedDate) return sampleTransactions;
-    return sampleTransactions.filter((t) => isSameDay(parseISO(t.date), selectedDate));
-  }, [selectedDate]);
+    if (!selectedDate) return transactions;
+    return transactions.filter((t) => isSameDay(parseISO(t.created_at), selectedDate));
+  }, [transactions, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -50,7 +60,6 @@ export default function Transactions() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Description</TableHead>
@@ -61,14 +70,13 @@ export default function Transactions() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No transactions found</TableCell>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No transactions found</TableCell>
               </TableRow>
             ) : (
               filtered.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="font-medium">{t.id}</TableCell>
-                  <TableCell>{format(parseISO(t.date), "MMM dd, yyyy")}</TableCell>
-                  <TableCell>{t.type}</TableCell>
+                  <TableCell>{format(parseISO(t.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell className="capitalize">{t.type}</TableCell>
                   <TableCell>{t.description}</TableCell>
                   <TableCell className={`font-semibold ${t.amount > 0 ? "text-success" : "text-destructive"}`}>
                     {t.amount > 0 ? "+" : ""}{formatCurrency(Math.abs(t.amount))}

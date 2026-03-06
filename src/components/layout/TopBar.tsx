@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, User, Wallet, Menu, X, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, Shield } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/data";
 import {
   DropdownMenu,
@@ -17,17 +17,23 @@ const navItems = [
   { label: "Orders", icon: ShoppingBag, path: "/orders" },
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
+  { label: "Profile", icon: User, path: "/profile" },
 ];
 
 export default function TopBar({ title }: { title: string }) {
   const { itemCount } = useCart();
+  const { profile, isAdmin, signOut } = useAuth();
   const location = useLocation();
-  const walletBalance = 94.10;
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <header className="flex items-center justify-between px-4 lg:px-6 py-3 bg-card border-b border-border">
       <div className="flex items-center gap-3">
-        {/* Mobile menu */}
         <Sheet>
           <SheetTrigger className="lg:hidden">
             <Menu className="w-5 h-5 text-muted-foreground" />
@@ -47,9 +53,7 @@ export default function TopBar({ title }: { title: string }) {
                     key={item.path}
                     to={item.path}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? "gradient-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent"
+                      isActive ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -57,10 +61,16 @@ export default function TopBar({ title }: { title: string }) {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link to="/admin" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  location.pathname === "/admin" ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                }`}>
+                  <Shield className="w-4 h-4" /> Admin
+                </Link>
+              )}
             </nav>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent mt-4">
-              <LogOut className="w-4 h-4" />
-              Logout
+            <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent mt-4">
+              <LogOut className="w-4 h-4" /> Logout
             </button>
           </SheetContent>
         </Sheet>
@@ -69,14 +79,11 @@ export default function TopBar({ title }: { title: string }) {
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">{title}</h1>
-          </div>
+          <h1 className="text-lg font-bold text-foreground">{title}</h1>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Cart */}
         <Link to="/cart" className="relative p-2 rounded-lg hover:bg-accent transition-colors">
           <ShoppingCart className="w-5 h-5 text-muted-foreground" />
           {itemCount > 0 && (
@@ -86,16 +93,14 @@ export default function TopBar({ title }: { title: string }) {
           )}
         </Link>
 
-        {/* Balance */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-accent rounded-lg">
           <Wallet className="w-4 h-4 text-primary" />
           <div className="text-right">
             <p className="text-[10px] text-muted-foreground">Balance</p>
-            <p className="text-sm font-bold text-foreground">{formatCurrency(walletBalance)}</p>
+            <p className="text-sm font-bold text-foreground">{formatCurrency(profile?.wallet_balance ?? 0)}</p>
           </div>
         </div>
 
-        {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger className="p-2 rounded-lg hover:bg-accent transition-colors">
             <User className="w-5 h-5 text-muted-foreground" />
@@ -103,26 +108,24 @@ export default function TopBar({ title }: { title: string }) {
           <DropdownMenuContent align="end" className="w-56">
             <div className="flex items-center gap-3 p-3">
               <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">U</span>
+                <span className="text-primary-foreground font-bold">
+                  {profile?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
               </div>
               <div>
-                <p className="font-semibold text-sm">User</p>
-                <p className="text-xs text-muted-foreground">user@example.com</p>
+                <p className="font-semibold text-sm">{profile?.full_name || "User"}</p>
+                <p className="text-xs text-muted-foreground">{profile?.agent_code}</p>
               </div>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/orders" className="flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4" /> Orders
-              </Link>
+              <Link to="/profile" className="flex items-center gap-2"><User className="w-4 h-4" /> Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/transactions" className="flex items-center gap-2">
-                <Receipt className="w-4 h-4" /> Transactions
-              </Link>
+              <Link to="/orders" className="flex items-center gap-2"><ShoppingBag className="w-4 h-4" /> Orders</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
