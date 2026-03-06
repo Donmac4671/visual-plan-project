@@ -1,17 +1,80 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
 import { formatCurrency } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart, Wallet, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { initPaystack } from "@/lib/paystack";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
   const { toast } = useToast();
+  const { profile, refreshProfile } = useAuth();
+  const [showPayment, setShowPayment] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-  const handleCheckout = () => {
-    toast({ title: "Order Placed!", description: `${items.length} bundles ordered for ${formatCurrency(total)}` });
-    clearCart();
+  const handlePayWithWallet = async () => {
+    if (!profile) return;
+    if (profile.wallet_balance < total) {
+      toast({ title: "Insufficient Balance", description: "Please top up your wallet first.", variant: "destructive" });
+      return;
+    }
+    setProcessing(true);
+    try {
+      for (const item of items) {
+        await supabase.rpc("pay_with_wallet", {
+          p_network: item.network,
+          p_phone: item.phoneNumber,
+          p_bundle: item.bundle.size,
+          p_amount: item.bundle.price,
+        });
+      }
+      await refreshProfile();
+      toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered for ${formatCurrency(total)}` });
+      clearCart();
+      setShowPayment(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
+    }
+    setProcessing(false);
+  };
+
+  const handlePayWithPaystack = () => {
+    if (!profile) return;
+    initPaystack({
+      email: profile.email,
+      amount: total,
+      onSuccess: async (reference) => {
+        try {
+          for (const item of items) {
+            await supabase.rpc("pay_order_with_paystack", {
+              p_network: item.network,
+              p_phone: item.phoneNumber,
+              p_bundle: item.bundle.size,
+              p_amount: item.bundle.price,
+              p_reference: reference,
+            });
+          }
+          toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
+          clearCart();
+          setShowPayment(false);
+        } catch (err: any) {
+          toast({ title: "Error", description: err.message, variant: "destructive" });
+        }
+      },
+      onClose: () => {
+        toast({ title: "Payment Cancelled" });
+      },
+    });
   };
 
   return (
@@ -22,9 +85,7 @@ export default function Cart() {
             <ShoppingCart className="w-5 h-5" /> Shopping Cart ({items.length})
           </h2>
           {items.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>
-              Clear All
-            </Button>
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
           )}
         </div>
 
@@ -63,13 +124,52 @@ export default function Cart() {
                 <span className="font-semibold text-foreground">Total</span>
                 <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
               </div>
-              <Button className="w-full gradient-primary border-0" size="lg" onClick={handleCheckout}>
-                Place Order — {formatCurrency(total)}
+              <Button className="w-full gradient-primary border-0" size="lg" onClick={() => setShowPayment(true)}>
+                Proceed to Pay — {formatCurrency(total)}
               </Button>
             </div>
           </>
         )}
       </div>
+
+      <Dialog open={showPayment} onOpenChange={setShowPayment}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Payment Method</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="bg-accent rounded-xl p-4 text-center">
+              <p className="text-sm text-muted-foreground">Total Amount</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(total)}</p>
+            </div>
+
+            <Button
+              className="w-full h-14 text-left justify-start gap-3"
+              variant="outline"
+              onClick={handlePayWithWallet}
+              disabled={processing}
+            >
+              <Wallet className="w-5 h-5 text-primary" />
+              <div>
+                <p className="font-semibold">Pay with Wallet</p>
+                <p className="text-xs text-muted-foreground">Balance: {formatCurrency(profile?.wallet_balance ?? 0)}</p>
+              </div>
+            </Button>
+
+            <Button
+              className="w-full h-14 text-left justify-start gap-3"
+              variant="outline"
+              onClick={handlePayWithPaystack}
+            >
+              <CreditCard className="w-5 h-5 text-primary" />
+              <div>
+                <p className="font-semibold">Pay with Paystack</p>
+                <p className="text-xs text-muted-foreground">Card, Bank Transfer, Mobile Money</p>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
