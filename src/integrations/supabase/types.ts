@@ -14,16 +14,220 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          amount: number
+          bundle_size: string
+          created_at: string
+          id: string
+          network: string
+          order_ref: string
+          payment_method: string
+          phone_number: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bundle_size: string
+          created_at?: string
+          id?: string
+          network: string
+          order_ref: string
+          payment_method?: string
+          phone_number: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bundle_size?: string
+          created_at?: string
+          id?: string
+          network?: string
+          order_ref?: string
+          payment_method?: string
+          phone_number?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          agent_code: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_blocked: boolean
+          phone: string
+          updated_at: string
+          user_id: string
+          wallet_balance: number
+        }
+        Insert: {
+          agent_code?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_blocked?: boolean
+          phone?: string
+          updated_at?: string
+          user_id: string
+          wallet_balance?: number
+        }
+        Update: {
+          agent_code?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_blocked?: boolean
+          phone?: string
+          updated_at?: string
+          user_id?: string
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_topups: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          paystack_reference: string | null
+          screenshot_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          paystack_reference?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          paystack_reference?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_toggle_block: {
+        Args: { block_status: boolean; target_user_id: string }
+        Returns: undefined
+      }
+      admin_update_order_status: {
+        Args: { new_status: string; order_id: string }
+        Returns: undefined
+      }
+      admin_wallet_operation: {
+        Args: {
+          operation_amount: number
+          operation_description?: string
+          operation_type: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
+      complete_paystack_topup: {
+        Args: { p_amount: number; p_reference: string }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      pay_order_with_paystack: {
+        Args: {
+          p_amount: number
+          p_bundle: string
+          p_network: string
+          p_phone: string
+          p_reference: string
+        }
+        Returns: string
+      }
+      pay_with_wallet: {
+        Args: {
+          p_amount: number
+          p_bundle: string
+          p_network: string
+          p_phone: string
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +354,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
