@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
-import { Users, ShoppingBag, Ban, DollarSign } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2 } from "lucide-react";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -74,8 +74,13 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    await supabase.from("orders").delete().eq("id", orderId);
+    toast({ title: "Order Deleted" });
+    fetchData();
+  };
+
   const handleApproveTopup = async (topup: any) => {
-    // Credit wallet and update topup status
     await supabase.rpc("admin_wallet_operation", {
       target_user_id: topup.user_id,
       operation_amount: topup.amount,
@@ -151,6 +156,7 @@ export default function Admin() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Update</TableHead>
+                  <TableHead>Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -165,18 +171,25 @@ export default function Admin() {
                       <Badge variant="outline" className={
                         o.status === "completed" ? "bg-success/10 text-success" :
                         o.status === "pending" ? "bg-warning/10 text-warning" :
+                        o.status === "processing" ? "bg-primary/10 text-primary" :
                         "bg-destructive/10 text-destructive"
                       }>{o.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
-                        <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="failed">Failed</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

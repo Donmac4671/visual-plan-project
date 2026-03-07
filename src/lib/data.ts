@@ -55,8 +55,8 @@ export const networks: Network[] = [
   {
     id: "at-bigtime",
     name: "AT BIG TIME",
-    color: "bg-red-600",
-    gradient: "gradient-at",
+    color: "bg-sky-600",
+    gradient: "gradient-at-bigtime",
     bundles: [
       { size: "15GB", sizeGB: 15, price: 60 },
       { size: "20GB", sizeGB: 20, price: 72 },
@@ -77,8 +77,8 @@ export const networks: Network[] = [
   {
     id: "at-premium",
     name: "AT PREMIUM",
-    color: "bg-red-700",
-    gradient: "gradient-at",
+    color: "bg-sky-700",
+    gradient: "gradient-at-premium",
     bundles: [
       { size: "1GB", sizeGB: 1, price: 4.80 },
       { size: "2GB", sizeGB: 2, price: 9.60 },
@@ -113,7 +113,7 @@ export interface Order {
   phoneNumber: string;
   bundle: string;
   amount: number;
-  status: "completed" | "pending" | "failed";
+  status: "completed" | "pending" | "processing" | "failed";
 }
 
 export interface Transaction {
@@ -133,26 +133,11 @@ export interface TopUp {
   status: "completed" | "pending" | "failed";
 }
 
-export const sampleOrders: Order[] = [
-  { id: "ORD-001", date: "2026-03-05", network: "MTN", phoneNumber: "0241234567", bundle: "2GB", amount: 10, status: "completed" },
-  { id: "ORD-002", date: "2026-03-04", network: "TELECEL", phoneNumber: "0201234567", bundle: "5GB", amount: 24.50, status: "completed" },
-  { id: "ORD-003", date: "2026-03-03", network: "MTN", phoneNumber: "0551234567", bundle: "10GB", amount: 46, status: "pending" },
-  { id: "ORD-004", date: "2026-03-02", network: "AT BIG TIME", phoneNumber: "0261234567", bundle: "20GB", amount: 72, status: "completed" },
-  { id: "ORD-005", date: "2026-03-01", network: "AT PREMIUM", phoneNumber: "0271234567", bundle: "5GB", amount: 24, status: "failed" },
-];
+export const PAYSTACK_FEE_PERCENT = 0.02; // 2%
 
-export const sampleTransactions: Transaction[] = [
-  { id: "TXN-001", date: "2026-03-05", type: "Purchase", description: "MTN 2GB Bundle", amount: -10, status: "completed" },
-  { id: "TXN-002", date: "2026-03-04", type: "Top-up", description: "Wallet Top-up via MoMo", amount: 100, status: "completed" },
-  { id: "TXN-003", date: "2026-03-03", type: "Purchase", description: "TELECEL 5GB Bundle", amount: -24.50, status: "completed" },
-  { id: "TXN-004", date: "2026-03-02", type: "Top-up", description: "Wallet Top-up via Card", amount: 200, status: "pending" },
-];
-
-export const sampleTopUps: TopUp[] = [
-  { id: "TOP-001", date: "2026-03-05", method: "Mobile Money", amount: 100, status: "completed" },
-  { id: "TOP-002", date: "2026-03-04", method: "Bank Card", amount: 200, status: "completed" },
-  { id: "TOP-003", date: "2026-03-03", method: "Mobile Money", amount: 50, status: "pending" },
-];
+export function calculatePaystackFee(amount: number): number {
+  return Math.round(amount * PAYSTACK_FEE_PERCENT * 100) / 100;
+}
 
 export function formatCurrency(amount: number): string {
   return `₵${amount.toFixed(2)}`;

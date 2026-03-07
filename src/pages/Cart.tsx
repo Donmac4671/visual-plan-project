@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatCurrency } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingCart, Wallet, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,9 @@ export default function Cart() {
   const { profile, refreshProfile } = useAuth();
   const [showPayment, setShowPayment] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  const paystackFee = calculatePaystackFee(total);
+  const paystackTotal = total + paystackFee;
 
   const handlePayWithWallet = async () => {
     if (!profile) return;
@@ -50,9 +53,10 @@ export default function Cart() {
 
   const handlePayWithPaystack = () => {
     if (!profile) return;
+    // Charge total + 2% fee via Paystack
     initPaystack({
       email: profile.email,
-      amount: total,
+      amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
           for (const item of items) {
@@ -164,7 +168,9 @@ export default function Cart() {
               <CreditCard className="w-5 h-5 text-primary" />
               <div>
                 <p className="font-semibold">Pay with Paystack</p>
-                <p className="text-xs text-muted-foreground">Card, Bank Transfer, Mobile Money</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(total)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
+                </p>
               </div>
             </Button>
           </div>

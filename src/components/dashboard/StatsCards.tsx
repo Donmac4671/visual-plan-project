@@ -1,14 +1,52 @@
+import { useState, useEffect } from "react";
 import { Wallet, ShoppingCart, CreditCard, Database } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
-
-const stats = [
-  { label: "Wallet Balance", value: formatCurrency(94.10), icon: Wallet, sublabel: "Current Balance", color: "text-primary" },
-  { label: "Orders Placed", value: "36", icon: ShoppingCart, sublabel: "Today's Orders", color: "text-destructive" },
-  { label: "Total Payments", value: formatCurrency(284.70), icon: CreditCard, sublabel: "Amount Spent", color: "text-success" },
-  { label: "Total Capacity", value: "73GB", icon: Database, sublabel: "Data Purchased", color: "text-primary" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function StatsCards() {
+  const { user, profile } = useAuth();
+  const [todayOrders, setTodayOrders] = useState(0);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [totalData, setTotalData] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("amount, bundle_size, created_at")
+        .eq("user_id", user.id);
+
+      if (orders) {
+        const todayCount = orders.filter(
+          (o) => new Date(o.created_at) >= today
+        ).length;
+        setTodayOrders(todayCount);
+
+        const spent = orders.reduce((sum, o) => sum + Number(o.amount), 0);
+        setTotalSpent(spent);
+
+        const dataGB = orders.reduce((sum, o) => {
+          const match = o.bundle_size.match(/(\d+)/);
+          return sum + (match ? parseInt(match[1]) : 0);
+        }, 0);
+        setTotalData(dataGB);
+      }
+    };
+    fetchStats();
+  }, [user]);
+
+  const stats = [
+    { label: "Wallet Balance", value: formatCurrency(profile?.wallet_balance ?? 0), icon: Wallet, sublabel: "Current Balance", color: "text-primary" },
+    { label: "Orders Placed", value: todayOrders.toString(), icon: ShoppingCart, sublabel: "Today's Orders", color: "text-destructive" },
+    { label: "Total Payments", value: formatCurrency(totalSpent), icon: CreditCard, sublabel: "Amount Spent", color: "text-success" },
+    { label: "Total Capacity", value: `${totalData}GB`, icon: Database, sublabel: "Data Purchased", color: "text-primary" },
+  ];
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
       {stats.map((stat) => (

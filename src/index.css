@@ -47,7 +47,8 @@
     --mtn-primary: 45 100% 50%;
     --mtn-secondary: 45 100% 60%;
     --telecel-primary: 0 72% 50%;
-    --at-primary: 0 72% 45%;
+    --at-bigtime-primary: 199 70% 45%;
+    --at-premium-primary: 199 70% 38%;
 
     --gradient-primary: linear-gradient(135deg, hsl(246, 65%, 56%), hsl(340, 80%, 55%));
 
@@ -103,7 +104,10 @@
   .gradient-telecel {
     background: linear-gradient(135deg, hsl(0, 72%, 50%), hsl(350, 80%, 45%));
   }
-  .gradient-at {
-    background: linear-gradient(135deg, hsl(0, 72%, 45%), hsl(340, 80%, 50%));
+  .gradient-at-bigtime {
+    background: linear-gradient(135deg, hsl(199, 70%, 45%), hsl(199, 80%, 55%));
+  }
+  .gradient-at-premium {
+    background: linear-gradient(135deg, hsl(199, 70%, 38%), hsl(199, 80%, 48%));
   }
 }
