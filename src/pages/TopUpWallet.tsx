@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, CreditCard, Smartphone, Upload, Copy, CheckCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,9 +19,11 @@ export default function TopUpWallet() {
   const { user, profile, refreshProfile } = useAuth();
 
   const quickAmounts = [20, 50, 100, 200, 500];
+  const amt = parseFloat(amount) || 0;
+  const paystackFee = calculatePaystackFee(amt);
+  const paystackTotal = amt + paystackFee;
 
   const handleMomoTopUp = () => {
-    const amt = parseFloat(amount);
     if (!amt || amt < 20) {
       toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
       return;
@@ -31,7 +33,6 @@ export default function TopUpWallet() {
 
   const handleScreenshotUpload = async () => {
     if (!screenshotFile || !user) return;
-    const amt = parseFloat(amount);
     setUploading(true);
 
     const filePath = `${user.id}/${Date.now()}_${screenshotFile.name}`;
@@ -63,16 +64,16 @@ export default function TopUpWallet() {
   };
 
   const handlePaystackTopUp = () => {
-    const amt = parseFloat(amount);
     if (!amt || amt < 20) {
       toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
       return;
     }
     if (!profile) return;
 
+    // Charge amount + 2% fee via Paystack, but credit only the base amount
     initPaystack({
       email: profile.email,
-      amount: amt,
+      amount: paystackTotal,
       onSuccess: async (reference) => {
         await supabase.rpc("complete_paystack_topup", {
           p_amount: amt,
@@ -145,6 +146,11 @@ export default function TopUpWallet() {
               </Button>
             ))}
           </div>
+          {method === "paystack" && amt >= 20 && (
+            <div className="mt-3 p-3 bg-accent rounded-lg text-sm text-muted-foreground">
+              Amount: {formatCurrency(amt)} + 2% fee ({formatCurrency(paystackFee)}) = <span className="font-bold text-foreground">{formatCurrency(paystackTotal)}</span>
+            </div>
+          )}
         </div>
 
         {showMomoDetails && method === "momo" && (
@@ -168,7 +174,7 @@ export default function TopUpWallet() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Amount</p>
-                <p className="font-bold text-foreground text-lg">{formatCurrency(parseFloat(amount) || 0)}</p>
+                <p className="font-bold text-foreground text-lg">{formatCurrency(amt)}</p>
               </div>
             </div>
 
@@ -201,7 +207,7 @@ export default function TopUpWallet() {
             size="lg"
             onClick={method === "momo" ? handleMomoTopUp : handlePaystackTopUp}
           >
-            {method === "momo" ? "Proceed to Pay" : `Pay ${amount ? formatCurrency(parseFloat(amount)) : ""} with Paystack`}
+            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= 20 ? formatCurrency(paystackTotal) : ""} with Paystack`}
           </Button>
         )}
       </div>

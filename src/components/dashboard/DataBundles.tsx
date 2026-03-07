@@ -16,8 +16,8 @@ function NetworkIcon({ network }: { network: Network }) {
   const colors: Record<string, string> = {
     mtn: "bg-yellow-400 text-yellow-900",
     telecel: "bg-red-500 text-white",
-    "at-bigtime": "bg-red-600 text-white",
-    "at-premium": "bg-red-700 text-white",
+    "at-bigtime": "bg-sky-600 text-white",
+    "at-premium": "bg-sky-700 text-white",
   };
   const initials: Record<string, string> = {
     mtn: "MTN",
@@ -33,7 +33,7 @@ function NetworkIcon({ network }: { network: Network }) {
 }
 
 function BundleCard({ bundle, network, onSelect }: { bundle: DataBundle; network: Network; onSelect: () => void }) {
-  const gradientClass = network.id === "mtn" ? "gradient-mtn" : network.id === "telecel" ? "gradient-telecel" : "gradient-at";
+  const gradientClass = network.gradient;
 
   return (
     <div className="flex flex-col items-center">
@@ -154,7 +154,7 @@ export default function DataBundles() {
             </div>
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">⏱ Validity</p>
-              <p className="text-xl font-bold text-foreground">No-Expiry</p>
+              <p className="text-xl font-bold text-foreground">90 Days</p>
             </div>
           </div>
 

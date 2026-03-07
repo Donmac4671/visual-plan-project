@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckCircle, Clock, XCircle, List } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, XCircle, List, Loader } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-type OrderStatus = "all" | "completed" | "pending" | "failed";
+type OrderStatus = "all" | "completed" | "pending" | "processing" | "failed";
 
 export default function Orders() {
   const { user } = useAuth();
@@ -33,7 +33,7 @@ export default function Orders() {
   }, [user]);
 
   const statusCounts = useMemo(() => {
-    const counts = { all: orders.length, completed: 0, pending: 0, failed: 0 };
+    const counts = { all: orders.length, completed: 0, pending: 0, processing: 0, failed: 0 };
     orders.forEach((o) => {
       if (o.status in counts) counts[o.status as keyof typeof counts]++;
     });
@@ -55,6 +55,7 @@ export default function Orders() {
     switch (status) {
       case "completed": return "bg-success/10 text-success border-success/20";
       case "pending": return "bg-warning/10 text-warning border-warning/20";
+      case "processing": return "bg-primary/10 text-primary border-primary/20";
       case "failed": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "";
     }
@@ -62,15 +63,15 @@ export default function Orders() {
 
   const statusTabs: { key: OrderStatus; label: string; icon: any; color: string }[] = [
     { key: "all", label: "All", icon: List, color: "text-foreground" },
-    { key: "completed", label: "Completed", icon: CheckCircle, color: "text-success" },
     { key: "pending", label: "Pending", icon: Clock, color: "text-warning" },
+    { key: "processing", label: "Processing", icon: Loader, color: "text-primary" },
+    { key: "completed", label: "Completed", icon: CheckCircle, color: "text-success" },
     { key: "failed", label: "Failed", icon: XCircle, color: "text-destructive" },
   ];
 
   return (
     <DashboardLayout title="Orders">
-      {/* Status filter tabs */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-5 gap-3 mb-4">
         {statusTabs.map((tab) => (
           <button
             key={tab.key}
