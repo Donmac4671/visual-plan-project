@@ -1,15 +1,19 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
-import { format, parseISO, subDays, startOfDay } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
+import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface AdminAnalyticsProps {
   users: any[];
@@ -33,82 +37,152 @@ const PIE_COLORS = [
   "hsl(var(--destructive))",
 ];
 
+function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClear }: {
+  dateFrom?: Date;
+  dateTo?: Date;
+  onDateFromChange: (d?: Date) => void;
+  onDateToChange: (d?: Date) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className={cn("text-xs gap-1", !dateFrom && "text-muted-foreground")}>
+            <CalendarIcon className="w-3 h-3" />
+            {dateFrom ? format(dateFrom, "MMM dd, yyyy") : "From date"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={dateFrom} onSelect={onDateFromChange} initialFocus className="p-3 pointer-events-auto" />
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className={cn("text-xs gap-1", !dateTo && "text-muted-foreground")}>
+            <CalendarIcon className="w-3 h-3" />
+            {dateTo ? format(dateTo, "MMM dd, yyyy") : "To date"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={dateTo} onSelect={onDateToChange} initialFocus className="p-3 pointer-events-auto" />
+        </PopoverContent>
+      </Popover>
+      {(dateFrom || dateTo) && (
+        <Button variant="ghost" size="sm" className="text-xs gap-1 text-destructive" onClick={onClear}>
+          <X className="w-3 h-3" /> Clear
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAnalytics({ users, orders, topups, complaints }: AdminAnalyticsProps) {
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const d = parseISO(o.created_at);
+      if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
+      if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
+      return true;
+    });
+  }, [orders, dateFrom, dateTo]);
+
+  const filteredTopups = useMemo(() => {
+    return topups.filter(t => {
+      const d = parseISO(t.created_at);
+      if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
+      if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
+      return true;
+    });
+  }, [topups, dateFrom, dateTo]);
+
+  const filteredComplaints = useMemo(() => {
+    return complaints.filter(c => {
+      const d = parseISO(c.created_at);
+      if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
+      if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
+      return true;
+    });
+  }, [complaints, dateFrom, dateTo]);
+
   const stats = useMemo(() => {
-    const totalRevenue = orders.reduce((sum, o) => sum + Number(o.amount), 0);
-    const totalTopups = topups.filter(t => t.status === "completed").reduce((sum, t) => sum + Number(t.amount), 0);
-    const pendingOrders = orders.filter(o => o.status === "pending" || o.status === "processing").length;
-    const completedOrders = orders.filter(o => o.status === "completed").length;
-    const failedOrders = orders.filter(o => o.status === "failed").length;
-    const openComplaints = complaints.filter(c => c.status === "open").length;
+    const totalRevenue = filteredOrders.reduce((sum, o) => sum + Number(o.amount), 0);
+    const totalTopups = filteredTopups.filter(t => t.status === "completed").reduce((sum, t) => sum + Number(t.amount), 0);
+    const pendingOrders = filteredOrders.filter(o => o.status === "pending" || o.status === "processing").length;
+    const completedOrders = filteredOrders.filter(o => o.status === "completed").length;
+    const failedOrders = filteredOrders.filter(o => o.status === "failed").length;
+    const openComplaints = filteredComplaints.filter(c => c.status === "open").length;
     const totalWalletBalance = users.reduce((sum, u) => sum + Number(u.wallet_balance), 0);
     const blockedUsers = users.filter(u => u.is_blocked).length;
-    const pendingTopups = topups.filter(t => t.status === "pending").length;
+    const pendingTopups = filteredTopups.filter(t => t.status === "pending").length;
 
     return {
       totalUsers: users.length,
       totalRevenue,
       totalTopups,
-      totalOrders: orders.length,
+      totalOrders: filteredOrders.length,
       pendingOrders,
       completedOrders,
       failedOrders,
       openComplaints,
-      totalComplaints: complaints.length,
+      totalComplaints: filteredComplaints.length,
       totalWalletBalance,
       blockedUsers,
       pendingTopups,
     };
-  }, [users, orders, topups, complaints]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints]);
 
-  // Orders per day (last 7 days)
+  // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(new Date(), 6 - i);
-      return { date: startOfDay(date), label: format(date, "EEE") };
+      const date = subDays(dateTo || new Date(), 6 - i);
+      return { date: startOfDay(date), label: format(date, "EEE dd") };
     });
 
     return days.map(({ date, label }) => {
-      const count = orders.filter(o => {
+      const count = filteredOrders.filter(o => {
         const d = startOfDay(parseISO(o.created_at));
         return d.getTime() === date.getTime();
       }).length;
       return { day: label, orders: count };
     });
-  }, [orders]);
+  }, [filteredOrders, dateTo]);
 
-  // Revenue per day (last 7 days)
+  // Revenue per day (last 7 days or within date range)
   const revenuePerDay = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(new Date(), 6 - i);
-      return { date: startOfDay(date), label: format(date, "EEE") };
+      const date = subDays(dateTo || new Date(), 6 - i);
+      return { date: startOfDay(date), label: format(date, "EEE dd") };
     });
 
     return days.map(({ date, label }) => {
-      const total = orders
+      const total = filteredOrders
         .filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime())
         .reduce((sum, o) => sum + Number(o.amount), 0);
       return { day: label, revenue: total };
     });
-  }, [orders]);
+  }, [filteredOrders, dateTo]);
 
   // Order status distribution
   const orderStatusData = useMemo(() => {
     const statuses = ["pending", "processing", "completed", "failed"];
     return statuses.map(s => ({
       name: s === "completed" ? "Delivered" : s.charAt(0).toUpperCase() + s.slice(1),
-      value: orders.filter(o => o.status === s).length,
+      value: filteredOrders.filter(o => o.status === s).length,
     })).filter(d => d.value > 0);
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Network distribution
   const networkData = useMemo(() => {
     const map: Record<string, number> = {};
-    orders.forEach(o => {
+    filteredOrders.forEach(o => {
       map[o.network] = (map[o.network] || 0) + 1;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [orders]);
+  }, [filteredOrders]);
 
   const networkChartConfig: ChartConfig = useMemo(() => {
     const config: ChartConfig = {};
@@ -128,6 +202,18 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
   return (
     <div className="space-y-6">
+      {/* Date Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">Filter by date:</span>
+        <DateFilter
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onClear={() => { setDateFrom(undefined); setDateTo(undefined); }}
+        />
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -245,7 +331,6 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Orders per day */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Orders (Last 7 Days)</CardTitle>
@@ -263,7 +348,6 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
           </CardContent>
         </Card>
 
-        {/* Revenue per day */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Revenue (Last 7 Days)</CardTitle>
@@ -281,7 +365,6 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
           </CardContent>
         </Card>
 
-        {/* Order Status Pie */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Order Status Distribution</CardTitle>
@@ -300,7 +383,6 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
           </CardContent>
         </Card>
 
-        {/* Network Distribution Pie */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Orders by Network</CardTitle>
