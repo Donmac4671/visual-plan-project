@@ -19,6 +19,7 @@ import {
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
   const [showPayment, setShowPayment] = useState(false);
   const [processing, setProcessing] = useState(false);
