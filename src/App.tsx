@@ -47,6 +47,7 @@ const App = () => (
           <BrowserRouter>
             <RealtimeNotifications />
             <FloatingWhatsAppButton />
+            <FloatingCartButton />
             <Routes>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
