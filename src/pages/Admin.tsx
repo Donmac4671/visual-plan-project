@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3 } from "lucide-react";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -187,13 +188,19 @@ export default function Admin() {
 
   return (
     <DashboardLayout title="Admin Panel">
-      <Tabs defaultValue="users">
-        <TabsList className="mb-4">
+      <Tabs defaultValue="analytics">
+        <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
           <TabsTrigger value="topups" className="gap-2"><DollarSign className="w-4 h-4" /> Top-ups</TabsTrigger>
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
         </TabsList>
+
+        {/* ANALYTICS TAB */}
+        <TabsContent value="analytics">
+          <AdminAnalytics users={users} orders={orders} topups={topups} complaints={complaints} />
+        </TabsContent>
 
         {/* USERS TAB */}
         <TabsContent value="users">
