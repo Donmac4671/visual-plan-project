@@ -63,7 +63,8 @@ export default function Complaints() {
     }
     setSubmitting(true);
     const orderRef = orders.find((o) => o.id === selectedOrder)?.order_ref || "";
-    const fullMessage = `Phone: ${phoneNumber.trim() || "N/A"}\nData Package: ${dataPackage.trim() || "N/A"}\nDate: ${issueDate || "N/A"}\n\n${message.trim()}`;
+    const networkName = selectedNetworkData?.name || "N/A";
+    const fullMessage = `Phone: ${phoneNumber.trim() || "N/A"}\nNetwork: ${networkName}\nData Package: ${dataPackage.trim() || "N/A"}\nDate: ${issueDate || "N/A"}\n\n${message.trim()}`;
     const { error } = await supabase.from("complaints").insert({
       user_id: user.id,
       order_id: selectedOrder || null,
