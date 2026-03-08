@@ -11,23 +11,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import mtnLogo from "@/assets/networks/mtn.png";
+import telecelLogo from "@/assets/networks/telecel.png";
+import airteltigoLogo from "@/assets/networks/airteltigo.png";
+
+const networkLogos: Record<string, string> = {
+  mtn: mtnLogo,
+  telecel: telecelLogo,
+  "at-bigtime": airteltigoLogo,
+  "at-premium": airteltigoLogo,
+};
 
 function NetworkIcon({ network }: { network: Network }) {
-  const colors: Record<string, string> = {
-    mtn: "bg-yellow-400 text-yellow-900",
-    telecel: "bg-red-500 text-white",
-    "at-bigtime": "bg-sky-600 text-white",
-    "at-premium": "bg-sky-700 text-white",
-  };
-  const initials: Record<string, string> = {
-    mtn: "MTN",
-    telecel: "T",
-    "at-bigtime": "AT",
-    "at-premium": "AT",
-  };
   return (
-    <div className={`w-10 h-10 rounded-full ${colors[network.id] || "bg-muted"} flex items-center justify-center`}>
-      <span className="text-xs font-bold">{initials[network.id]}</span>
+    <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted">
+      <img src={networkLogos[network.id]} alt={network.name} className="w-full h-full object-cover" />
     </div>
   );
 }
