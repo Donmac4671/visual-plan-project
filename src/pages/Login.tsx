@@ -116,11 +116,6 @@ export default function Login() {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-4">
-                <p className="text-xs text-destructive font-medium text-center">
-                  ⚠️ This platform is for authorized agents only. Do not sign up if you are not an agent. Unauthorized users will be blocked and any deposits will not be refunded.
-                </p>
-              </div>
               <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">Sign Up</Link>
