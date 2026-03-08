@@ -22,6 +22,9 @@ export default function Complaints() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [selectedOrder, setSelectedOrder] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [dataPackage, setDataPackage] = useState("");
+  const [issueDate, setIssueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const fetchComplaints = async () => {
