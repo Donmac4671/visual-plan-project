@@ -118,7 +118,7 @@ export default function Login() {
               </form>
               <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-4">
                 <p className="text-xs text-destructive font-medium text-center">
-                  ⚠️ This platform is for authorized agents only. Non-agents will be blocked and deposits will not be refunded.
+                  ⚠️ This platform is for authorized agents only. Do not sign up if you are not an agent. Unauthorized users will be blocked and any deposits will not be refunded.
                 </p>
               </div>
               <p className="text-center text-sm text-muted-foreground mt-3">

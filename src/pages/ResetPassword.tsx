@@ -16,13 +16,39 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const initializeRecoveryState = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasRecoveryType =
+        hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery";
+      const hasAccessToken = Boolean(hashParams.get("access_token"));
+      const code = searchParams.get("code");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          toast({
+            title: "Invalid reset link",
+            description: "Please request a new password reset email.",
+            variant: "destructive",
+          });
+          setIsRecovery(false);
+          return;
+        }
+      }
+
+      setIsRecovery(hasRecoveryType || hasAccessToken || Boolean(code));
+    };
+
+    void initializeRecoveryState();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
