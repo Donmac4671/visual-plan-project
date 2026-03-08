@@ -126,6 +126,26 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleDeclineTopup = async (topupId: string) => {
+    const { error } = await supabase.from("wallet_topups").update({ status: "failed" }).eq("id", topupId);
+    if (error) {
+      toast({ title: "Decline Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Top-up Declined" });
+    fetchData();
+  };
+
+  const handleDeleteTopup = async (topupId: string) => {
+    const { error } = await supabase.from("wallet_topups").delete().eq("id", topupId);
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Top-up Deleted" });
+    fetchData();
+  };
+
   const handleReplyComplaint = async () => {
     if (!replyDialog || !replyText.trim()) return;
     const newStatus = "resolved";
@@ -291,9 +311,17 @@ export default function Admin() {
                       ) : "-"}
                     </TableCell>
                     <TableCell>
-                      {t.status === "pending" && (
-                        <Button size="sm" onClick={() => handleApproveTopup(t)}>Approve</Button>
-                      )}
+                      <div className="flex gap-1">
+                        {t.status === "pending" && (
+                          <>
+                            <Button size="sm" onClick={() => handleApproveTopup(t)}>Approve</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeclineTopup(t.id)}>Decline</Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteTopup(t.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
