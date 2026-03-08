@@ -47,16 +47,18 @@ export default function Admin() {
   const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>();
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
+    const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
+      supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers(u || []);
     setOrders(o || []);
     setTopups(t || []);
     setComplaints(c || []);
+    setAgentApplications(aa || []);
   };
 
   useEffect(() => {
