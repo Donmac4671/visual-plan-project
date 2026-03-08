@@ -144,7 +144,7 @@ export default function Complaints() {
                 <label className="text-sm font-medium text-foreground mb-1 block">Data Package</label>
                 <Select value={dataPackage} onValueChange={setDataPackage} disabled={!selectedNetwork}>
                   <SelectTrigger><SelectValue placeholder={selectedNetwork ? "Select data package" : "Select network first"} /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {selectedNetworkData?.bundles.map((b) => (
                       <SelectItem key={b.size} value={b.size}>{b.size} — ₵{b.price.toFixed(2)}</SelectItem>
                     ))}
