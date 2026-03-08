@@ -17,6 +17,7 @@ const navItems = [
   { label: "Orders", icon: ShoppingBag, path: "/orders" },
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
+  { label: "Complaints", icon: MessageSquare, path: "/complaints" },
   { label: "Profile", icon: User, path: "/profile" },
 ];
 
