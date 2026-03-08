@@ -163,7 +163,7 @@ export default function DataBundles() {
               📞 Recipient Phone Number
             </label>
             <Input
-              placeholder="e.g., 0241234567"
+              placeholder="e.g., 0549358359"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
