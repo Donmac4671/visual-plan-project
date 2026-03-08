@@ -428,7 +428,7 @@ export default function Admin() {
 
         {/* COMPLAINTS TAB */}
         <TabsContent value="complaints">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={complaintStatusFilter} onValueChange={setComplaintStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
@@ -438,6 +438,25 @@ export default function Admin() {
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !complaintDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {complaintDateFrom ? format(complaintDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={complaintDateFrom} onSelect={setComplaintDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !complaintDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {complaintDateTo ? format(complaintDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={complaintDateTo} onSelect={setComplaintDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(complaintDateFrom || complaintDateTo) && <Button variant="ghost" size="sm" onClick={() => { setComplaintDateFrom(undefined); setComplaintDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
