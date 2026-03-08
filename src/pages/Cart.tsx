@@ -31,51 +31,64 @@ export default function Cart() {
       toast({ title: "Insufficient Balance", description: "Please top up your wallet first.", variant: "destructive" });
       return;
     }
+
     setProcessing(true);
     try {
       for (const item of items) {
-        await supabase.rpc("pay_with_wallet", {
+        const { error } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
           p_phone: item.phoneNumber,
           p_bundle: item.bundle.size,
           p_amount: item.bundle.price,
         });
+
+        if (error) throw error;
       }
+
       await refreshProfile();
       toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered for ${formatCurrency(total)}` });
       clearCart();
       setShowPayment(false);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const handlePayWithPaystack = async () => {
     if (!profile) return;
-    // Charge total + 2% fee via Paystack
+
+    setProcessing(true);
     await initPaystack({
       email: profile.email,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
           for (const item of items) {
-            await supabase.rpc("pay_order_with_paystack", {
+            const { error } = await supabase.rpc("pay_order_with_paystack", {
               p_network: item.network,
               p_phone: item.phoneNumber,
               p_bundle: item.bundle.size,
               p_amount: item.bundle.price,
               p_reference: reference,
             });
+
+            if (error) throw error;
           }
+
+          await refreshProfile();
           toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
           clearCart();
           setShowPayment(false);
         } catch (err: any) {
-          toast({ title: "Error", description: err.message, variant: "destructive" });
+          toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
+        } finally {
+          setProcessing(false);
         }
       },
       onClose: () => {
+        setProcessing(false);
         toast({ title: "Payment Cancelled" });
       },
     });
