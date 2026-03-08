@@ -26,8 +26,8 @@ export default function TopUpWallet() {
   const paystackTotal = amt + paystackFee;
 
   const handleMomoTopUp = () => {
-    if (!amt || amt < 20) {
-      toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
+    if (!amt || amt < minTopUp) {
+      toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
     setShowMomoDetails(true);
