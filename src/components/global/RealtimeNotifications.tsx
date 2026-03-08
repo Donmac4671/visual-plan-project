@@ -1,11 +1,57 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+
+    // Second tone for a pleasant two-tone chime
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.frequency.value = 1174;
+    osc2.type = "sine";
+    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
+    gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
+    osc2.start(ctx.currentTime + 0.15);
+    osc2.stop(ctx.currentTime + 0.7);
+  } catch {
+    // Web Audio not supported
+  }
+}
+
+function vibrate() {
+  try {
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  } catch {
+    // Vibration not supported
+  }
+}
+
 export default function RealtimeNotifications() {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+
+  const adminAlert = useCallback(() => {
+    playNotificationSound();
+    vibrate();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -70,7 +116,7 @@ export default function RealtimeNotifications() {
     };
   }, [user, toast]);
 
-  // Admin: get notified on every new order from any user
+  // Admin: get notified on every new order and MoMo top-up from any user
   useEffect(() => {
     if (!user || !isAdmin) return;
 
@@ -85,6 +131,7 @@ export default function RealtimeNotifications() {
             phone_number?: string; amount?: number; user_id?: string;
           };
           if (order.user_id === user.id) return;
+          adminAlert();
           toast({
             title: "🔔 New Order Received!",
             description: `${order.order_ref}: ${order.network} ${order.bundle_size} to ${order.phone_number} — ₵${Number(order.amount ?? 0).toFixed(2)}`,
@@ -104,6 +151,7 @@ export default function RealtimeNotifications() {
           };
           if (topup.user_id === user.id) return;
           if (topup.method !== "momo") return;
+          adminAlert();
           toast({
             title: "💰 New MoMo Top-up Request!",
             description: `A user submitted a MoMo deposit of ₵${Number(topup.amount ?? 0).toFixed(2)} for approval.`,
@@ -116,7 +164,7 @@ export default function RealtimeNotifications() {
       supabase.removeChannel(adminOrdersChannel);
       supabase.removeChannel(adminTopupsChannel);
     };
-  }, [user, isAdmin, toast]);
+  }, [user, isAdmin, toast, adminAlert]);
 
   return null;
 }
