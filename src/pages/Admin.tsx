@@ -251,11 +251,20 @@ export default function Admin() {
                   <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                 ) : filteredUsers.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.agent_code}</TableCell>
+                    <TableCell className="font-medium">{u.agent_code || "—"}</TableCell>
                     <TableCell>{u.full_name}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.phone}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(u.wallet_balance)}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={u.tier === "agent" ? "bg-primary/10 text-primary cursor-pointer" : "bg-muted text-muted-foreground cursor-pointer"}
+                        onClick={() => handleSetTier(u.user_id, u.tier === "agent" ? "general" : "agent")}
+                      >
+                        {u.tier === "agent" ? "Agent" : "General"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={u.is_blocked ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}>
                         {u.is_blocked ? "Blocked" : "Active"}
