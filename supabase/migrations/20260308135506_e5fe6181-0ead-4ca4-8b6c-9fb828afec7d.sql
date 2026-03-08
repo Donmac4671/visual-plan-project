@@ -1,0 +1,1 @@
+CREATE POLICY "Admin can delete topups" ON public.wallet_topups FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
