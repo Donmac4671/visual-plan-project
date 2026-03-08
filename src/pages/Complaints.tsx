@@ -22,6 +22,9 @@ export default function Complaints() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [selectedOrder, setSelectedOrder] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [dataPackage, setDataPackage] = useState("");
+  const [issueDate, setIssueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const fetchComplaints = async () => {
@@ -56,12 +59,13 @@ export default function Complaints() {
     }
     setSubmitting(true);
     const orderRef = orders.find((o) => o.id === selectedOrder)?.order_ref || "";
+    const fullMessage = `Phone: ${phoneNumber.trim() || "N/A"}\nData Package: ${dataPackage.trim() || "N/A"}\nDate: ${issueDate || "N/A"}\n\n${message.trim()}`;
     const { error } = await supabase.from("complaints").insert({
       user_id: user.id,
       order_id: selectedOrder || null,
       order_ref: orderRef,
       subject: subject.trim(),
-      message: message.trim(),
+      message: fullMessage,
     });
     setSubmitting(false);
     if (error) {
@@ -73,6 +77,9 @@ export default function Complaints() {
     setSubject("");
     setMessage("");
     setSelectedOrder("");
+    setPhoneNumber("");
+    setDataPackage("");
+    setIssueDate("");
     fetchComplaints();
   };
 
@@ -113,8 +120,27 @@ export default function Complaints() {
                 </Select>
               </div>
               <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Phone Number (affected)</label>
+                <Input placeholder="e.g., 0549358359" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} maxLength={15} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Data Package</label>
+                <Select value={dataPackage} onValueChange={setDataPackage}>
+                  <SelectTrigger><SelectValue placeholder="Select data package" /></SelectTrigger>
+                  <SelectContent>
+                    {["1GB", "2GB", "3GB", "4GB", "5GB", "6GB", "7GB", "8GB", "10GB", "12GB", "15GB", "20GB", "25GB", "30GB", "40GB", "50GB"].map((pkg) => (
+                      <SelectItem key={pkg} value={pkg}>{pkg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Date of Issue</label>
+                <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+              </div>
+              <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Subject</label>
-                <Input placeholder="e.g. Order not delivered" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} />
+                <Input placeholder="e.g. Data bundle not delivered" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Message</label>
