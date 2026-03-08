@@ -38,7 +38,7 @@ export default function Login() {
     }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
     if (error) {
@@ -116,7 +116,12 @@ export default function Login() {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
-              <p className="text-center text-sm text-muted-foreground mt-4">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-4">
+                <p className="text-xs text-destructive font-medium text-center">
+                  ⚠️ This platform is for authorized agents only. Non-agents will be blocked and deposits will not be refunded.
+                </p>
+              </div>
+              <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">Sign Up</Link>
               </p>
