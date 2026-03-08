@@ -89,7 +89,12 @@ export default function Register() {
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
-          <p className="text-center text-sm text-muted-foreground mt-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-4">
+            <p className="text-xs text-destructive font-medium text-center">
+              ⚠️ This platform is for authorized agents only. Do not register if you are not an agent. Unauthorized accounts will be blocked and any deposits will not be refunded.
+            </p>
+          </div>
+          <p className="text-center text-sm text-muted-foreground mt-3">
             Already have an account?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>
           </p>
