@@ -291,9 +291,17 @@ export default function Admin() {
                       ) : "-"}
                     </TableCell>
                     <TableCell>
-                      {t.status === "pending" && (
-                        <Button size="sm" onClick={() => handleApproveTopup(t)}>Approve</Button>
-                      )}
+                      <div className="flex gap-1">
+                        {t.status === "pending" && (
+                          <>
+                            <Button size="sm" onClick={() => handleApproveTopup(t)}>Approve</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeclineTopup(t.id)}>Decline</Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteTopup(t.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -130,12 +130,23 @@ export default function Complaints() {
                 <Input placeholder="e.g., 0549358359" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} maxLength={15} />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Data Package</label>
-                <Select value={dataPackage} onValueChange={setDataPackage}>
-                  <SelectTrigger><SelectValue placeholder="Select data package" /></SelectTrigger>
+                <label className="text-sm font-medium text-foreground mb-1 block">Network</label>
+                <Select value={selectedNetwork} onValueChange={(val) => { setSelectedNetwork(val); setDataPackage(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select network" /></SelectTrigger>
                   <SelectContent>
-                    {["1GB", "2GB", "3GB", "4GB", "5GB", "6GB", "7GB", "8GB", "10GB", "12GB", "15GB", "20GB", "25GB", "30GB", "40GB", "50GB"].map((pkg) => (
-                      <SelectItem key={pkg} value={pkg}>{pkg}</SelectItem>
+                    {networks.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>{n.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Data Package</label>
+                <Select value={dataPackage} onValueChange={setDataPackage} disabled={!selectedNetwork}>
+                  <SelectTrigger><SelectValue placeholder={selectedNetwork ? "Select data package" : "Select network first"} /></SelectTrigger>
+                  <SelectContent>
+                    {selectedNetworkData?.bundles.map((b) => (
+                      <SelectItem key={b.size} value={b.size}>{b.size} — ₵{b.price.toFixed(2)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
