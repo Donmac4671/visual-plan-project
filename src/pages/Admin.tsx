@@ -48,19 +48,27 @@ export default function Admin() {
   }
 
   const handleToggleBlock = async (userId: string, block: boolean) => {
-    await supabase.rpc("admin_toggle_block", { target_user_id: userId, block_status: block });
+    const { error } = await supabase.rpc("admin_toggle_block", { target_user_id: userId, block_status: block });
+    if (error) {
+      toast({ title: "Action Failed", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: block ? "User Blocked" : "User Unblocked" });
     fetchData();
   };
 
   const handleWalletOp = async () => {
     if (!walletDialog || !walletAmount) return;
-    await supabase.rpc("admin_wallet_operation", {
+    const { error } = await supabase.rpc("admin_wallet_operation", {
       target_user_id: walletDialog.user.user_id,
       operation_amount: parseFloat(walletAmount),
       operation_type: walletDialog.type,
       operation_description: walletDesc || `Admin ${walletDialog.type}`,
     });
+    if (error) {
+      toast({ title: "Wallet Action Failed", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: `Wallet ${walletDialog.type}ed`, description: `${formatCurrency(parseFloat(walletAmount))} ${walletDialog.type}ed` });
     setWalletDialog(null);
     setWalletAmount("");
@@ -69,25 +77,43 @@ export default function Admin() {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
-    await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
+    const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
+    if (error) {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Order Updated", description: `Status changed to ${status}` });
     fetchData();
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    await supabase.from("orders").delete().eq("id", orderId);
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Order Deleted" });
     fetchData();
   };
 
   const handleApproveTopup = async (topup: any) => {
-    await supabase.rpc("admin_wallet_operation", {
+    const { error: walletError } = await supabase.rpc("admin_wallet_operation", {
       target_user_id: topup.user_id,
       operation_amount: topup.amount,
       operation_type: "credit",
       operation_description: "MoMo top-up approved",
     });
-    await supabase.from("wallet_topups").update({ status: "completed" }).eq("id", topup.id);
+    if (walletError) {
+      toast({ title: "Approval Failed", description: walletError.message, variant: "destructive" });
+      return;
+    }
+
+    const { error: topupError } = await supabase.from("wallet_topups").update({ status: "completed" }).eq("id", topup.id);
+    if (topupError) {
+      toast({ title: "Approval Failed", description: topupError.message, variant: "destructive" });
+      return;
+    }
+
     toast({ title: "Top-up Approved" });
     fetchData();
   };

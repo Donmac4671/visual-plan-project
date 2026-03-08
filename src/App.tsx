@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import FloatingWhatsAppButton from "@/components/global/FloatingWhatsAppButton";
+import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import Transactions from "./pages/Transactions";
@@ -41,6 +43,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <RealtimeNotifications />
+            <FloatingWhatsAppButton />
             <Routes>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
