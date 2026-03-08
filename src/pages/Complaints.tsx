@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { MessageSquarePlus, AlertCircle } from "lucide-react";
-import { networks } from "@/lib/data";
+import { networks, getBundlePrice } from "@/lib/data";
 
 export default function Complaints() {
   const { user } = useAuth();
