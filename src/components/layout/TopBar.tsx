@@ -28,7 +28,7 @@ export default function TopBar({ title }: { title: string }) {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (

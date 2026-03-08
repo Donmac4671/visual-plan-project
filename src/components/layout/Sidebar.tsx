@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -12,7 +12,13 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { profile, isAdmin, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-[220px] min-h-screen bg-card border-r border-border p-4">
@@ -68,7 +74,10 @@ export default function Sidebar() {
       </nav>
 
       <button
-        onClick={signOut}
+        type="button"
+        onClick={() => {
+          void handleSignOut();
+        }}
         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-all mt-4"
       >
         <LogOut className="w-4 h-4" />
@@ -77,3 +86,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
