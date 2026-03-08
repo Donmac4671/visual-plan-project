@@ -12,8 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
-import { format, parseISO } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search } from "lucide-react";
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -31,8 +34,14 @@ export default function Admin() {
   // Filters
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>();
+  const [orderDateTo, setOrderDateTo] = useState<Date | undefined>();
   const [topupStatusFilter, setTopupStatusFilter] = useState("all");
+  const [topupDateFrom, setTopupDateFrom] = useState<Date | undefined>();
+  const [topupDateTo, setTopupDateTo] = useState<Date | undefined>();
   const [complaintStatusFilter, setComplaintStatusFilter] = useState("all");
+  const [complaintDateFrom, setComplaintDateFrom] = useState<Date | undefined>();
+  const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>();
 
   const fetchData = async () => {
     const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
@@ -61,20 +70,32 @@ export default function Admin() {
     );
   }, [users, userSearch]);
 
+  const filterByDate = (items: any[], dateFrom?: Date, dateTo?: Date) => {
+    return items.filter(item => {
+      const d = parseISO(item.created_at);
+      if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
+      if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
+      return true;
+    });
+  };
+
   const filteredOrders = useMemo(() => {
-    if (orderStatusFilter === "all") return orders;
-    return orders.filter(o => o.status === orderStatusFilter);
-  }, [orders, orderStatusFilter]);
+    let result = orders;
+    if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
+    return filterByDate(result, orderDateFrom, orderDateTo);
+  }, [orders, orderStatusFilter, orderDateFrom, orderDateTo]);
 
   const filteredTopups = useMemo(() => {
-    if (topupStatusFilter === "all") return topups;
-    return topups.filter(t => t.status === topupStatusFilter);
-  }, [topups, topupStatusFilter]);
+    let result = topups;
+    if (topupStatusFilter !== "all") result = result.filter(t => t.status === topupStatusFilter);
+    return filterByDate(result, topupDateFrom, topupDateTo);
+  }, [topups, topupStatusFilter, topupDateFrom, topupDateTo]);
 
   const filteredComplaints = useMemo(() => {
-    if (complaintStatusFilter === "all") return complaints;
-    return complaints.filter(c => c.status === complaintStatusFilter);
-  }, [complaints, complaintStatusFilter]);
+    let result = complaints;
+    if (complaintStatusFilter !== "all") result = result.filter(c => c.status === complaintStatusFilter);
+    return filterByDate(result, complaintDateFrom, complaintDateTo);
+  }, [complaints, complaintStatusFilter, complaintDateFrom, complaintDateTo]);
 
   if (!isAdmin) {
     return (
@@ -233,7 +254,7 @@ export default function Admin() {
 
         {/* ORDERS TAB */}
         <TabsContent value="orders">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
@@ -244,6 +265,25 @@ export default function Admin() {
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !orderDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDateFrom ? format(orderDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={orderDateFrom} onSelect={setOrderDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !orderDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDateTo ? format(orderDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={orderDateTo} onSelect={setOrderDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(orderDateFrom || orderDateTo) && <Button variant="ghost" size="sm" onClick={() => { setOrderDateFrom(undefined); setOrderDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
@@ -304,7 +344,7 @@ export default function Admin() {
 
         {/* TOPUPS TAB */}
         <TabsContent value="topups">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={topupStatusFilter} onValueChange={setTopupStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
@@ -314,6 +354,25 @@ export default function Admin() {
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {topupDateFrom ? format(topupDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateFrom} onSelect={setTopupDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {topupDateTo ? format(topupDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateTo} onSelect={setTopupDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(topupDateFrom || topupDateTo) && <Button variant="ghost" size="sm" onClick={() => { setTopupDateFrom(undefined); setTopupDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
@@ -369,7 +428,7 @@ export default function Admin() {
 
         {/* COMPLAINTS TAB */}
         <TabsContent value="complaints">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={complaintStatusFilter} onValueChange={setComplaintStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
@@ -379,6 +438,25 @@ export default function Admin() {
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !complaintDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {complaintDateFrom ? format(complaintDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={complaintDateFrom} onSelect={setComplaintDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !complaintDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {complaintDateTo ? format(complaintDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={complaintDateTo} onSelect={setComplaintDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(complaintDateFrom || complaintDateTo) && <Button variant="ghost" size="sm" onClick={() => { setComplaintDateFrom(undefined); setComplaintDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
