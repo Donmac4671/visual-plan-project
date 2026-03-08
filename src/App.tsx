@@ -20,6 +20,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Complaints from "./pages/Complaints";
+import BecomeAgent from "./pages/BecomeAgent";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
