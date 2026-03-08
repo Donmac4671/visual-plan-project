@@ -15,7 +15,7 @@ import { MessageSquarePlus, AlertCircle } from "lucide-react";
 import { networks, getBundlePrice } from "@/lib/data";
 
 export default function Complaints() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
