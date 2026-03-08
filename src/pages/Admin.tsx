@@ -29,14 +29,16 @@ export default function Admin() {
   const [replyText, setReplyText] = useState("");
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }] = await Promise.all([
+    const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
+      supabase.from("complaints").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers(u || []);
     setOrders(o || []);
     setTopups(t || []);
+    setComplaints(c || []);
   };
 
   useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
