@@ -344,7 +344,7 @@ export default function Admin() {
 
         {/* TOPUPS TAB */}
         <TabsContent value="topups">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={topupStatusFilter} onValueChange={setTopupStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
@@ -354,6 +354,25 @@ export default function Admin() {
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {topupDateFrom ? format(topupDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateFrom} onSelect={setTopupDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {topupDateTo ? format(topupDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateTo} onSelect={setTopupDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(topupDateFrom || topupDateTo) && <Button variant="ghost" size="sm" onClick={() => { setTopupDateFrom(undefined); setTopupDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
