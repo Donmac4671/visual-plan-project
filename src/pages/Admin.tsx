@@ -21,9 +21,12 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [topups, setTopups] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [walletDialog, setWalletDialog] = useState<{ user: any; type: "credit" | "debit" } | null>(null);
   const [walletAmount, setWalletAmount] = useState("");
   const [walletDesc, setWalletDesc] = useState("");
+  const [replyDialog, setReplyDialog] = useState<any | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const fetchData = async () => {
     const [{ data: u }, { data: o }, { data: t }] = await Promise.all([
