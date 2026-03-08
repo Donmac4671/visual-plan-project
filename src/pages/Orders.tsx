@@ -104,7 +104,7 @@ export default function Orders() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={(date) => setSelectedDate(date)} initialFocus />
+                <Calendar mode="single" selected={selectedDate} onSelect={(date: Date | undefined) => setSelectedDate(date)} initialFocus />
               </PopoverContent>
             </Popover>
           </div>
