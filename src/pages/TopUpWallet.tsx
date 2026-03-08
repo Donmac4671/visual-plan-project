@@ -66,8 +66,8 @@ export default function TopUpWallet() {
   };
 
   const handlePaystackTopUp = async () => {
-    if (!amt || amt < 20) {
-      toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
+    if (!amt || amt < minTopUp) {
+      toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
     const payerEmail = profile?.email || user?.email;
