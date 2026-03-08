@@ -32,6 +32,7 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [agentApplications, setAgentApplications] = useState<any[]>([]);
 
   // Filters
   const [userSearch, setUserSearch] = useState("");
