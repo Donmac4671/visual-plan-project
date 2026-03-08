@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type OrderStatus = "all" | "completed" | "pending" | "processing" | "failed";
 
+const displayStatus = (status: string) => status === "completed" ? "delivered" : status;
+
 export default function Orders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
