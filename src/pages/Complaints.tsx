@@ -83,6 +83,7 @@ export default function Complaints() {
     setMessage("");
     setSelectedOrder("");
     setPhoneNumber("");
+    setSelectedNetwork("");
     setDataPackage("");
     setIssueDate("");
     fetchComplaints();
