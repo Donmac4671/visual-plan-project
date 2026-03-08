@@ -51,10 +51,10 @@ export default function Cart() {
     setProcessing(false);
   };
 
-  const handlePayWithPaystack = () => {
+  const handlePayWithPaystack = async () => {
     if (!profile) return;
     // Charge total + 2% fee via Paystack
-    initPaystack({
+    await initPaystack({
       email: profile.email,
       amount: paystackTotal,
       onSuccess: async (reference) => {
