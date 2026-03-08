@@ -32,9 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const clearStoredSession = () => {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith("sb-") && key.includes("-auth-token"))
+      .forEach((key) => localStorage.removeItem(key));
+  };
+
+  const isAnonymousSession = (authUser: User) => {
+    const provider = (authUser.app_metadata as { provider?: string } | undefined)?.provider;
+    return provider === "anonymous" || (authUser as User & { is_anonymous?: boolean }).is_anonymous === true;
+  };
+
   const fetchProfile = async (authUser: User) => {
     try {
-      const { data: profileData, error: profileError } = await supabase
+      let { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", authUser.id)
@@ -42,6 +53,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileError) {
         console.error("Profile fetch error:", profileError.message);
+      }
+
+      if (!profileData) {
+        const { data: createdProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: authUser.id,
+            full_name: (authUser.user_metadata as { full_name?: string } | undefined)?.full_name ?? "",
+            email: authUser.email ?? "",
+            phone: (authUser.user_metadata as { phone?: string } | undefined)?.phone ?? "",
+          })
+          .select("*")
+          .single();
+
+        if (createError) {
+          console.error("Profile bootstrap error:", createError.message);
+        } else {
+          profileData = createdProfile;
+        }
       }
 
       setProfile((profileData as Profile) ?? null);
@@ -75,6 +105,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const hydrate = async (sessionUser: User | null) => {
       if (!isMounted) return;
+
+      if (sessionUser && isAnonymousSession(sessionUser)) {
+        await supabase.auth.signOut({ scope: "global" }).catch(() => undefined);
+        clearStoredSession();
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        if (isMounted) setLoading(false);
+        return;
+      }
+
       setUser(sessionUser);
 
       if (sessionUser) {
@@ -131,10 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
-
-      Object.keys(localStorage)
-        .filter((key) => key.startsWith("sb-") && key.includes("-auth-token"))
-        .forEach((key) => localStorage.removeItem(key));
+      clearStoredSession();
     }
   };
 
