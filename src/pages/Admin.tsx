@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare } from "lucide-react";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -19,19 +21,24 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [topups, setTopups] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [walletDialog, setWalletDialog] = useState<{ user: any; type: "credit" | "debit" } | null>(null);
   const [walletAmount, setWalletAmount] = useState("");
   const [walletDesc, setWalletDesc] = useState("");
+  const [replyDialog, setReplyDialog] = useState<any | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }] = await Promise.all([
+    const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
+      supabase.from("complaints").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers(u || []);
     setOrders(o || []);
     setTopups(t || []);
+    setComplaints(c || []);
   };
 
   useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
@@ -118,6 +125,30 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleReplyComplaint = async () => {
+    if (!replyDialog || !replyText.trim()) return;
+    const newStatus = "resolved";
+    const { error } = await supabase.from("complaints").update({ admin_reply: replyText.trim(), status: newStatus }).eq("id", replyDialog.id);
+    if (error) {
+      toast({ title: "Reply Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Complaint replied & resolved" });
+    setReplyDialog(null);
+    setReplyText("");
+    fetchData();
+  };
+
+  const handleCloseComplaint = async (id: string) => {
+    const { error } = await supabase.from("complaints").update({ status: "closed" }).eq("id", id);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Complaint closed" });
+    fetchData();
+  };
+
   return (
     <DashboardLayout title="Admin Panel">
       <Tabs defaultValue="users">
@@ -125,6 +156,7 @@ export default function Admin() {
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
           <TabsTrigger value="topups" className="gap-2"><DollarSign className="w-4 h-4" /> Top-ups</TabsTrigger>
+          <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -176,6 +208,7 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ref</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Network</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Bundle</TableHead>
@@ -189,6 +222,7 @@ export default function Admin() {
                 {orders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
+                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>{o.network}</TableCell>
                     <TableCell>{o.phone_number}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
@@ -199,7 +233,7 @@ export default function Admin() {
                         o.status === "pending" ? "bg-warning/10 text-warning" :
                         o.status === "processing" ? "bg-primary/10 text-primary" :
                         "bg-destructive/10 text-destructive"
-                      }>{o.status}</Badge>
+                      }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
@@ -207,7 +241,7 @@ export default function Admin() {
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="processing">Processing</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="completed">Delivered</SelectItem>
                           <SelectItem value="failed">Failed</SelectItem>
                         </SelectContent>
                       </Select>
@@ -266,6 +300,58 @@ export default function Admin() {
             </Table>
           </div>
         </TabsContent>
+
+        <TabsContent value="complaints">
+          <div className="bg-card rounded-xl border border-border shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {complaints.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No complaints</TableCell>
+                  </TableRow>
+                ) : (
+                  complaints.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
+                      <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
+                      <TableCell>{c.order_ref || "—"}</TableCell>
+                      <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          c.status === "open" ? "bg-warning/10 text-warning" :
+                          c.status === "resolved" ? "bg-success/10 text-success" :
+                          "bg-muted text-muted-foreground"
+                        }>{c.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {c.status === "open" && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => { setReplyDialog(c); setReplyText(c.admin_reply || ""); }}>Reply</Button>
+                              <Button size="sm" variant="secondary" onClick={() => handleCloseComplaint(c.id)}>Close</Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
 
       <Dialog open={!!walletDialog} onOpenChange={() => setWalletDialog(null)}>
@@ -279,6 +365,22 @@ export default function Admin() {
             <Button className="w-full gradient-primary border-0" onClick={handleWalletOp}>
               {walletDialog?.type === "credit" ? "Credit" : "Debit"} {walletAmount ? formatCurrency(parseFloat(walletAmount)) : ""}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!replyDialog} onOpenChange={() => setReplyDialog(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reply to Complaint</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            <div className="bg-muted p-3 rounded-lg text-sm">
+              <p className="font-medium">{replyDialog?.subject}</p>
+              <p className="text-muted-foreground mt-1">{replyDialog?.message}</p>
+            </div>
+            <Textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} rows={3} />
+            <Button className="w-full gradient-primary border-0" onClick={handleReplyComplaint}>Send Reply & Resolve</Button>
           </div>
         </DialogContent>
       </Dialog>

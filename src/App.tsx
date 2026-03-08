@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import Complaints from "./pages/Complaints";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/top-up-wallet" element={<ProtectedRoute><TopUpWallet /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

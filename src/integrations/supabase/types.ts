@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      complaints: {
+        Row: {
+          admin_reply: string | null
+          created_at: string
+          id: string
+          message: string
+          order_id: string | null
+          order_ref: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          order_id?: string | null
+          order_ref?: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          order_id?: string | null
+          order_ref?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number
