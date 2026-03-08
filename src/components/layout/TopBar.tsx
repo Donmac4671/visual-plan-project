@@ -125,7 +125,12 @@ export default function TopBar({ title }: { title: string }) {
               <Link to="/orders" className="flex items-center gap-2"><ShoppingBag className="w-4 h-4" /> Orders</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
+            <DropdownMenuItem
+              className="text-destructive"
+              onSelect={() => {
+                void handleSignOut();
+              }}
+            >
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
