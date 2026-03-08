@@ -165,8 +165,16 @@ export default function DataBundles() {
             <Input
               placeholder="e.g., 0549358359"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                setPhoneNumber(val);
+              }}
+              maxLength={10}
+              inputMode="numeric"
             />
+            {phoneNumber.length > 0 && phoneNumber.length < 10 && (
+              <p className="text-xs text-destructive mt-1">{10 - phoneNumber.length} more digit(s) needed</p>
+            )}
           </div>
 
           <div className="flex gap-3 mt-4">
