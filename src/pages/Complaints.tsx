@@ -77,6 +77,9 @@ export default function Complaints() {
     setSubject("");
     setMessage("");
     setSelectedOrder("");
+    setPhoneNumber("");
+    setDataPackage("");
+    setIssueDate("");
     fetchComplaints();
   };
 
