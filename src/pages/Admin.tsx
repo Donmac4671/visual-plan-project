@@ -34,8 +34,14 @@ export default function Admin() {
   // Filters
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>();
+  const [orderDateTo, setOrderDateTo] = useState<Date | undefined>();
   const [topupStatusFilter, setTopupStatusFilter] = useState("all");
+  const [topupDateFrom, setTopupDateFrom] = useState<Date | undefined>();
+  const [topupDateTo, setTopupDateTo] = useState<Date | undefined>();
   const [complaintStatusFilter, setComplaintStatusFilter] = useState("all");
+  const [complaintDateFrom, setComplaintDateFrom] = useState<Date | undefined>();
+  const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>();
 
   const fetchData = async () => {
     const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
