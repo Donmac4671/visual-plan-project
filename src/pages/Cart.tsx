@@ -102,9 +102,14 @@ export default function Cart() {
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" /> Shopping Cart ({items.length})
           </h2>
-          {items.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
-          )}
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} title="Close cart">
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {items.length === 0 ? (
