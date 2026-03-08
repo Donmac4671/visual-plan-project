@@ -11,6 +11,7 @@ interface Profile {
   agent_code: string;
   wallet_balance: number;
   is_blocked: boolean;
+  tier: string;
 }
 
 interface AuthContextType {
