@@ -63,7 +63,7 @@ export default function TopUpWallet() {
     setUploading(false);
   };
 
-  const handlePaystackTopUp = () => {
+  const handlePaystackTopUp = async () => {
     if (!amt || amt < 20) {
       toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
       return;
@@ -71,7 +71,7 @@ export default function TopUpWallet() {
     if (!profile) return;
 
     // Charge amount + 2% fee via Paystack, but credit only the base amount
-    initPaystack({
+    await initPaystack({
       email: profile.email,
       amount: paystackTotal,
       onSuccess: async (reference) => {
