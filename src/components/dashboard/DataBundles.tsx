@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Wifi, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
-import { networks, Network, DataBundle, formatCurrency } from "@/lib/data";
+import { networks, Network, DataBundle, formatCurrency, getBundlePrice } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
@@ -30,8 +31,9 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
-function BundleCard({ bundle, network, onSelect }: { bundle: DataBundle; network: Network; onSelect: () => void }) {
+function BundleCard({ bundle, network, tier, onSelect }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void }) {
   const gradientClass = network.gradient;
+  const displayPrice = getBundlePrice(bundle, tier);
 
   return (
     <div className="flex flex-col items-center">
@@ -41,7 +43,7 @@ function BundleCard({ bundle, network, onSelect }: { bundle: DataBundle; network
       </div>
       <div className="mt-2 bg-accent rounded-full px-3 py-1 flex items-center gap-1">
         <span className="text-[10px] text-muted-foreground">Price</span>
-        <span className="text-sm font-bold text-foreground">{formatCurrency(bundle.price)}</span>
+        <span className="text-sm font-bold text-foreground">{formatCurrency(displayPrice)}</span>
       </div>
       <Button
         size="sm"
@@ -60,6 +62,9 @@ export default function DataBundles() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const { profile } = useAuth();
+
+  const userTier = profile?.tier || "general";
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
@@ -70,7 +75,8 @@ export default function DataBundles() {
       toast({ title: "Error", description: "Please enter a valid 10-digit phone number", variant: "destructive" });
       return;
     }
-    addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber);
+    const effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
+    addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
     toast({ title: "Added to cart", description: `${selectedBundle.network.name} ${selectedBundle.bundle.size} added` });
     setSelectedBundle(null);
     setPhoneNumber("");
@@ -122,6 +128,7 @@ export default function DataBundles() {
                       key={bundle.size}
                       bundle={bundle}
                       network={network}
+                      tier={userTier}
                       onSelect={() => setSelectedBundle({ network, bundle })}
                     />
                   ))}
@@ -148,7 +155,9 @@ export default function DataBundles() {
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">💰 Price</p>
-              <p className="text-xl font-bold text-foreground">{selectedBundle && formatCurrency(selectedBundle.bundle.price)}</p>
+              <p className="text-xl font-bold text-foreground">
+                {selectedBundle && formatCurrency(getBundlePrice(selectedBundle.bundle, userTier))}
+              </p>
             </div>
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">⏱ Validity</p>

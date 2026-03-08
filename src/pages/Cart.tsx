@@ -134,7 +134,7 @@ export default function Cart() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-foreground">{formatCurrency(item.bundle.price)}</span>
+                    <span className="font-bold text-foreground">{formatCurrency(item.effectivePrice)}</span>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>

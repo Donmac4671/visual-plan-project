@@ -3,7 +3,7 @@ import { CartItem, DataBundle } from "@/lib/data";
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (networkId: string, networkName: string, bundle: DataBundle, phoneNumber: string) => void;
+  addItem: (networkId: string, networkName: string, bundle: DataBundle, phoneNumber: string, effectivePrice: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   total: number;
@@ -15,13 +15,14 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addItem = (networkId: string, networkName: string, bundle: DataBundle, phoneNumber: string) => {
+  const addItem = (networkId: string, networkName: string, bundle: DataBundle, phoneNumber: string, effectivePrice: number) => {
     const newItem: CartItem = {
       id: `${Date.now()}-${Math.random()}`,
       network: networkName,
       networkId,
       bundle,
       phoneNumber,
+      effectivePrice,
     };
     setItems((prev) => [...prev, newItem]);
   };
@@ -32,7 +33,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setItems([]);
 
-  const total = items.reduce((sum, item) => sum + item.bundle.price, 0);
+  const total = items.reduce((sum, item) => sum + item.effectivePrice, 0);
   const itemCount = items.length;
 
   return (
