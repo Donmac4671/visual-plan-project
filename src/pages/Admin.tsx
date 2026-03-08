@@ -265,6 +265,25 @@ export default function Admin() {
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !orderDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDateFrom ? format(orderDateFrom, "MMM dd, yyyy") : "From date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={orderDateFrom} onSelect={setOrderDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !orderDateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDateTo ? format(orderDateTo, "MMM dd, yyyy") : "To date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={orderDateTo} onSelect={setOrderDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+            </Popover>
+            {(orderDateFrom || orderDateTo) && <Button variant="ghost" size="sm" onClick={() => { setOrderDateFrom(undefined); setOrderDateTo(undefined); }}>Clear dates</Button>}
           </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
