@@ -125,6 +125,30 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleReplyComplaint = async () => {
+    if (!replyDialog || !replyText.trim()) return;
+    const newStatus = "resolved";
+    const { error } = await supabase.from("complaints").update({ admin_reply: replyText.trim(), status: newStatus }).eq("id", replyDialog.id);
+    if (error) {
+      toast({ title: "Reply Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Complaint replied & resolved" });
+    setReplyDialog(null);
+    setReplyText("");
+    fetchData();
+  };
+
+  const handleCloseComplaint = async (id: string) => {
+    const { error } = await supabase.from("complaints").update({ status: "closed" }).eq("id", id);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Complaint closed" });
+    fetchData();
+  };
+
   return (
     <DashboardLayout title="Admin Panel">
       <Tabs defaultValue="users">
