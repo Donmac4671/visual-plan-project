@@ -83,42 +83,53 @@ export default function ResetPassword() {
           <p className="text-muted-foreground mt-1">Enter your new password below</p>
         </div>
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-          <form onSubmit={handleReset} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter new password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+          {!isRecovery ? (
+            <div className="space-y-4 text-center py-2">
+              <p className="text-sm text-muted-foreground">
+                This reset link is invalid or expired. Please request a new password reset link from the login page.
+              </p>
+              <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/login")}>
+                Back to Login
+              </Button>
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Confirm New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+          ) : (
+            <form onSubmit={handleReset} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
-            <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
-              {loading ? "Updating..." : "Update Password"}
-            </Button>
-          </form>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Confirm New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
+                {loading ? "Updating..." : "Update Password"}
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>
