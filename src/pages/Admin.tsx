@@ -70,20 +70,32 @@ export default function Admin() {
     );
   }, [users, userSearch]);
 
+  const filterByDate = (items: any[], dateFrom?: Date, dateTo?: Date) => {
+    return items.filter(item => {
+      const d = parseISO(item.created_at);
+      if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
+      if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
+      return true;
+    });
+  };
+
   const filteredOrders = useMemo(() => {
-    if (orderStatusFilter === "all") return orders;
-    return orders.filter(o => o.status === orderStatusFilter);
-  }, [orders, orderStatusFilter]);
+    let result = orders;
+    if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
+    return filterByDate(result, orderDateFrom, orderDateTo);
+  }, [orders, orderStatusFilter, orderDateFrom, orderDateTo]);
 
   const filteredTopups = useMemo(() => {
-    if (topupStatusFilter === "all") return topups;
-    return topups.filter(t => t.status === topupStatusFilter);
-  }, [topups, topupStatusFilter]);
+    let result = topups;
+    if (topupStatusFilter !== "all") result = result.filter(t => t.status === topupStatusFilter);
+    return filterByDate(result, topupDateFrom, topupDateTo);
+  }, [topups, topupStatusFilter, topupDateFrom, topupDateTo]);
 
   const filteredComplaints = useMemo(() => {
-    if (complaintStatusFilter === "all") return complaints;
-    return complaints.filter(c => c.status === complaintStatusFilter);
-  }, [complaints, complaintStatusFilter]);
+    let result = complaints;
+    if (complaintStatusFilter !== "all") result = result.filter(c => c.status === complaintStatusFilter);
+    return filterByDate(result, complaintDateFrom, complaintDateTo);
+  }, [complaints, complaintStatusFilter, complaintDateFrom, complaintDateTo]);
 
   if (!isAdmin) {
     return (
