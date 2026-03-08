@@ -110,9 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    const loadingGuard = setTimeout(() => {
-      if (isMounted) setLoading(false);
-    }, 8000);
+
+    const setSafeState = (updater: () => void) => {
+      if (isMounted) updater();
+    };
 
     const hydrate = async (sessionUser: User | null) => {
       if (!isMounted) return;
@@ -120,54 +121,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (sessionUser && isAnonymousSession(sessionUser)) {
         await supabase.auth.signOut({ scope: "global" }).catch(() => undefined);
         clearStoredSession();
-        setUser(null);
-        setProfile(null);
-        setIsAdmin(false);
-        if (isMounted) setLoading(false);
+        setSafeState(() => {
+          setUser(null);
+          setProfile(null);
+          setIsAdmin(false);
+          setLoading(false);
+        });
         return;
       }
 
-      setUser(sessionUser);
+      setSafeState(() => {
+        setUser(sessionUser);
+        setLoading(false);
+      });
 
       if (sessionUser) {
-        await fetchProfile(sessionUser);
+        void fetchProfile(sessionUser);
       } else {
-        setProfile(null);
-        setIsAdmin(false);
+        setSafeState(() => {
+          setProfile(null);
+          setIsAdmin(false);
+        });
       }
-
-      if (isMounted) setLoading(false);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      await hydrate(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      void hydrate(session?.user ?? null);
     });
 
-    supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (!session) {
           await hydrate(null);
           return;
         }
 
-        const { data: { user: validatedUser }, error } = await supabase.auth.getUser();
-        if (error || !validatedUser) {
+        const validationResult = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise<{ data: { user: null }; error: Error }>((resolve) => {
+            setTimeout(() => {
+              resolve({ data: { user: null }, error: new Error("User validation timed out") });
+            }, 3000);
+          }),
+        ]);
+
+        const validatedUser = validationResult.data?.user;
+
+        if (validationResult.error && !validatedUser) {
           await supabase.auth.signOut({ scope: "global" }).catch(() => undefined);
           clearStoredSession();
           await hydrate(null);
           return;
         }
 
-        await hydrate(validatedUser);
-      })
-      .catch((error) => {
-        console.error("Session load failed:", error);
-        if (isMounted) setLoading(false);
-      });
+        await hydrate(validatedUser ?? session.user);
+      } catch (error) {
+        console.error("Session initialization failed:", error);
+        setSafeState(() => setLoading(false));
+      }
+    };
+
+    void initializeAuth();
 
     return () => {
       isMounted = false;
-      clearTimeout(loadingGuard);
       subscription.unsubscribe();
     };
   }, []);
