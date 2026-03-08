@@ -42,7 +42,7 @@ export const networks: Network[] = [
     gradient: "gradient-telecel",
     bundles: [
       { size: "2GB", sizeGB: 2, price: 9.60 },
-      { size: "3GB", sizeGB: 3, price: 14.20 },
+      { size: "3GB", sizeGB: 3, price: 14 },
       { size: "5GB", sizeGB: 5, price: 23 },
       { size: "10GB", sizeGB: 10, price: 42 },
       { size: "15GB", sizeGB: 15, price: 62 },
