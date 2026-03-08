@@ -57,7 +57,17 @@ export default function Admin() {
     setComplaints(c || []);
   };
 
-  useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchData();
+
+    const ordersChannel = supabase
+      .channel('admin-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchData())
+      .subscribe();
+
+    return () => { supabase.removeChannel(ordersChannel); };
+  }, [isAdmin]);
 
   // Filtered data
   const filteredUsers = useMemo(() => {
