@@ -33,9 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const clearStoredSession = () => {
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith("sb-") && key.includes("-auth-token"))
-      .forEach((key) => localStorage.removeItem(key));
+    if (typeof window === "undefined") return;
+
+    const clearFromStorage = (storage: Storage) => {
+      Object.keys(storage)
+        .filter(
+          (key) =>
+            key === "supabase.auth.token" ||
+            (key.startsWith("sb-") && key.includes("auth-token"))
+        )
+        .forEach((key) => storage.removeItem(key));
+    };
+
+    clearFromStorage(window.localStorage);
+    clearFromStorage(window.sessionStorage);
   };
 
   const isAnonymousSession = (authUser: User) => {
