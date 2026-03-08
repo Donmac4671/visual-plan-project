@@ -189,12 +189,18 @@ export default function Admin() {
   return (
     <DashboardLayout title="Admin Panel">
       <Tabs defaultValue="users">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
           <TabsTrigger value="topups" className="gap-2"><DollarSign className="w-4 h-4" /> Top-ups</TabsTrigger>
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
         </TabsList>
+
+        {/* ANALYTICS TAB */}
+        <TabsContent value="analytics">
+          <AdminAnalytics users={users} orders={orders} topups={topups} complaints={complaints} />
+        </TabsContent>
 
         {/* USERS TAB */}
         <TabsContent value="users">
