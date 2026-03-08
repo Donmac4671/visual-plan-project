@@ -89,7 +89,8 @@ export default function Admin() {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Order Updated", description: `Status changed to ${status}` });
+    const displayLabel = status === "completed" ? "delivered" : status;
+    toast({ title: "Order Updated", description: `Status changed to ${displayLabel}` });
     fetchData();
   };
 
