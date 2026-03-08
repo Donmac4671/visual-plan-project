@@ -132,6 +132,7 @@ export default function ResetPassword() {
           )}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-4">© 2026 Donmac Data Hub. All rights reserved.</p>
+      </div>
     </div>
   );
 }
