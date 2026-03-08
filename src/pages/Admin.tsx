@@ -300,6 +300,58 @@ export default function Admin() {
             </Table>
           </div>
         </TabsContent>
+
+        <TabsContent value="complaints">
+          <div className="bg-card rounded-xl border border-border shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {complaints.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No complaints</TableCell>
+                  </TableRow>
+                ) : (
+                  complaints.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
+                      <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
+                      <TableCell>{c.order_ref || "—"}</TableCell>
+                      <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          c.status === "open" ? "bg-warning/10 text-warning" :
+                          c.status === "resolved" ? "bg-success/10 text-success" :
+                          "bg-muted text-muted-foreground"
+                        }>{c.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {c.status === "open" && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => { setReplyDialog(c); setReplyText(c.admin_reply || ""); }}>Reply</Button>
+                              <Button size="sm" variant="secondary" onClick={() => handleCloseComplaint(c.id)}>Close</Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
 
       <Dialog open={!!walletDialog} onOpenChange={() => setWalletDialog(null)}>
@@ -313,6 +365,22 @@ export default function Admin() {
             <Button className="w-full gradient-primary border-0" onClick={handleWalletOp}>
               {walletDialog?.type === "credit" ? "Credit" : "Debit"} {walletAmount ? formatCurrency(parseFloat(walletAmount)) : ""}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!replyDialog} onOpenChange={() => setReplyDialog(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reply to Complaint</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            <div className="bg-muted p-3 rounded-lg text-sm">
+              <p className="font-medium">{replyDialog?.subject}</p>
+              <p className="text-muted-foreground mt-1">{replyDialog?.message}</p>
+            </div>
+            <Textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} rows={3} />
+            <Button className="w-full gradient-primary border-0" onClick={handleReplyComplaint}>Send Reply & Resolve</Button>
           </div>
         </DialogContent>
       </Dialog>
