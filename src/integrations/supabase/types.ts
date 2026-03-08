@@ -109,6 +109,7 @@ export type Database = {
           id: string
           is_blocked: boolean
           phone: string
+          tier: string
           updated_at: string
           user_id: string
           wallet_balance: number
@@ -121,6 +122,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           phone?: string
+          tier?: string
           updated_at?: string
           user_id: string
           wallet_balance?: number
@@ -133,6 +135,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           phone?: string
+          tier?: string
           updated_at?: string
           user_id?: string
           wallet_balance?: number
@@ -225,6 +228,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_tier: {
+        Args: { new_tier: string; target_user_id: string }
+        Returns: undefined
+      }
       admin_toggle_block: {
         Args: { block_status: boolean; target_user_id: string }
         Returns: undefined
