@@ -138,6 +138,13 @@ export interface TopUp {
 
 export const PAYSTACK_FEE_PERCENT = 0.02; // 2%
 
+export const MIN_TOPUP_AGENT = 20;
+export const MIN_TOPUP_GENERAL = 5;
+
+export function getMinTopUp(tier: string): number {
+  return tier === "agent" ? MIN_TOPUP_AGENT : MIN_TOPUP_GENERAL;
+}
+
 export function calculatePaystackFee(amount: number): number {
   return Math.round(amount * PAYSTACK_FEE_PERCENT * 100) / 100;
 }

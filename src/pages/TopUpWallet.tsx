@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, CreditCard, Smartphone, Upload, Copy, CheckCircle } from "lucide-react";
-import { formatCurrency, calculatePaystackFee } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee, getMinTopUp } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,14 +18,16 @@ export default function TopUpWallet() {
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
 
-  const quickAmounts = [20, 50, 100, 200, 500];
+  const tier = profile?.tier ?? "general";
+  const minTopUp = getMinTopUp(tier);
+  const quickAmounts = tier === "agent" ? [20, 50, 100, 200, 500] : [5, 10, 20, 50, 100];
   const amt = parseFloat(amount) || 0;
   const paystackFee = calculatePaystackFee(amt);
   const paystackTotal = amt + paystackFee;
 
   const handleMomoTopUp = () => {
-    if (!amt || amt < 20) {
-      toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
+    if (!amt || amt < minTopUp) {
+      toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
     setShowMomoDetails(true);
@@ -64,8 +66,8 @@ export default function TopUpWallet() {
   };
 
   const handlePaystackTopUp = async () => {
-    if (!amt || amt < 20) {
-      toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
+    if (!amt || amt < minTopUp) {
+      toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
     const payerEmail = profile?.email || user?.email;
@@ -138,14 +140,14 @@ export default function TopUpWallet() {
         </div>
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵20</h3>
+          <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵{minTopUp}</h3>
           <Input
             type="number"
-            placeholder="Enter amount (min ₵20)"
+            placeholder={`Enter amount (min ₵${minTopUp})`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-lg mb-3"
-            min={20}
+            min={minTopUp}
           />
           <div className="flex flex-wrap gap-2">
             {quickAmounts.map((qa) => (
@@ -160,7 +162,7 @@ export default function TopUpWallet() {
               </Button>
             ))}
           </div>
-          {method === "paystack" && amt >= 20 && (
+          {method === "paystack" && amt >= minTopUp && (
             <div className="mt-3 p-3 bg-accent rounded-lg text-sm text-muted-foreground">
               Amount: {formatCurrency(amt)} + 2% fee ({formatCurrency(paystackFee)}) = <span className="font-bold text-foreground">{formatCurrency(paystackTotal)}</span>
             </div>
@@ -221,7 +223,7 @@ export default function TopUpWallet() {
             size="lg"
             onClick={method === "momo" ? handleMomoTopUp : handlePaystackTopUp}
           >
-            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= 20 ? formatCurrency(paystackTotal) : ""} with Paystack`}
+            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= minTopUp ? formatCurrency(paystackTotal) : ""} with Paystack`}
           </Button>
         )}
       </div>
