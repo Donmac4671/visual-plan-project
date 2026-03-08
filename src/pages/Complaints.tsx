@@ -24,8 +24,11 @@ export default function Complaints() {
   const [message, setMessage] = useState("");
   const [selectedOrder, setSelectedOrder] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedNetwork, setSelectedNetwork] = useState("");
   const [dataPackage, setDataPackage] = useState("");
   const [issueDate, setIssueDate] = useState("");
+
+  const selectedNetworkData = networks.find((n) => n.id === selectedNetwork);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchComplaints = async () => {
