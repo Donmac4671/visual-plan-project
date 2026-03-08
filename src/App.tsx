@@ -57,6 +57,7 @@ const App = () => (
               <Route path="/top-up-wallet" element={<ProtectedRoute><TopUpWallet /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
