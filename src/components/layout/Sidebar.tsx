@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
