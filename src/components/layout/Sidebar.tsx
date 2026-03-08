@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
   { label: "Complaints", icon: MessageSquare, path: "/complaints" },
   { label: "Profile", icon: User, path: "/profile" },
+  { label: "Become an Agent", icon: Crown, path: "/become-agent", hideForAgents: true },
 ];
 
 export default function Sidebar() {
@@ -47,6 +48,7 @@ export default function Sidebar() {
       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Navigation</p>
       <nav className="flex flex-col gap-1 flex-1">
         {navItems.map((item) => {
+          if ((item as any).hideForAgents && profile?.tier === "agent") return null;
           const isActive = location.pathname === item.path;
           return (
             <Link

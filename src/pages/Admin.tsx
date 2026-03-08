@@ -13,8 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3 } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [agentApplications, setAgentApplications] = useState<any[]>([]);
 
   // Filters
   const [userSearch, setUserSearch] = useState("");
@@ -45,16 +47,18 @@ export default function Admin() {
   const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>();
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
+    const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
+      supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers(u || []);
     setOrders(o || []);
     setTopups(t || []);
     setComplaints(c || []);
+    setAgentApplications(aa || []);
   };
 
   useEffect(() => {
@@ -212,6 +216,7 @@ export default function Admin() {
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
           <TabsTrigger value="topups" className="gap-2"><DollarSign className="w-4 h-4" /> Top-ups</TabsTrigger>
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
+          <TabsTrigger value="agent-apps" className="gap-2"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
         </TabsList>
 
         {/* ANALYTICS TAB */}
@@ -537,6 +542,11 @@ export default function Admin() {
               </TableBody>
             </Table>
           </div>
+        </TabsContent>
+
+        {/* AGENT APPLICATIONS TAB */}
+        <TabsContent value="agent-apps">
+          <AdminAgentApplications applications={agentApplications} onRefresh={fetchData} />
         </TabsContent>
       </Tabs>
 

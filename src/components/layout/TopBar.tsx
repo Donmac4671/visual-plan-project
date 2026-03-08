@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, Shield, MessageSquare } from "lucide-react";
+import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, Shield, MessageSquare, Crown } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/data";
@@ -62,6 +62,13 @@ export default function TopBar({ title }: { title: string }) {
                   </Link>
                 );
               })}
+              {profile?.tier !== "agent" && (
+                <Link to="/become-agent" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  location.pathname === "/become-agent" ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                }`}>
+                  <Crown className="w-4 h-4" /> Become an Agent
+                </Link>
+              )}
               {isAdmin && (
                 <Link to="/admin" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   location.pathname === "/admin" ? "gradient-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
