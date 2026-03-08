@@ -131,7 +131,7 @@ export default function Orders() {
               filteredOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.order_ref}</TableCell>
-                  <TableCell>{format(parseISO(order.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>{format(parseISO(order.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                   <TableCell>{order.network}</TableCell>
                   <TableCell>{order.phone_number}</TableCell>
                   <TableCell>{order.bundle_size}</TableCell>
