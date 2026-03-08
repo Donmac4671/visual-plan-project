@@ -68,17 +68,31 @@ export default function TopUpWallet() {
       toast({ title: "Error", description: "Minimum top-up amount is ₵20", variant: "destructive" });
       return;
     }
-    if (!profile) return;
+    const payerEmail = profile?.email || user?.email;
+    if (!payerEmail) {
+      toast({
+        title: "Payment Error",
+        description: "Your account email is missing. Please update your profile and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Charge amount + 2% fee via Paystack, but credit only the base amount
     await initPaystack({
-      email: profile.email,
+      email: payerEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
-        await supabase.rpc("complete_paystack_topup", {
+        const { error } = await supabase.rpc("complete_paystack_topup", {
           p_amount: amt,
           p_reference: reference,
         });
+
+        if (error) {
+          toast({ title: "Top-up Failed", description: error.message, variant: "destructive" });
+          return;
+        }
+
         await refreshProfile();
         toast({ title: "Top-up Successful!", description: `${formatCurrency(amt)} has been added to your wallet.` });
         setAmount("");
