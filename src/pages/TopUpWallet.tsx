@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, CreditCard, Smartphone, Upload, Copy, CheckCircle } from "lucide-react";
-import { formatCurrency, calculatePaystackFee } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee, getMinTopUp } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
