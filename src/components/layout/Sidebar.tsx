@@ -48,6 +48,7 @@ export default function Sidebar() {
       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Navigation</p>
       <nav className="flex flex-col gap-1 flex-1">
         {navItems.map((item) => {
+          if ((item as any).hideForAgents && profile?.tier === "agent") return null;
           const isActive = location.pathname === item.path;
           return (
             <Link

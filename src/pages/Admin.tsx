@@ -543,6 +543,11 @@ export default function Admin() {
             </Table>
           </div>
         </TabsContent>
+
+        {/* AGENT APPLICATIONS TAB */}
+        <TabsContent value="agent-apps">
+          <AdminAgentApplications applications={agentApplications} onRefresh={fetchData} />
+        </TabsContent>
       </Tabs>
 
       {/* Wallet Dialog */}
