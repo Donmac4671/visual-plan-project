@@ -26,9 +26,10 @@ export default function RealtimeNotifications() {
           const orderRef = (payload.new as { order_ref?: string } | null)?.order_ref ?? "your order";
 
           if (newStatus && oldStatus !== newStatus) {
+            const displayStatus = newStatus === "completed" ? "delivered" : newStatus;
             toast({
               title: "Order status updated",
-              description: `${orderRef} is now ${newStatus}`,
+              description: `${orderRef} is now ${displayStatus}`,
             });
           }
         }
