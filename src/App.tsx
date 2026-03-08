@@ -74,6 +74,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <RecoveryRedirect />
             <RealtimeNotifications />
             <FloatingWhatsAppButton />
             <FloatingCartButton />
