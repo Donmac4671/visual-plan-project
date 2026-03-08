@@ -123,10 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
+    try {
+      await supabase.auth.signOut({ scope: "global" });
+    } catch (error) {
+      console.error("Sign out failed:", error);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith("sb-") && key.includes("-auth-token"))
+        .forEach((key) => localStorage.removeItem(key));
+    }
   };
 
   return (

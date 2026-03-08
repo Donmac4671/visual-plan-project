@@ -23,8 +23,19 @@ type V2PaystackInstance = {
 
 type V2PaystackConstructor = new () => V2PaystackInstance;
 
-function loadPaystackScript(): Promise<void> {
+function appendPaystackScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+function loadPaystackScript(): Promise<void> {
+  return new Promise(async (resolve, reject) => {
     const hasLegacy = typeof (window as any).PaystackPop?.setup === "function";
     const hasV2 = typeof (window as any).PaystackPop === "function";
 
@@ -33,15 +44,33 @@ function loadPaystackScript(): Promise<void> {
       return;
     }
 
-    const existing = document.querySelector('script[src*="paystack"]');
-    if (existing) existing.remove();
+    document
+      .querySelectorAll('script[src*="js.paystack.co"]')
+      .forEach((script) => script.remove());
 
-    const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v2/inline.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Paystack script"));
-    document.head.appendChild(script);
+    try {
+      await appendPaystackScript("https://js.paystack.co/v1/inline.js");
+      if (typeof (window as any).PaystackPop?.setup === "function") {
+        resolve();
+        return;
+      }
+    } catch {
+      // fallback to v2 below
+    }
+
+    try {
+      await appendPaystackScript("https://js.paystack.co/v2/inline.js");
+      const hasLoadedLegacy = typeof (window as any).PaystackPop?.setup === "function";
+      const hasLoadedV2 = typeof (window as any).PaystackPop === "function";
+      if (hasLoadedLegacy || hasLoadedV2) {
+        resolve();
+        return;
+      }
+    } catch {
+      // handled by final reject
+    }
+
+    reject(new Error("Paystack script loaded, but SDK is unavailable"));
   });
 }
 
