@@ -137,7 +137,7 @@ export default function Orders() {
                   <TableCell>{order.bundle_size}</TableCell>
                   <TableCell className="font-semibold">{formatCurrency(order.amount)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusColor(order.status)}>{order.status}</Badge>
+                    <Badge variant="outline" className={statusColor(order.status)}>{displayStatus(order.status)}</Badge>
                   </TableCell>
                 </TableRow>
               ))
