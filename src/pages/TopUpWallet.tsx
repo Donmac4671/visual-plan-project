@@ -223,7 +223,7 @@ export default function TopUpWallet() {
             size="lg"
             onClick={method === "momo" ? handleMomoTopUp : handlePaystackTopUp}
           >
-            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= 20 ? formatCurrency(paystackTotal) : ""} with Paystack`}
+            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= minTopUp ? formatCurrency(paystackTotal) : ""} with Paystack`}
           </Button>
         )}
       </div>
