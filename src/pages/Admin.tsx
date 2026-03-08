@@ -241,6 +241,7 @@ export default function Admin() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Balance</TableHead>
+                  <TableHead>Tier</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
