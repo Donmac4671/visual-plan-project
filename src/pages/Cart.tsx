@@ -177,6 +177,7 @@ export default function Cart() {
               className="w-full h-14 text-left justify-start gap-3"
               variant="outline"
               onClick={handlePayWithPaystack}
+              disabled={processing}
             >
               <CreditCard className="w-5 h-5 text-primary" />
               <div>
