@@ -233,7 +233,7 @@ export default function Admin() {
                         o.status === "pending" ? "bg-warning/10 text-warning" :
                         o.status === "processing" ? "bg-primary/10 text-primary" :
                         "bg-destructive/10 text-destructive"
-                      }>{o.status}</Badge>
+                      }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
