@@ -75,7 +75,7 @@ export default function TopUps() {
             ) : (
               filtered.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell>{format(parseISO(t.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>{format(parseISO(t.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                   <TableCell className="capitalize">{t.method}</TableCell>
                   <TableCell className="font-semibold text-success">{formatCurrency(t.amount)}</TableCell>
                   <TableCell><Badge variant="outline" className={statusColor(t.status)}>{t.status}</Badge></TableCell>

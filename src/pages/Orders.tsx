@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type OrderStatus = "all" | "completed" | "pending" | "processing" | "failed";
 
+const displayStatus = (status: string) => status === "completed" ? "delivered" : status;
+
 export default function Orders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
@@ -65,7 +67,7 @@ export default function Orders() {
     { key: "all", label: "All", icon: List, color: "text-foreground" },
     { key: "pending", label: "Pending", icon: Clock, color: "text-warning" },
     { key: "processing", label: "Processing", icon: Loader, color: "text-primary" },
-    { key: "completed", label: "Completed", icon: CheckCircle, color: "text-success" },
+    { key: "completed", label: "Delivered", icon: CheckCircle, color: "text-success" },
     { key: "failed", label: "Failed", icon: XCircle, color: "text-destructive" },
   ];
 
@@ -129,13 +131,13 @@ export default function Orders() {
               filteredOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.order_ref}</TableCell>
-                  <TableCell>{format(parseISO(order.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>{format(parseISO(order.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                   <TableCell>{order.network}</TableCell>
                   <TableCell>{order.phone_number}</TableCell>
                   <TableCell>{order.bundle_size}</TableCell>
                   <TableCell className="font-semibold">{formatCurrency(order.amount)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusColor(order.status)}>{order.status}</Badge>
+                    <Badge variant="outline" className={statusColor(order.status)}>{displayStatus(order.status)}</Badge>
                   </TableCell>
                 </TableRow>
               ))
