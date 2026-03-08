@@ -78,24 +78,13 @@ export default function RealtimeNotifications() {
       .channel("admin-new-orders-notification")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-        },
+        { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
           const order = payload.new as {
-            order_ref?: string;
-            network?: string;
-            bundle_size?: string;
-            phone_number?: string;
-            amount?: number;
-            user_id?: string;
+            order_ref?: string; network?: string; bundle_size?: string;
+            phone_number?: string; amount?: number; user_id?: string;
           };
-
-          // Don't notify for own orders
           if (order.user_id === user.id) return;
-
           toast({
             title: "🔔 New Order Received!",
             description: `${order.order_ref}: ${order.network} ${order.bundle_size} to ${order.phone_number} — ₵${Number(order.amount ?? 0).toFixed(2)}`,
@@ -104,8 +93,28 @@ export default function RealtimeNotifications() {
       )
       .subscribe();
 
+    const adminTopupsChannel = supabase
+      .channel("admin-new-topups-notification")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "wallet_topups" },
+        (payload) => {
+          const topup = payload.new as {
+            amount?: number; method?: string; user_id?: string;
+          };
+          if (topup.user_id === user.id) return;
+          if (topup.method !== "momo") return;
+          toast({
+            title: "💰 New MoMo Top-up Request!",
+            description: `A user submitted a MoMo deposit of ₵${Number(topup.amount ?? 0).toFixed(2)} for approval.`,
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(adminOrdersChannel);
+      supabase.removeChannel(adminTopupsChannel);
     };
   }, [user, isAdmin, toast]);
 
