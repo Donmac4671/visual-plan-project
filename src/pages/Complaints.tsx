@@ -107,7 +107,7 @@ export default function Complaints() {
               <MessageSquarePlus className="w-4 h-4" /> New Complaint
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Submit a Complaint</DialogTitle>
             </DialogHeader>
@@ -161,7 +161,7 @@ export default function Complaints() {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Message</label>
-                <Textarea placeholder="Describe your issue..." value={message} onChange={(e) => setMessage(e.target.value)} rows={4} maxLength={1000} />
+                <Textarea placeholder="Describe your issue..." value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1000} />
               </div>
               <Button className="w-full gradient-primary border-0" onClick={handleSubmit} disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit Complaint"}
