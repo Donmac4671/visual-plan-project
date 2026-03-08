@@ -32,48 +32,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    if (data) setProfile(data as Profile);
+  const fetchProfile = async (authUser: User) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+      if (profileError) {
+        console.error("Profile fetch error:", profileError.message);
+      }
+
+      setProfile((profileData as Profile) ?? null);
+
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authUser.id);
+
+      if (rolesError) {
+        console.error("Role fetch error:", rolesError.message);
+      }
+
+      setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+    } catch (error) {
+      console.error("Auth profile load failed:", error);
+      setProfile(null);
+      setIsAdmin(false);
+    }
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) await fetchProfile(user);
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setIsAdmin(false);
-        }
-        setLoading(false);
-      }
-    );
+    let isMounted = true;
+    const loadingGuard = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 8000);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    const hydrate = async (sessionUser: User | null) => {
+      if (!isMounted) return;
+      setUser(sessionUser);
+
+      if (sessionUser) {
+        await fetchProfile(sessionUser);
+      } else {
+        setProfile(null);
+        setIsAdmin(false);
       }
-      setLoading(false);
+
+      if (isMounted) setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await hydrate(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => hydrate(session?.user ?? null))
+      .catch((error) => {
+        console.error("Session load failed:", error);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+      clearTimeout(loadingGuard);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -112,3 +141,4 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+
