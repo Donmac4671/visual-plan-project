@@ -208,6 +208,7 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ref</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Network</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Bundle</TableHead>
@@ -221,6 +222,7 @@ export default function Admin() {
                 {orders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
+                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>{o.network}</TableCell>
                     <TableCell>{o.phone_number}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
