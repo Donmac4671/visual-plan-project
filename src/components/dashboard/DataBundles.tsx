@@ -68,8 +68,8 @@ export default function DataBundles() {
   };
 
   const handleAddToCart = () => {
-    if (!selectedBundle || !phoneNumber.trim()) {
-      toast({ title: "Error", description: "Please enter a phone number", variant: "destructive" });
+    if (!selectedBundle || phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
+      toast({ title: "Error", description: "Please enter a valid 10-digit phone number", variant: "destructive" });
       return;
     }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber);
