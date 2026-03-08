@@ -188,7 +188,7 @@ export default function Admin() {
 
   return (
     <DashboardLayout title="Admin Panel">
-      <Tabs defaultValue="users">
+      <Tabs defaultValue="analytics">
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
