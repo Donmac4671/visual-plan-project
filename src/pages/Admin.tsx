@@ -254,7 +254,7 @@ export default function Admin() {
 
         {/* ORDERS TAB */}
         <TabsContent value="orders">
-          <div className="mb-4">
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
