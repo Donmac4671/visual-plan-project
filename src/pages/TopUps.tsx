@@ -16,10 +16,26 @@ export default function TopUps() {
   const [topups, setTopups] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
+  const fetchTopups = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("wallet_topups").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+    setTopups(data || []);
+  };
+
   useEffect(() => {
     if (!user) return;
-    supabase.from("wallet_topups").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-      .then(({ data }) => setTopups(data || []));
+    fetchTopups();
+
+    const channel = supabase
+      .channel(`topups-list-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wallet_topups", filter: `user_id=eq.${user.id}` },
+        () => fetchTopups()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const filtered = useMemo(() => {
