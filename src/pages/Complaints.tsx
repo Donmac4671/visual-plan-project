@@ -146,7 +146,7 @@ export default function Complaints() {
                   <SelectTrigger><SelectValue placeholder={selectedNetwork ? "Select data package" : "Select network first"} /></SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
                     {selectedNetworkData?.bundles.map((b) => (
-                      <SelectItem key={b.size} value={b.size}>{b.size} — ₵{b.price.toFixed(2)}</SelectItem>
+                      <SelectItem key={b.size} value={b.size}>{b.size} — ₵{getBundlePrice(b, profile?.tier || "general").toFixed(2)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
