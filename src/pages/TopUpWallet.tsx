@@ -162,7 +162,7 @@ export default function TopUpWallet() {
               </Button>
             ))}
           </div>
-          {method === "paystack" && amt >= 20 && (
+          {method === "paystack" && amt >= minTopUp && (
             <div className="mt-3 p-3 bg-accent rounded-lg text-sm text-muted-foreground">
               Amount: {formatCurrency(amt)} + 2% fee ({formatCurrency(paystackFee)}) = <span className="font-bold text-foreground">{formatCurrency(paystackTotal)}</span>
             </div>
