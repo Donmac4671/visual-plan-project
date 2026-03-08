@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { MessageSquarePlus, AlertCircle } from "lucide-react";
-import { networks } from "@/lib/data";
+import { networks, getBundlePrice } from "@/lib/data";
 
 export default function Complaints() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -146,7 +146,7 @@ export default function Complaints() {
                   <SelectTrigger><SelectValue placeholder={selectedNetwork ? "Select data package" : "Select network first"} /></SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
                     {selectedNetworkData?.bundles.map((b) => (
-                      <SelectItem key={b.size} value={b.size}>{b.size} — ₵{b.price.toFixed(2)}</SelectItem>
+                      <SelectItem key={b.size} value={b.size}>{b.size} — ₵{getBundlePrice(b, profile?.tier || "general").toFixed(2)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
