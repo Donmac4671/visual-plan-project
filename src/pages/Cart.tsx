@@ -3,7 +3,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
 import { formatCurrency, calculatePaystackFee } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingCart, Wallet, CreditCard } from "lucide-react";
+import { Trash2, ShoppingCart, Wallet, CreditCard, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import {
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
   const [showPayment, setShowPayment] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -101,9 +103,14 @@ export default function Cart() {
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" /> Shopping Cart ({items.length})
           </h2>
-          {items.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
-          )}
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} title="Close cart">
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {items.length === 0 ? (
