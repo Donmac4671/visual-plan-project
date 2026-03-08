@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search } from "lucide-react";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -27,6 +27,12 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
+
+  // Filters
+  const [userSearch, setUserSearch] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [topupStatusFilter, setTopupStatusFilter] = useState("all");
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState("all");
 
   const fetchData = async () => {
     const [{ data: u }, { data: o }, { data: t }, { data: c }] = await Promise.all([
@@ -43,6 +49,33 @@ export default function Admin() {
 
   useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
 
+  // Filtered data
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(u =>
+      u.full_name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.phone?.toLowerCase().includes(q) ||
+      u.agent_code?.toLowerCase().includes(q)
+    );
+  }, [users, userSearch]);
+
+  const filteredOrders = useMemo(() => {
+    if (orderStatusFilter === "all") return orders;
+    return orders.filter(o => o.status === orderStatusFilter);
+  }, [orders, orderStatusFilter]);
+
+  const filteredTopups = useMemo(() => {
+    if (topupStatusFilter === "all") return topups;
+    return topups.filter(t => t.status === topupStatusFilter);
+  }, [topups, topupStatusFilter]);
+
+  const filteredComplaints = useMemo(() => {
+    if (complaintStatusFilter === "all") return complaints;
+    return complaints.filter(c => c.status === complaintStatusFilter);
+  }, [complaints, complaintStatusFilter]);
+
   if (!isAdmin) {
     return (
       <DashboardLayout title="Admin">
@@ -56,10 +89,7 @@ export default function Admin() {
 
   const handleToggleBlock = async (userId: string, block: boolean) => {
     const { error } = await supabase.rpc("admin_toggle_block", { target_user_id: userId, block_status: block });
-    if (error) {
-      toast({ title: "Action Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Action Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: block ? "User Blocked" : "User Unblocked" });
     fetchData();
   };
@@ -72,23 +102,15 @@ export default function Admin() {
       operation_type: walletDialog.type,
       operation_description: walletDesc || `Admin ${walletDialog.type}`,
     });
-    if (error) {
-      toast({ title: "Wallet Action Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Wallet Action Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: `Wallet ${walletDialog.type}ed`, description: `${formatCurrency(parseFloat(walletAmount))} ${walletDialog.type}ed` });
-    setWalletDialog(null);
-    setWalletAmount("");
-    setWalletDesc("");
+    setWalletDialog(null); setWalletAmount(""); setWalletDesc("");
     fetchData();
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
-    if (error) {
-      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     const displayLabel = status === "completed" ? "delivered" : status;
     toast({ title: "Order Updated", description: `Status changed to ${displayLabel}` });
     fetchData();
@@ -96,76 +118,48 @@ export default function Admin() {
 
   const handleDeleteOrder = async (orderId: string) => {
     const { error } = await supabase.from("orders").delete().eq("id", orderId);
-    if (error) {
-      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Delete Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Order Deleted" });
     fetchData();
   };
 
   const handleApproveTopup = async (topup: any) => {
     const { error: walletError } = await supabase.rpc("admin_wallet_operation", {
-      target_user_id: topup.user_id,
-      operation_amount: topup.amount,
-      operation_type: "credit",
-      operation_description: "MoMo top-up approved",
+      target_user_id: topup.user_id, operation_amount: topup.amount, operation_type: "credit", operation_description: "MoMo top-up approved",
     });
-    if (walletError) {
-      toast({ title: "Approval Failed", description: walletError.message, variant: "destructive" });
-      return;
-    }
-
+    if (walletError) { toast({ title: "Approval Failed", description: walletError.message, variant: "destructive" }); return; }
     const { error: topupError } = await supabase.from("wallet_topups").update({ status: "completed" }).eq("id", topup.id);
-    if (topupError) {
-      toast({ title: "Approval Failed", description: topupError.message, variant: "destructive" });
-      return;
-    }
-
+    if (topupError) { toast({ title: "Approval Failed", description: topupError.message, variant: "destructive" }); return; }
     toast({ title: "Top-up Approved" });
     fetchData();
   };
 
   const handleDeclineTopup = async (topupId: string) => {
     const { error } = await supabase.from("wallet_topups").update({ status: "failed" }).eq("id", topupId);
-    if (error) {
-      toast({ title: "Decline Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Decline Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Top-up Declined" });
     fetchData();
   };
 
   const handleDeleteTopup = async (topupId: string) => {
     const { error } = await supabase.from("wallet_topups").delete().eq("id", topupId);
-    if (error) {
-      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Delete Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Top-up Deleted" });
     fetchData();
   };
 
   const handleReplyComplaint = async () => {
     if (!replyDialog || !replyText.trim()) return;
-    const newStatus = "resolved";
-    const { error } = await supabase.from("complaints").update({ admin_reply: replyText.trim(), status: newStatus }).eq("id", replyDialog.id);
-    if (error) {
-      toast({ title: "Reply Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    const { error } = await supabase.from("complaints").update({ admin_reply: replyText.trim(), status: "resolved" }).eq("id", replyDialog.id);
+    if (error) { toast({ title: "Reply Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Complaint replied & resolved" });
-    setReplyDialog(null);
-    setReplyText("");
+    setReplyDialog(null); setReplyText("");
     fetchData();
   };
 
   const handleCloseComplaint = async (id: string) => {
     const { error } = await supabase.from("complaints").update({ status: "closed" }).eq("id", id);
-    if (error) {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Complaint closed" });
     fetchData();
   };
@@ -180,7 +174,19 @@ export default function Admin() {
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
         </TabsList>
 
+        {/* USERS TAB */}
         <TabsContent value="users">
+          <div className="mb-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, phone, or agent code..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
               <TableHeader>
@@ -195,7 +201,9 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u) => (
+                {filteredUsers.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                ) : filteredUsers.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.agent_code}</TableCell>
                     <TableCell>{u.full_name}</TableCell>
@@ -223,7 +231,20 @@ export default function Admin() {
           </div>
         </TabsContent>
 
+        {/* ORDERS TAB */}
         <TabsContent value="orders">
+          <div className="mb-4">
+            <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="completed">Delivered</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
               <TableHeader>
@@ -240,7 +261,9 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((o) => (
+                {filteredOrders.length === 0 ? (
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No orders found</TableCell></TableRow>
+                ) : filteredOrders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
                     <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
@@ -279,7 +302,19 @@ export default function Admin() {
           </div>
         </TabsContent>
 
+        {/* TOPUPS TAB */}
         <TabsContent value="topups">
+          <div className="mb-4">
+            <Select value={topupStatusFilter} onValueChange={setTopupStatusFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
               <TableHeader>
@@ -293,7 +328,9 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topups.map((t) => (
+                {filteredTopups.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No top-ups found</TableCell></TableRow>
+                ) : filteredTopups.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell>{t.user_id.slice(0, 8)}...</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
@@ -330,7 +367,19 @@ export default function Admin() {
           </div>
         </TabsContent>
 
+        {/* COMPLAINTS TAB */}
         <TabsContent value="complaints">
+          <div className="mb-4">
+            <Select value={complaintStatusFilter} onValueChange={setComplaintStatusFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <Table>
               <TableHeader>
@@ -345,44 +394,41 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {complaints.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No complaints</TableCell>
+                {filteredComplaints.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No complaints found</TableCell></TableRow>
+                ) : filteredComplaints.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
+                    <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell>{c.order_ref || "—"}</TableCell>
+                    <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        c.status === "open" ? "bg-warning/10 text-warning" :
+                        c.status === "resolved" ? "bg-success/10 text-success" :
+                        "bg-muted text-muted-foreground"
+                      }>{c.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {c.status === "open" && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => { setReplyDialog(c); setReplyText(c.admin_reply || ""); }}>Reply</Button>
+                            <Button size="sm" variant="secondary" onClick={() => handleCloseComplaint(c.id)}>Close</Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
-                ) : (
-                  complaints.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
-                      <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
-                      <TableCell>{c.order_ref || "—"}</TableCell>
-                      <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={
-                          c.status === "open" ? "bg-warning/10 text-warning" :
-                          c.status === "resolved" ? "bg-success/10 text-success" :
-                          "bg-muted text-muted-foreground"
-                        }>{c.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {c.status === "open" && (
-                            <>
-                              <Button size="sm" variant="outline" onClick={() => { setReplyDialog(c); setReplyText(c.admin_reply || ""); }}>Reply</Button>
-                              <Button size="sm" variant="secondary" onClick={() => handleCloseComplaint(c.id)}>Close</Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
         </TabsContent>
       </Tabs>
 
+      {/* Wallet Dialog */}
       <Dialog open={!!walletDialog} onOpenChange={() => setWalletDialog(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -398,6 +444,7 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
+      {/* Reply Dialog */}
       <Dialog open={!!replyDialog} onOpenChange={() => setReplyDialog(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
