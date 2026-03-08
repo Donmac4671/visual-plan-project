@@ -133,7 +133,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     supabase.auth.getSession()
-      .then(({ data: { session } }) => hydrate(session?.user ?? null))
+      .then(async ({ data: { session } }) => {
+        if (!session) {
+          await hydrate(null);
+          return;
+        }
+
+        const { data: { user: validatedUser }, error } = await supabase.auth.getUser();
+        if (error || !validatedUser) {
+          await supabase.auth.signOut({ scope: "global" }).catch(() => undefined);
+          clearStoredSession();
+          await hydrate(null);
+          return;
+        }
+
+        await hydrate(validatedUser);
+      })
       .catch((error) => {
         console.error("Session load failed:", error);
         if (isMounted) setLoading(false);
