@@ -140,14 +140,14 @@ export default function TopUpWallet() {
         </div>
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵20</h3>
+          <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵{minTopUp}</h3>
           <Input
             type="number"
-            placeholder="Enter amount (min ₵20)"
+            placeholder={`Enter amount (min ₵${minTopUp})`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-lg mb-3"
-            min={20}
+            min={minTopUp}
           />
           <div className="flex flex-wrap gap-2">
             {quickAmounts.map((qa) => (
