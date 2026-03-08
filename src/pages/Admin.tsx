@@ -126,6 +126,13 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleSetTier = async (userId: string, newTier: string) => {
+    const { error } = await supabase.rpc("admin_set_user_tier", { target_user_id: userId, new_tier: newTier });
+    if (error) { toast({ title: "Tier Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Tier Updated", description: `User set to ${newTier}` });
+    fetchData();
+  };
+
   const handleWalletOp = async () => {
     if (!walletDialog || !walletAmount) return;
     const { error } = await supabase.rpc("admin_wallet_operation", {
@@ -234,20 +241,30 @@ export default function Admin() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Balance</TableHead>
+                  <TableHead>Tier</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                 ) : filteredUsers.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.agent_code}</TableCell>
+                    <TableCell className="font-medium">{u.agent_code || "—"}</TableCell>
                     <TableCell>{u.full_name}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.phone}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(u.wallet_balance)}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={u.tier === "agent" ? "bg-primary/10 text-primary cursor-pointer" : "bg-muted text-muted-foreground cursor-pointer"}
+                        onClick={() => handleSetTier(u.user_id, u.tier === "agent" ? "general" : "agent")}
+                      >
+                        {u.tier === "agent" ? "Agent" : "General"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={u.is_blocked ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}>
                         {u.is_blocked ? "Blocked" : "Active"}
