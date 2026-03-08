@@ -126,6 +126,13 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleSetTier = async (userId: string, newTier: string) => {
+    const { error } = await supabase.rpc("admin_set_user_tier", { target_user_id: userId, new_tier: newTier });
+    if (error) { toast({ title: "Tier Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Tier Updated", description: `User set to ${newTier}` });
+    fetchData();
+  };
+
   const handleWalletOp = async () => {
     if (!walletDialog || !walletAmount) return;
     const { error } = await supabase.rpc("admin_wallet_operation", {
