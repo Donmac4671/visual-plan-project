@@ -41,7 +41,7 @@ export default function Cart() {
           p_network: item.network,
           p_phone: item.phoneNumber,
           p_bundle: item.bundle.size,
-          p_amount: item.bundle.price,
+          p_amount: item.effectivePrice,
         });
 
         if (error) throw error;
