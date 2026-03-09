@@ -358,6 +358,7 @@ export default function Admin() {
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
+                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
                         <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
