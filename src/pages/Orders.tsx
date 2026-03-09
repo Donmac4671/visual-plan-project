@@ -113,13 +113,13 @@ export default function Orders() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Ref</TableHead>
               <TableHead>Network</TableHead>
-              <TableHead>Phone</TableHead>
               <TableHead>Bundle</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Date & Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
