@@ -517,7 +517,7 @@ export default function Admin() {
                 ) : filteredComplaints.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
-                    <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell className="text-sm">{users.find(u => u.user_id === c.user_id)?.full_name || c.user_id.slice(0, 8) + "..."}</TableCell>
                     <TableCell>{c.order_ref || "—"}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>

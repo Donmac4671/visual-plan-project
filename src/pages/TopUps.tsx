@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function TopUps() {
   const { user } = useAuth();
   const [topups, setTopups] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const fetchTopups = async () => {
     if (!user) return;

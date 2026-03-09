@@ -18,7 +18,7 @@ const displayStatus = (status: string) => status === "completed" ? "delivered" :
 export default function Orders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all");
 
   useEffect(() => {
