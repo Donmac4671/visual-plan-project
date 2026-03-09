@@ -141,7 +141,7 @@ export default function DataBundles() {
 
       {/* Add to cart dialog */}
       <Dialog open={!!selectedBundle} onOpenChange={() => setSelectedBundle(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md mx-4 w-[calc(100%-2rem)]">
           <DialogHeader>
             <div className="flex items-center gap-3">
               {selectedBundle && <NetworkIcon network={selectedBundle.network} />}
