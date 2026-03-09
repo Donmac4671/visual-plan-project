@@ -330,12 +330,12 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ref</TableHead>
-                  <TableHead>Date & Time</TableHead>
                   <TableHead>Network</TableHead>
-                  <TableHead>Phone</TableHead>
                   <TableHead>Bundle</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Update</TableHead>
                   <TableHead>Delete</TableHead>
                 </TableRow>
@@ -346,10 +346,9 @@ export default function Admin() {
                 ) : filteredOrders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
-                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>{o.network}</TableCell>
-                    <TableCell>{o.phone_number}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
+                    <TableCell>{o.phone_number}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(o.amount)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={
@@ -359,6 +358,7 @@ export default function Admin() {
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
+                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
                         <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
