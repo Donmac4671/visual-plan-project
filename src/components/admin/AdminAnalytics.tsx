@@ -78,8 +78,9 @@ function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClea
 }
 
 export default function AdminAnalytics({ users, orders, topups, complaints }: AdminAnalyticsProps) {
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const today = new Date();
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(today);
+  const [dateTo, setDateTo] = useState<Date | undefined>(today);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {

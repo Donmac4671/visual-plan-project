@@ -37,14 +37,15 @@ export default function Admin() {
   // Filters
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
-  const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>();
-  const [orderDateTo, setOrderDateTo] = useState<Date | undefined>();
+  const today = new Date();
+  const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
+  const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
   const [topupStatusFilter, setTopupStatusFilter] = useState("all");
-  const [topupDateFrom, setTopupDateFrom] = useState<Date | undefined>();
-  const [topupDateTo, setTopupDateTo] = useState<Date | undefined>();
+  const [topupDateFrom, setTopupDateFrom] = useState<Date | undefined>(today);
+  const [topupDateTo, setTopupDateTo] = useState<Date | undefined>(today);
   const [complaintStatusFilter, setComplaintStatusFilter] = useState("all");
-  const [complaintDateFrom, setComplaintDateFrom] = useState<Date | undefined>();
-  const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>();
+  const [complaintDateFrom, setComplaintDateFrom] = useState<Date | undefined>(today);
+  const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>(today);
 
   const fetchData = async () => {
     const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }] = await Promise.all([
@@ -430,7 +431,7 @@ export default function Admin() {
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No top-ups found</TableCell></TableRow>
                 ) : filteredTopups.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell>{t.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell>{users.find(u => u.user_id === t.user_id)?.full_name || t.user_id.slice(0, 8) + "..."}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
                     <TableCell className="capitalize">{t.method}</TableCell>
                     <TableCell>
@@ -516,7 +517,7 @@ export default function Admin() {
                 ) : filteredComplaints.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="text-sm">{format(parseISO(c.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
-                    <TableCell className="text-sm">{c.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell className="text-sm">{users.find(u => u.user_id === c.user_id)?.full_name || c.user_id.slice(0, 8) + "..."}</TableCell>
                     <TableCell>{c.order_ref || "—"}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{c.subject}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{c.message}</TableCell>

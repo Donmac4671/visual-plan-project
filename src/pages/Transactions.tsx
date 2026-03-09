@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Transactions() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (!user) return;
