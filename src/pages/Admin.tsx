@@ -335,8 +335,8 @@ export default function Admin() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date & Time</TableHead>
                   <TableHead>Update</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Delete</TableHead>
                 </TableRow>
               </TableHeader>
@@ -358,7 +358,6 @@ export default function Admin() {
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
                       <Select value={o.status} onValueChange={(val) => handleUpdateOrderStatus(o.id, val)}>
                         <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
@@ -370,6 +369,7 @@ export default function Admin() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
                       <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
                         <Trash2 className="w-4 h-4" />
