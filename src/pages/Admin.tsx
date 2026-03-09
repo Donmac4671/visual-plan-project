@@ -335,8 +335,8 @@ export default function Admin() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date & Time</TableHead>
                   <TableHead>Update</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Delete</TableHead>
                 </TableRow>
               </TableHeader>
