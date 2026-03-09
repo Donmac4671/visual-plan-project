@@ -431,7 +431,7 @@ export default function Admin() {
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No top-ups found</TableCell></TableRow>
                 ) : filteredTopups.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell>{t.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell>{users.find(u => u.user_id === t.user_id)?.full_name || t.user_id.slice(0, 8) + "..."}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
                     <TableCell className="capitalize">{t.method}</TableCell>
                     <TableCell>
