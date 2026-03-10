@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
