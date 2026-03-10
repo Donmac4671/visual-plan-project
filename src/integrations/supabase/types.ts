@@ -208,6 +208,36 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          created_at: string
+          description: string
+          discount_percent: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          discount_percent: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          starts_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_percent?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          starts_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
