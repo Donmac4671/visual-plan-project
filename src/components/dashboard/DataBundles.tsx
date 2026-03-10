@@ -33,9 +33,11 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
-function BundleCard({ bundle, network, tier, onSelect }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void }) {
+function BundleCard({ bundle, network, tier, onSelect, applyDiscount }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number }) {
   const gradientClass = network.gradient;
-  const displayPrice = getBundlePrice(bundle, tier);
+  const basePrice = getBundlePrice(bundle, tier);
+  const displayPrice = (tier !== "agent" && applyDiscount) ? applyDiscount(basePrice) : basePrice;
+  const hasDiscount = displayPrice < basePrice;
 
   return (
     <div className="flex flex-col items-center">
@@ -45,7 +47,10 @@ function BundleCard({ bundle, network, tier, onSelect }: { bundle: DataBundle; n
       </div>
       <div className="mt-2 bg-accent rounded-full px-3 py-1 flex items-center gap-1">
         <span className="text-[10px] text-muted-foreground">Price</span>
-        <span className="text-sm font-bold text-foreground">{formatCurrency(displayPrice)}</span>
+        {hasDiscount && (
+          <span className="text-xs text-muted-foreground line-through">{formatCurrency(basePrice)}</span>
+        )}
+        <span className={`text-sm font-bold ${hasDiscount ? "text-green-600" : "text-foreground"}`}>{formatCurrency(displayPrice)}</span>
       </div>
       <Button
         size="sm"
