@@ -97,7 +97,10 @@ export default function DataBundles() {
       </div>
 
       <div className="space-y-3">
-        {networks.map((network) => (
+        {networks.map((network) => {
+          const visibleBundles = network.bundles.filter(b => !isHidden(network.id, b.size));
+          if (visibleBundles.length === 0) return null;
+          return (
           <div key={network.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <button
               onClick={() => toggleNetwork(network.id)}
@@ -107,12 +110,12 @@ export default function DataBundles() {
                 <NetworkIcon network={network} />
                 <div className="text-left">
                   <p className="font-semibold text-foreground">{network.name}</p>
-                  <p className="text-xs text-muted-foreground">{network.bundles.length} data packages available</p>
+                  <p className="text-xs text-muted-foreground">{visibleBundles.length} data packages available</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground bg-accent px-2 py-1 rounded-full">
-                  {network.bundles.length} bundles
+                  {visibleBundles.length} bundles
                 </span>
                 {expandedNetwork === network.id ? (
                   <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -125,7 +128,7 @@ export default function DataBundles() {
             {expandedNetwork === network.id && (
               <div className="p-4 pt-0">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {network.bundles.map((bundle) => (
+                  {visibleBundles.map((bundle) => (
                     <BundleCard
                       key={bundle.size}
                       bundle={bundle}
@@ -138,7 +141,8 @@ export default function DataBundles() {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Add to cart dialog */}

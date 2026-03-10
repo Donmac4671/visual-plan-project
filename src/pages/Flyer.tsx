@@ -1,4 +1,5 @@
 import { networks, formatCurrency } from "@/lib/data";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 
 const networkStyles: Record<string, { bg: string; header: string; text: string }> = {
   mtn: { bg: "bg-yellow-400", header: "bg-yellow-500", text: "text-yellow-900" },
