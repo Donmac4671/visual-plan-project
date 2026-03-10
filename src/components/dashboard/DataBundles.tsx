@@ -145,6 +145,7 @@ export default function DataBundles() {
                       network={network}
                       tier={userTier}
                       onSelect={() => setSelectedBundle({ network, bundle })}
+                      applyDiscount={promo ? applyDiscount : undefined}
                     />
                   ))}
                 </div>
