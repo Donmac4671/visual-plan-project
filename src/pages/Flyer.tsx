@@ -36,6 +36,12 @@ export default function Flyer() {
           </p>
         </div>
 
+        {promo && (
+          <div className="bg-green-100 text-green-800 text-center py-2 px-4 font-bold text-sm">
+            🎉 PROMO: {promo.discount_percent}% OFF all prices! {promo.description}
+          </div>
+        )}
+
         {/* Networks Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
           {networks.map((network) => {
