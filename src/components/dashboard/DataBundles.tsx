@@ -105,6 +105,11 @@ export default function DataBundles() {
           </div>
         </div>
       </div>
+      {promo && userTier !== "agent" && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4 text-center">
+          <p className="text-sm font-semibold text-green-700">🎉 {promo.discount_percent}% OFF all bundles! {promo.description}</p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {networks.map((network) => {
