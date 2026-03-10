@@ -84,7 +84,10 @@ export default function DataBundles() {
       toast({ title: "Error", description: "Please enter a valid 10-digit phone number", variant: "destructive" });
       return;
     }
-    const effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
+    let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
+    if (userTier !== "agent" && promo) {
+      effectivePrice = applyDiscount(effectivePrice);
+    }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
     toast({ title: "Added to cart", description: `${selectedBundle.network.name} ${selectedBundle.bundle.size} added` });
     setSelectedBundle(null);
