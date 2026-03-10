@@ -38,6 +38,8 @@ export default function Flyer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
           {networks.map((network) => {
             const style = networkStyles[network.id];
+            const visibleBundles = network.bundles.filter(b => !isHidden(network.id, b.size));
+            if (visibleBundles.length === 0) return null;
             return (
               <div key={network.id} className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                 {/* Network Header */}
