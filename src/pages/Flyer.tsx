@@ -1,5 +1,6 @@
 import { networks, formatCurrency } from "@/lib/data";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useActivePromo } from "@/hooks/useActivePromo";
 
 const networkStyles: Record<string, { bg: string; header: string; text: string }> = {
   mtn: { bg: "bg-yellow-400", header: "bg-yellow-500", text: "text-yellow-900" },
@@ -17,6 +18,7 @@ const deliveryInfo: Record<string, string> = {
 
 export default function Flyer() {
   const { isHidden } = useHiddenBundles();
+  const { promo, applyDiscount } = useActivePromo();
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 print:p-0 print:bg-white">
@@ -33,6 +35,12 @@ export default function Flyer() {
             Affordable Data Bundles • Fast Delivery • All Networks
           </p>
         </div>
+
+        {promo && (
+          <div className="bg-green-100 text-green-800 text-center py-2 px-4 font-bold text-sm">
+            🎉 PROMO: {promo.discount_percent}% OFF all prices! {promo.description}
+          </div>
+        )}
 
         {/* Networks Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
@@ -73,7 +81,14 @@ export default function Flyer() {
                           {bundle.size}
                         </td>
                         <td className="py-1.5 px-3 text-right font-bold text-gray-900">
-                          {formatCurrency(bundle.generalPrice)}
+                          {promo ? (
+                            <span>
+                              <span className="line-through text-gray-400 text-xs mr-1">{formatCurrency(bundle.generalPrice)}</span>
+                              <span className="text-green-700">{formatCurrency(applyDiscount(bundle.generalPrice))}</span>
+                            </span>
+                          ) : (
+                            formatCurrency(bundle.generalPrice)
+                          )}
                         </td>
                       </tr>
                     ))}
