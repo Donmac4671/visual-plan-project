@@ -64,7 +64,7 @@ export default function Flyer() {
                     </tr>
                   </thead>
                   <tbody>
-                    {network.bundles.map((bundle, i) => (
+                    {visibleBundles.map((bundle, i) => (
                       <tr
                         key={bundle.size}
                         className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
