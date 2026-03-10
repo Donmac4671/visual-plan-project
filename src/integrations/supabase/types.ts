@@ -106,6 +106,27 @@ export type Database = {
           },
         ]
       }
+      hidden_bundles: {
+        Row: {
+          bundle_size: string
+          created_at: string
+          id: string
+          network_id: string
+        }
+        Insert: {
+          bundle_size: string
+          created_at?: string
+          id?: string
+          network_id: string
+        }
+        Update: {
+          bundle_size?: string
+          created_at?: string
+          id?: string
+          network_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
