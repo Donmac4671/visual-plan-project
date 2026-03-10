@@ -51,7 +51,7 @@ export default function Flyer() {
                     </p>
                   </div>
                   <span className="text-xs font-semibold bg-white/20 rounded-full px-2 py-0.5">
-                    {network.bundles.length} bundles
+                    {visibleBundles.length} bundles
                   </span>
                 </div>
 
