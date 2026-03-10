@@ -64,6 +64,7 @@ export default function DataBundles() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { isHidden } = useHiddenBundles();
 
   const userTier = profile?.tier || "general";
 
