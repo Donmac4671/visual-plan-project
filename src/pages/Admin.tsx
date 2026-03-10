@@ -558,6 +558,11 @@ export default function Admin() {
         <TabsContent value="bundles">
           <AdminBundleManager />
         </TabsContent>
+
+        {/* PROMOS TAB */}
+        <TabsContent value="promos">
+          <AdminPromoManager />
+        </TabsContent>
       </Tabs>
 
       {/* Wallet Dialog */}
