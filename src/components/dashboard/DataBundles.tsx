@@ -71,6 +71,7 @@ export default function DataBundles() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const { isHidden } = useHiddenBundles();
+  const { promo, applyDiscount } = useActivePromo();
 
   const userTier = profile?.tier || "general";
 
