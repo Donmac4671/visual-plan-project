@@ -1,4 +1,5 @@
 import { networks, formatCurrency } from "@/lib/data";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 
 const networkStyles: Record<string, { bg: string; header: string; text: string }> = {
   mtn: { bg: "bg-yellow-400", header: "bg-yellow-500", text: "text-yellow-900" },
@@ -15,6 +16,8 @@ const deliveryInfo: Record<string, string> = {
 };
 
 export default function Flyer() {
+  const { isHidden } = useHiddenBundles();
+
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 print:p-0 print:bg-white">
       <div
@@ -35,6 +38,8 @@ export default function Flyer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
           {networks.map((network) => {
             const style = networkStyles[network.id];
+            const visibleBundles = network.bundles.filter(b => !isHidden(network.id, b.size));
+            if (visibleBundles.length === 0) return null;
             return (
               <div key={network.id} className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                 {/* Network Header */}
@@ -46,7 +51,7 @@ export default function Flyer() {
                     </p>
                   </div>
                   <span className="text-xs font-semibold bg-white/20 rounded-full px-2 py-0.5">
-                    {network.bundles.length} bundles
+                    {visibleBundles.length} bundles
                   </span>
                 </div>
 
@@ -59,7 +64,7 @@ export default function Flyer() {
                     </tr>
                   </thead>
                   <tbody>
-                    {network.bundles.map((bundle, i) => (
+                    {visibleBundles.map((bundle, i) => (
                       <tr
                         key={bundle.size}
                         className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
