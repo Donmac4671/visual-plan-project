@@ -221,6 +221,7 @@ export default function Admin() {
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
           <TabsTrigger value="agent-apps" className="gap-2"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
           <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
+          <TabsTrigger value="promos" className="gap-2"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
         </TabsList>
 
         {/* ANALYTICS TAB */}
