@@ -172,9 +172,18 @@ export default function DataBundles() {
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">💰 Price</p>
-              <p className="text-xl font-bold text-foreground">
-                {selectedBundle && formatCurrency(getBundlePrice(selectedBundle.bundle, userTier))}
-              </p>
+              {(() => {
+                if (!selectedBundle) return null;
+                const base = getBundlePrice(selectedBundle.bundle, userTier);
+                const final = (userTier !== "agent" && promo) ? applyDiscount(base) : base;
+                const hasDiscount = final < base;
+                return (
+                  <>
+                    {hasDiscount && <p className="text-sm text-muted-foreground line-through">{formatCurrency(base)}</p>}
+                    <p className={`text-xl font-bold ${hasDiscount ? "text-green-600" : "text-foreground"}`}>{formatCurrency(final)}</p>
+                  </>
+                );
+              })()}
             </div>
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">⏱ Validity</p>
