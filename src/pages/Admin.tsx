@@ -551,6 +551,11 @@ export default function Admin() {
         <TabsContent value="agent-apps">
           <AdminAgentApplications applications={agentApplications} onRefresh={fetchData} />
         </TabsContent>
+
+        {/* BUNDLES TAB */}
+        <TabsContent value="bundles">
+          <AdminBundleManager />
+        </TabsContent>
       </Tabs>
 
       {/* Wallet Dialog */}
