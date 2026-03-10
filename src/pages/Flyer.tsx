@@ -75,7 +75,14 @@ export default function Flyer() {
                           {bundle.size}
                         </td>
                         <td className="py-1.5 px-3 text-right font-bold text-gray-900">
-                          {formatCurrency(bundle.generalPrice)}
+                          {promo ? (
+                            <span>
+                              <span className="line-through text-gray-400 text-xs mr-1">{formatCurrency(bundle.generalPrice)}</span>
+                              <span className="text-green-700">{formatCurrency(applyDiscount(bundle.generalPrice))}</span>
+                            </span>
+                          ) : (
+                            formatCurrency(bundle.generalPrice)
+                          )}
                         </td>
                       </tr>
                     ))}
