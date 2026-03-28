@@ -50,7 +50,7 @@ export default function StatsCards() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
       {stats.map((stat) => (
-        <div key={stat.label} className="bg-card rounded-xl p-4 border border-border shadow-sm">
+        <div key={stat.label} className="bg-card rounded-xl p-4 border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-1 hover:border-primary/30 cursor-default">
           <div className="flex items-center gap-2 mb-2">
             <stat.icon className={`w-5 h-5 ${stat.color}`} />
             <span className="text-xs text-muted-foreground">{stat.sublabel}</span>
