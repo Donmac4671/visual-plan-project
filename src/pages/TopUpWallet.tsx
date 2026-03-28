@@ -2,7 +2,7 @@ import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, CreditCard, Smartphone, Upload, Copy, CheckCircle } from "lucide-react";
+import { Wallet, CreditCard, Smartphone, Copy, CheckCircle, Hash } from "lucide-react";
 import { formatCurrency, calculatePaystackFee, getMinTopUp } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,9 +12,9 @@ import { initPaystack } from "@/lib/paystack";
 export default function TopUpWallet() {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<"momo" | "paystack">("momo");
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [showMomoDetails, setShowMomoDetails] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
+  const [claiming, setClaiming] = useState(false);
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
 
@@ -33,36 +33,33 @@ export default function TopUpWallet() {
     setShowMomoDetails(true);
   };
 
-  const handleScreenshotUpload = async () => {
-    if (!screenshotFile || !user) return;
-    setUploading(true);
-
-    const filePath = `${user.id}/${Date.now()}_${screenshotFile.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("payment-screenshots")
-      .upload(filePath, screenshotFile);
-
-    if (uploadError) {
-      toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
+  const handleClaimPayment = async () => {
+    if (!transactionId || transactionId.length !== 11) {
+      toast({ title: "Error", description: "Please enter a valid 11-digit transaction ID", variant: "destructive" });
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("payment-screenshots").getPublicUrl(filePath);
+    setClaiming(true);
+    try {
+      const { error } = await supabase.rpc("claim_verified_topup", {
+        p_transaction_id: transactionId,
+      });
 
-    await supabase.from("wallet_topups").insert({
-      user_id: user.id,
-      amount: amt,
-      method: "momo",
-      status: "pending",
-      screenshot_url: urlData.publicUrl,
-    });
+      if (error) {
+        toast({ title: "Claim Failed", description: error.message, variant: "destructive" });
+        return;
+      }
 
-    toast({ title: "Top-up Submitted", description: "Your MoMo payment is pending verification by admin." });
-    setAmount("");
-    setScreenshotFile(null);
-    setShowMomoDetails(false);
-    setUploading(false);
+      await refreshProfile();
+      toast({ title: "Payment Claimed!", description: "Your wallet has been credited successfully." });
+      setTransactionId("");
+      setShowMomoDetails(false);
+      setAmount("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
+    } finally {
+      setClaiming(false);
+    }
   };
 
   const handlePaystackTopUp = async () => {
@@ -72,15 +69,10 @@ export default function TopUpWallet() {
     }
     const payerEmail = profile?.email || user?.email;
     if (!payerEmail) {
-      toast({
-        title: "Payment Error",
-        description: "Your account email is missing. Please update your profile and try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Payment Error", description: "Your account email is missing.", variant: "destructive" });
       return;
     }
 
-    // Charge amount + 2% fee via Paystack, but credit only the base amount
     await initPaystack({
       email: payerEmail,
       amount: paystackTotal,
@@ -139,37 +131,33 @@ export default function TopUpWallet() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵{minTopUp}</h3>
-          <Input
-            type="number"
-            placeholder={`Enter amount (min ₵${minTopUp})`}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="text-lg mb-3"
-            min={minTopUp}
-          />
-          <div className="flex flex-wrap gap-2">
-            {quickAmounts.map((qa) => (
-              <Button
-                key={qa}
-                variant="outline"
-                size="sm"
-                onClick={() => setAmount(qa.toString())}
-                className={amount === qa.toString() ? "border-primary bg-primary/5" : ""}
-              >
-                ₵{qa}
-              </Button>
-            ))}
-          </div>
-          {method === "paystack" && amt >= minTopUp && (
-            <div className="mt-3 p-3 bg-accent rounded-lg text-sm text-muted-foreground">
-              Amount: {formatCurrency(amt)} + 2% fee ({formatCurrency(paystackFee)}) = <span className="font-bold text-foreground">{formatCurrency(paystackTotal)}</span>
+        {method === "paystack" && (
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+            <h3 className="font-semibold text-foreground mb-4">Amount (₵) — Min ₵{minTopUp}</h3>
+            <Input
+              type="number"
+              placeholder={`Enter amount (min ₵${minTopUp})`}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="text-lg mb-3"
+              min={minTopUp}
+            />
+            <div className="flex flex-wrap gap-2">
+              {quickAmounts.map((qa) => (
+                <Button key={qa} variant="outline" size="sm" onClick={() => setAmount(qa.toString())} className={amount === qa.toString() ? "border-primary bg-primary/5" : ""}>
+                  ₵{qa}
+                </Button>
+              ))}
             </div>
-          )}
-        </div>
+            {amt >= minTopUp && (
+              <div className="mt-3 p-3 bg-accent rounded-lg text-sm text-muted-foreground">
+                Amount: {formatCurrency(amt)} + 2% fee ({formatCurrency(paystackFee)}) = <span className="font-bold text-foreground">{formatCurrency(paystackTotal)}</span>
+              </div>
+            )}
+          </div>
+        )}
 
-        {showMomoDetails && method === "momo" && (
+        {method === "momo" && !showMomoDetails && (
           <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" /> Send Payment To
@@ -188,42 +176,59 @@ export default function TopUpWallet() {
                 <p className="text-xs text-muted-foreground">Account Name</p>
                 <p className="font-bold text-foreground">Michael Osei</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Amount</p>
-                <p className="font-bold text-foreground text-lg">{formatCurrency(amt)}</p>
-              </div>
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block flex items-center gap-2">
-                <Upload className="w-4 h-4" /> Upload Payment Screenshot
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
-                className="cursor-pointer"
-              />
-            </div>
-
-            <Button
-              className="w-full gradient-primary border-0"
-              size="lg"
-              onClick={handleScreenshotUpload}
-              disabled={!screenshotFile || uploading}
-            >
-              {uploading ? "Uploading..." : "Submit Payment Proof"}
+            <p className="text-sm text-muted-foreground text-center">
+              After sending the payment, click below to claim with your Transaction ID
+            </p>
+            <Button className="w-full gradient-primary border-0" size="lg" onClick={() => setShowMomoDetails(true)}>
+              I've Sent the Money
             </Button>
           </div>
         )}
 
-        {!showMomoDetails && (
+        {method === "momo" && showMomoDetails && (
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <Hash className="w-5 h-5 text-primary" /> Claim Your Payment
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Enter the 11-digit Transaction ID you received from your network provider after sending the payment.
+            </p>
+            <Input
+              placeholder="Enter 11-digit Transaction ID"
+              value={transactionId}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").slice(0, 11);
+                setTransactionId(val);
+              }}
+              maxLength={11}
+              inputMode="numeric"
+              className="text-lg text-center tracking-widest"
+            />
+            {transactionId.length > 0 && transactionId.length < 11 && (
+              <p className="text-xs text-destructive">{11 - transactionId.length} more digit(s) needed</p>
+            )}
+            <Button
+              className="w-full gradient-primary border-0"
+              size="lg"
+              onClick={handleClaimPayment}
+              disabled={transactionId.length !== 11 || claiming}
+            >
+              {claiming ? "Claiming..." : "Claim Payment"}
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => setShowMomoDetails(false)}>
+              ← Back to payment details
+            </Button>
+          </div>
+        )}
+
+        {method === "paystack" && (
           <Button
             className="w-full gradient-primary border-0"
             size="lg"
-            onClick={method === "momo" ? handleMomoTopUp : handlePaystackTopUp}
+            onClick={handlePaystackTopUp}
           >
-            {method === "momo" ? "Proceed to Pay" : `Pay ${amt >= minTopUp ? formatCurrency(paystackTotal) : ""} with Paystack`}
+            Pay {amt >= minTopUp ? formatCurrency(paystackTotal) : ""} with Paystack
           </Button>
         )}
       </div>

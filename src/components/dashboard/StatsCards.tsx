@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 export default function StatsCards() {
   const { user, profile } = useAuth();
   const [todayOrders, setTodayOrders] = useState(0);
-  const [totalSpent, setTotalSpent] = useState(0);
-  const [totalData, setTotalData] = useState(0);
+  const [todaySpent, setTodaySpent] = useState(0);
+  const [todayData, setTodayData] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -22,19 +22,19 @@ export default function StatsCards() {
         .eq("user_id", user.id);
 
       if (orders) {
-        const todayCount = orders.filter(
+        const todayItems = orders.filter(
           (o) => new Date(o.created_at) >= today
-        ).length;
-        setTodayOrders(todayCount);
+        );
+        setTodayOrders(todayItems.length);
 
-        const spent = orders.reduce((sum, o) => sum + Number(o.amount), 0);
-        setTotalSpent(spent);
+        const spent = todayItems.reduce((sum, o) => sum + Number(o.amount), 0);
+        setTodaySpent(spent);
 
-        const dataGB = orders.reduce((sum, o) => {
+        const dataGB = todayItems.reduce((sum, o) => {
           const match = o.bundle_size.match(/(\d+)/);
           return sum + (match ? parseInt(match[1]) : 0);
         }, 0);
-        setTotalData(dataGB);
+        setTodayData(dataGB);
       }
     };
     fetchStats();
@@ -43,8 +43,8 @@ export default function StatsCards() {
   const stats = [
     { label: "Wallet Balance", value: formatCurrency(profile?.wallet_balance ?? 0), icon: Wallet, sublabel: "Current Balance", color: "text-primary" },
     { label: "Orders Placed", value: todayOrders.toString(), icon: ShoppingCart, sublabel: "Today's Orders", color: "text-destructive" },
-    { label: "Total Payments", value: formatCurrency(totalSpent), icon: CreditCard, sublabel: "Amount Spent", color: "text-success" },
-    { label: "Total Capacity", value: `${totalData}GB`, icon: Database, sublabel: "Data Purchased", color: "text-primary" },
+    { label: "Total Payments", value: formatCurrency(todaySpent), icon: CreditCard, sublabel: "Today's Spending", color: "text-success" },
+    { label: "Total Capacity", value: `${todayData}GB`, icon: Database, sublabel: "Today's Data", color: "text-primary" },
   ];
 
   return (

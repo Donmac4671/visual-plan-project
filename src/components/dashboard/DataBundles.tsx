@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Wifi, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
-import { networks, Network, DataBundle, formatCurrency, getBundlePrice } from "@/lib/data";
+import { Network, DataBundle, formatCurrency, getBundlePrice } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
@@ -70,7 +70,7 @@ export default function DataBundles() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const { profile } = useAuth();
-  const { isHidden } = useHiddenBundles();
+  const { networks: mergedNetworks } = useCustomBundles();
   const { promo, applyDiscount } = useActivePromo();
 
   const userTier = profile?.tier || "general";
@@ -112,9 +112,8 @@ export default function DataBundles() {
       )}
 
       <div className="space-y-3">
-        {networks.map((network) => {
-          const visibleBundles = network.bundles.filter(b => !isHidden(network.id, b.size));
-          if (visibleBundles.length === 0) return null;
+        {mergedNetworks.map((network) => {
+          if (network.bundles.length === 0) return null;
           return (
           <div key={network.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <button
@@ -125,12 +124,12 @@ export default function DataBundles() {
                 <NetworkIcon network={network} />
                 <div className="text-left">
                   <p className="font-semibold text-foreground">{network.name}</p>
-                  <p className="text-xs text-muted-foreground">{visibleBundles.length} data packages available</p>
+                  <p className="text-xs text-muted-foreground">{network.bundles.length} data packages available</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground bg-accent px-2 py-1 rounded-full">
-                  {visibleBundles.length} bundles
+                  {network.bundles.length} bundles
                 </span>
                 {expandedNetwork === network.id ? (
                   <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -143,7 +142,7 @@ export default function DataBundles() {
             {expandedNetwork === network.id && (
               <div className="p-4 pt-0">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {visibleBundles.map((bundle) => (
+                  {network.bundles.map((bundle) => (
                     <BundleCard
                       key={bundle.size}
                       bundle={bundle}

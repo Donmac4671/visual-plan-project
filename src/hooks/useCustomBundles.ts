@@ -1,0 +1,60 @@
+import { useState, useEffect, useMemo } from "react";
+import { networks, Network, DataBundle } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+
+interface CustomBundle {
+  network_id: string;
+  bundle_size: string;
+  size_gb: number;
+  agent_price: number;
+  general_price: number;
+}
+
+export function useCustomBundles() {
+  const [customBundles, setCustomBundles] = useState<CustomBundle[]>([]);
+  const { isHidden } = useHiddenBundles();
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase.from("custom_bundles").select("*");
+      if (data) setCustomBundles(data as any);
+    };
+    fetch();
+  }, []);
+
+  const mergedNetworks = useMemo(() => {
+    return networks.map((network) => {
+      const customs = customBundles.filter((c) => c.network_id === network.id);
+      const bundleMap = new Map<string, DataBundle>();
+
+      // Start with hardcoded bundles
+      for (const b of network.bundles) {
+        bundleMap.set(b.size, { ...b });
+      }
+
+      // Override/add custom bundles
+      for (const c of customs) {
+        bundleMap.set(c.bundle_size, {
+          size: c.bundle_size,
+          sizeGB: c.size_gb,
+          price: c.agent_price,
+          generalPrice: c.general_price,
+        });
+      }
+
+      // Sort by sizeGB and filter hidden
+      const bundles = Array.from(bundleMap.values())
+        .filter((b) => !isHidden(network.id, b.size))
+        .sort((a, b) => a.sizeGB - b.sizeGB);
+
+      return { ...network, bundles };
+    });
+  }, [customBundles, isHidden]);
+
+  return { networks: mergedNetworks, customBundles, refetch: () => {
+    supabase.from("custom_bundles").select("*").then(({ data }) => {
+      if (data) setCustomBundles(data as any);
+    });
+  }};
+}

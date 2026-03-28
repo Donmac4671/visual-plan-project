@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
 import AdminPromoManager from "@/components/admin/AdminPromoManager";
+import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export default function Admin() {
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
   const [agentApplications, setAgentApplications] = useState<any[]>([]);
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
 
   // Filters
   const [userSearch, setUserSearch] = useState("");
@@ -42,26 +44,29 @@ export default function Admin() {
   const today = new Date();
   const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
   const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
-  const [topupStatusFilter, setTopupStatusFilter] = useState("all");
-  const [topupDateFrom, setTopupDateFrom] = useState<Date | undefined>(today);
-  const [topupDateTo, setTopupDateTo] = useState<Date | undefined>(today);
   const [complaintStatusFilter, setComplaintStatusFilter] = useState("all");
   const [complaintDateFrom, setComplaintDateFrom] = useState<Date | undefined>(today);
   const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>(today);
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }] = await Promise.all([
+    const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }, { data: ur }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
       supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*"),
     ]);
     setUsers(u || []);
     setOrders(o || []);
     setTopups(t || []);
     setComplaints(c || []);
     setAgentApplications(aa || []);
+    if (ur) {
+      const admins = new Set<string>();
+      (ur as any[]).forEach((r) => { if (r.role === "admin") admins.add(r.user_id); });
+      setAdminUserIds(admins);
+    }
   };
 
   useEffect(() => {
@@ -103,12 +108,6 @@ export default function Admin() {
     return filterByDate(result, orderDateFrom, orderDateTo);
   }, [orders, orderStatusFilter, orderDateFrom, orderDateTo]);
 
-  const filteredTopups = useMemo(() => {
-    let result = topups;
-    if (topupStatusFilter !== "all") result = result.filter(t => t.status === topupStatusFilter);
-    return filterByDate(result, topupDateFrom, topupDateTo);
-  }, [topups, topupStatusFilter, topupDateFrom, topupDateTo]);
-
   const filteredComplaints = useMemo(() => {
     let result = complaints;
     if (complaintStatusFilter !== "all") result = result.filter(c => c.status === complaintStatusFilter);
@@ -137,6 +136,13 @@ export default function Admin() {
     const { error } = await supabase.rpc("admin_set_user_tier", { target_user_id: userId, new_tier: newTier });
     if (error) { toast({ title: "Tier Update Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Tier Updated", description: `User set to ${newTier}` });
+    fetchData();
+  };
+
+  const handleToggleAdmin = async (userId: string, makeAdmin: boolean) => {
+    const { error } = await supabase.rpc("admin_toggle_admin_role", { target_user_id: userId, make_admin: makeAdmin });
+    if (error) { toast({ title: "Role Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: makeAdmin ? "User is now Admin" : "Admin role removed" });
     fetchData();
   };
 
@@ -169,31 +175,6 @@ export default function Admin() {
     fetchData();
   };
 
-  const handleApproveTopup = async (topup: any) => {
-    const { error: walletError } = await supabase.rpc("admin_wallet_operation", {
-      target_user_id: topup.user_id, operation_amount: topup.amount, operation_type: "credit", operation_description: "MoMo top-up approved",
-    });
-    if (walletError) { toast({ title: "Approval Failed", description: walletError.message, variant: "destructive" }); return; }
-    const { error: topupError } = await supabase.from("wallet_topups").update({ status: "completed" }).eq("id", topup.id);
-    if (topupError) { toast({ title: "Approval Failed", description: topupError.message, variant: "destructive" }); return; }
-    toast({ title: "Top-up Approved" });
-    fetchData();
-  };
-
-  const handleDeclineTopup = async (topupId: string) => {
-    const { error } = await supabase.from("wallet_topups").update({ status: "failed" }).eq("id", topupId);
-    if (error) { toast({ title: "Decline Failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Top-up Declined" });
-    fetchData();
-  };
-
-  const handleDeleteTopup = async (topupId: string) => {
-    const { error } = await supabase.from("wallet_topups").delete().eq("id", topupId);
-    if (error) { toast({ title: "Delete Failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Top-up Deleted" });
-    fetchData();
-  };
-
   const handleReplyComplaint = async () => {
     if (!replyDialog || !replyText.trim()) return;
     const { error } = await supabase.from("complaints").update({ admin_reply: replyText.trim(), status: "resolved" }).eq("id", replyDialog.id);
@@ -217,7 +198,7 @@ export default function Admin() {
           <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
-          <TabsTrigger value="topups" className="gap-2"><DollarSign className="w-4 h-4" /> Top-ups</TabsTrigger>
+          <TabsTrigger value="verified-id" className="gap-2"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
           <TabsTrigger value="agent-apps" className="gap-2"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
           <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
@@ -252,14 +233,17 @@ export default function Admin() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Balance</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
-                ) : filteredUsers.map((u) => (
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                ) : filteredUsers.map((u) => {
+                  const isUserAdmin = adminUserIds.has(u.user_id);
+                  return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.agent_code || "—"}</TableCell>
                     <TableCell>{u.full_name}</TableCell>
@@ -273,6 +257,16 @@ export default function Admin() {
                         onClick={() => handleSetTier(u.user_id, u.tier === "agent" ? "general" : "agent")}
                       >
                         {u.tier === "agent" ? "Agent" : "General"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={isUserAdmin ? "bg-amber-500/10 text-amber-600 cursor-pointer" : "bg-muted text-muted-foreground cursor-pointer"}
+                        onClick={() => handleToggleAdmin(u.user_id, !isUserAdmin)}
+                      >
+                        <Shield className="w-3 h-3 mr-1" />
+                        {isUserAdmin ? "Admin" : "User"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -290,7 +284,8 @@ export default function Admin() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -386,88 +381,9 @@ export default function Admin() {
           </div>
         </TabsContent>
 
-        {/* TOPUPS TAB */}
-        <TabsContent value="topups">
-          <div className="mb-4 flex flex-wrap gap-3 items-end">
-            <Select value={topupStatusFilter} onValueChange={setTopupStatusFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateFrom && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {topupDateFrom ? format(topupDateFrom, "MMM dd, yyyy") : "From date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateFrom} onSelect={setTopupDateFrom} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[150px] justify-start text-left font-normal", !topupDateTo && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {topupDateTo ? format(topupDateTo, "MMM dd, yyyy") : "To date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={topupDateTo} onSelect={setTopupDateTo} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
-            </Popover>
-            {(topupDateFrom || topupDateTo) && <Button variant="ghost" size="sm" onClick={() => { setTopupDateFrom(undefined); setTopupDateTo(undefined); }}>Clear dates</Button>}
-          </div>
-          <div className="bg-card rounded-xl border border-border shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Screenshot</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTopups.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No top-ups found</TableCell></TableRow>
-                ) : filteredTopups.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>{users.find(u => u.user_id === t.user_id)?.full_name || t.user_id.slice(0, 8) + "..."}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
-                    <TableCell className="capitalize">{t.method}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={
-                        t.status === "completed" ? "bg-success/10 text-success" :
-                        t.status === "pending" ? "bg-warning/10 text-warning" :
-                        "bg-destructive/10 text-destructive"
-                      }>{t.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {t.screenshot_url ? (
-                        <a href={t.screenshot_url} target="_blank" rel="noreferrer" className="text-primary underline text-sm">View</a>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {t.status === "pending" && (
-                          <>
-                            <Button size="sm" onClick={() => handleApproveTopup(t)}>Approve</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDeclineTopup(t.id)}>Decline</Button>
-                          </>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteTopup(t.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+        {/* VERIFIED ID TAB */}
+        <TabsContent value="verified-id">
+          <AdminVerifiedTopups users={users} />
         </TabsContent>
 
         {/* COMPLAINTS TAB */}

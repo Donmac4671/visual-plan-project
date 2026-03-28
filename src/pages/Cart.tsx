@@ -16,6 +16,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const fulfillOrder = async (orderId: string, networkId: string, phone: string, bundleSizeGB: number) => {
+  try {
+    await supabase.functions.invoke("fulfill-order", {
+      body: { order_id: orderId, network_id: networkId, phone, bundle_size_gb: bundleSizeGB },
+    });
+  } catch (err) {
+    console.error("Auto-fulfillment error:", err);
+  }
+};
+
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
   const { toast } = useToast();
@@ -37,7 +47,7 @@ export default function Cart() {
     setProcessing(true);
     try {
       for (const item of items) {
-        const { error } = await supabase.rpc("pay_with_wallet", {
+        const { data: orderId, error } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
           p_phone: item.phoneNumber,
           p_bundle: item.bundle.size,
@@ -45,6 +55,11 @@ export default function Cart() {
         });
 
         if (error) throw error;
+
+        // Auto-fulfill via GHDataConnect (fire and forget)
+        if (orderId) {
+          fulfillOrder(orderId, item.networkId, item.phoneNumber, item.bundle.sizeGB);
+        }
       }
 
       await refreshProfile();
@@ -68,7 +83,7 @@ export default function Cart() {
       onSuccess: async (reference) => {
         try {
           for (const item of items) {
-            const { error } = await supabase.rpc("pay_order_with_paystack", {
+            const { data: orderId, error } = await supabase.rpc("pay_order_with_paystack", {
               p_network: item.network,
               p_phone: item.phoneNumber,
               p_bundle: item.bundle.size,
@@ -77,6 +92,11 @@ export default function Cart() {
             });
 
             if (error) throw error;
+
+            // Auto-fulfill via GHDataConnect (fire and forget)
+            if (orderId) {
+              fulfillOrder(orderId, item.networkId, item.phoneNumber, item.bundle.sizeGB);
+            }
           }
 
           await refreshProfile();
