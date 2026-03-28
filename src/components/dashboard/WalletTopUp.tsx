@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function WalletTopUp() {
   return (
-    <div className="bg-card rounded-xl p-4 lg:p-5 border border-border shadow-sm">
+    <div className="bg-card rounded-xl p-4 lg:p-5 border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-1 hover:border-primary/30">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
