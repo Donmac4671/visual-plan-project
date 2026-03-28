@@ -20,7 +20,6 @@ serve(async (req) => {
     const body = await req.json();
     console.log("GHDataConnect webhook received:", JSON.stringify(body));
 
-    // GHDataConnect sends status updates with reference and status
     const { reference, status, message } = body;
 
     if (!reference) {
@@ -28,25 +27,6 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Find the order by matching the reference in the order_ref or by searching
-    // Our references start with "DMH" followed by timestamp
-    const { data: orders, error: fetchError } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("status", "processing")
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (fetchError) {
-      console.error("Error fetching orders:", fetchError);
-      throw fetchError;
-    }
-
-    // The reference we sent to GHDataConnect is stored in format DMH{timestamp}{random}
-    // We need to match it - since we don't store the GH reference separately,
-    // we'll log it for now and update based on the reference
-    console.log(`Webhook: reference=${reference}, status=${status}, message=${message}`);
 
     // Map GHDataConnect status to our status
     let newStatus = "processing";
@@ -56,20 +36,29 @@ serve(async (req) => {
       newStatus = "failed";
     }
 
-    // If the reference matches one of our order references, update it
-    if (reference.startsWith("DMH")) {
-      // This is our own reference - find any order with this as a potential match
-      // Since we use DMH{timestamp}{random}, we can try to match
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({ status: newStatus })
-        .eq("status", "processing")
-        .order("created_at", { ascending: false })
-        .limit(1);
+    // Match by gh_reference stored on the order
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("gh_reference", reference)
+      .single();
 
-      if (updateError) {
-        console.error("Error updating order:", updateError);
-      }
+    if (fetchError || !order) {
+      console.log(`No matching order for reference: ${reference}`);
+      return new Response(JSON.stringify({ success: true, message: "No matching order found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ status: newStatus })
+      .eq("id", order.id);
+
+    if (updateError) {
+      console.error("Error updating order:", updateError);
+    } else {
+      console.log(`Order ${order.id} updated to ${newStatus}`);
     }
 
     return new Response(JSON.stringify({ success: true, message: "Webhook processed" }), {

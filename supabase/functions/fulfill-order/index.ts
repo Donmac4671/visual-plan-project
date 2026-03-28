@@ -102,9 +102,9 @@ serve(async (req) => {
     console.log(`GHDataConnect response for order ${order_id}:`, JSON.stringify(result));
 
     if (result.success) {
-      // Order placed successfully on provider - keep status as processing
-      // Admin or status check can update to completed later
-      return new Response(JSON.stringify({ success: true, data: result.data }), {
+      // Store the GH reference on the order for webhook matching
+      await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
+      return new Response(JSON.stringify({ success: true, data: result.data, reference }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
