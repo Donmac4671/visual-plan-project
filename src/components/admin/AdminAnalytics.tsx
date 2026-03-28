@@ -82,6 +82,26 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const today = new Date();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(today);
   const [dateTo, setDateTo] = useState<Date | undefined>(today);
+  const [ghBalance, setGhBalance] = useState<number | null>(null);
+  const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
+
+  const fetchGhBalance = async () => {
+    setGhBalanceLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+      if (error) throw error;
+      if (data?.success && data?.data) {
+        const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
+        setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
+      }
+    } catch (err) {
+      console.error("Failed to fetch GH balance:", err);
+    } finally {
+      setGhBalanceLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchGhBalance(); }, []);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
