@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCanonical } from "@/hooks/useCanonical";
 
 export default function Login() {
+  useCanonical("/login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

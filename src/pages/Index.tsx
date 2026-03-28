@@ -3,8 +3,10 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import WalletTopUp from "@/components/dashboard/WalletTopUp";
 import ClaimPayment from "@/components/dashboard/ClaimPayment";
 import DataBundles from "@/components/dashboard/DataBundles";
+import { useCanonical } from "@/hooks/useCanonical";
 
 export default function Index() {
+  useCanonical("/");
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
