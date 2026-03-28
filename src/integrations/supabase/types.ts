@@ -106,6 +106,36 @@ export type Database = {
           },
         ]
       }
+      custom_bundles: {
+        Row: {
+          agent_price: number
+          bundle_size: string
+          created_at: string
+          general_price: number
+          id: string
+          network_id: string
+          size_gb: number
+        }
+        Insert: {
+          agent_price: number
+          bundle_size: string
+          created_at?: string
+          general_price: number
+          id?: string
+          network_id: string
+          size_gb: number
+        }
+        Update: {
+          agent_price?: number
+          bundle_size?: string
+          created_at?: string
+          general_price?: number
+          id?: string
+          network_id?: string
+          size_gb?: number
+        }
+        Relationships: []
+      }
       hidden_bundles: {
         Row: {
           bundle_size: string
@@ -286,6 +316,39 @@ export type Database = {
         }
         Relationships: []
       }
+      verified_topups: {
+        Row: {
+          amount: number
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          id: string
+          is_claimed: boolean
+          network: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          network: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          network?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
       wallet_topups: {
         Row: {
           amount: number
@@ -328,6 +391,10 @@ export type Database = {
         Args: { new_tier: string; target_user_id: string }
         Returns: undefined
       }
+      admin_toggle_admin_role: {
+        Args: { make_admin: boolean; target_user_id: string }
+        Returns: undefined
+      }
       admin_toggle_block: {
         Args: { block_status: boolean; target_user_id: string }
         Returns: undefined
@@ -343,6 +410,10 @@ export type Database = {
           operation_type: string
           target_user_id: string
         }
+        Returns: undefined
+      }
+      claim_verified_topup: {
+        Args: { p_transaction_id: string }
         Returns: undefined
       }
       complete_paystack_topup: {
