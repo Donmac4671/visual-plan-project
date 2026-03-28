@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X } from "lucide-react";
+import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ChartContainer,
   ChartTooltip,
@@ -81,6 +82,26 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const today = new Date();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(today);
   const [dateTo, setDateTo] = useState<Date | undefined>(today);
+  const [ghBalance, setGhBalance] = useState<number | null>(null);
+  const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
+
+  const fetchGhBalance = async () => {
+    setGhBalanceLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+      if (error) throw error;
+      if (data?.success && data?.data) {
+        const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
+        setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
+      }
+    } catch (err) {
+      console.error("Failed to fetch GH balance:", err);
+    } finally {
+      setGhBalanceLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchGhBalance(); }, []);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -330,7 +351,30 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* GHDataConnect Balance */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Wallet className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">GHDataConnect Balance</p>
+                  <p className="text-2xl font-bold">
+                    {ghBalance !== null ? formatCurrency(ghBalance) : "—"}
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={fetchGhBalance} disabled={ghBalanceLoading}>
+                <RefreshCw className={`w-4 h-4 ${ghBalanceLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>

@@ -162,6 +162,7 @@ export type Database = {
           amount: number
           bundle_size: string
           created_at: string
+          gh_reference: string | null
           id: string
           network: string
           order_ref: string
@@ -174,6 +175,7 @@ export type Database = {
           amount: number
           bundle_size: string
           created_at?: string
+          gh_reference?: string | null
           id?: string
           network: string
           order_ref: string
@@ -186,6 +188,7 @@ export type Database = {
           amount?: number
           bundle_size?: string
           created_at?: string
+          gh_reference?: string | null
           id?: string
           network?: string
           order_ref?: string
