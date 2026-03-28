@@ -94,8 +94,8 @@ export default function Register() {
             <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>
           </p>
         </div>
-        </div>
         <p className="text-center text-xs text-muted-foreground mt-4">© 2026 Donmac Data Hub. All rights reserved.</p>
+      </div>
     </div>
   );
 }

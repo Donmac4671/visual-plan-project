@@ -43,10 +43,12 @@ export default function Complaints() {
 
   const fetchOrders = async () => {
     if (!user) return;
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from("orders")
       .select("id, order_ref, network, bundle_size, phone_number")
       .eq("user_id", user.id)
+      .gte("created_at", cutoff)
       .order("created_at", { ascending: false });
     setOrders(data || []);
   };
