@@ -351,7 +351,30 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* GHDataConnect Balance */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Wallet className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">GHDataConnect Balance</p>
+                  <p className="text-2xl font-bold">
+                    {ghBalance !== null ? formatCurrency(ghBalance) : "—"}
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={fetchGhBalance} disabled={ghBalanceLoading}>
+                <RefreshCw className={`w-4 h-4 ${ghBalanceLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
