@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X } from "lucide-react";
+import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ChartContainer,
   ChartTooltip,
