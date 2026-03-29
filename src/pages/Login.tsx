@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCanonical } from "@/hooks/useCanonical";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+
 
 export default function Login() {
   useCanonical("/login");
