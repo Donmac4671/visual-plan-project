@@ -191,7 +191,7 @@ export default function AdminVerifiedTopups({ users }: Props) {
                 onChange={(e) => setTxnId(e.target.value.replace(/\D/g, "").slice(0, 11))}
                 maxLength={11}
                 inputMode="numeric"
-                className="tracking-widest"
+                className="tracking-widest text-base"
               />
             </div>
             <div>
