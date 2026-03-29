@@ -66,7 +66,15 @@ export default function Login() {
             {forgotMode ? "Reset your password" : "Sign in to your account"}
           </p>
         </div>
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+        {justRegistered && (
+          <Alert className="mb-4 border-primary/30 bg-primary/5">
+            <MailCheck className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-sm text-foreground">
+              A verification link has been sent to your email. Please check your inbox (and spam folder) and verify your email before signing in.
+            </AlertDescription>
+          </Alert>
+        )}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
           {forgotMode ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               {resetSent ? (
