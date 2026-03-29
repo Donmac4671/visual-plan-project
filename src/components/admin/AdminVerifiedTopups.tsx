@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
@@ -8,8 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Edit } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Trash2, Plus, Edit, CalendarIcon } from "lucide-react";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface VerifiedTopup {
   id: string;
@@ -34,6 +37,8 @@ export default function AdminVerifiedTopups({ users }: Props) {
   const [txnId, setTxnId] = useState("");
   const [amount, setAmount] = useState("");
   const [network, setNetwork] = useState("MTN");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(new Date());
+  const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
 
   const fetchTopups = async () => {
     const { data } = await supabase
@@ -44,6 +49,15 @@ export default function AdminVerifiedTopups({ users }: Props) {
   };
 
   useEffect(() => { fetchTopups(); }, []);
+
+  const filteredTopups = useMemo(() => {
+    return topups.filter((t) => {
+      const created = parseISO(t.created_at);
+      if (dateFrom && created < startOfDay(dateFrom)) return false;
+      if (dateTo && created > endOfDay(dateTo)) return false;
+      return true;
+    });
+  }, [topups, dateFrom, dateTo]);
 
   const handleAdd = async () => {
     if (!txnId || txnId.length !== 11 || !amount || !network) {
@@ -122,14 +136,44 @@ export default function AdminVerifiedTopups({ users }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Add transaction IDs for users to claim their MoMo payments.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {dateFrom ? format(dateFrom, "MMM dd, yyyy") : "From"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <span className="text-muted-foreground text-sm">to</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {dateTo ? format(dateTo, "MMM dd, yyyy") : "To"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+              Clear
+            </Button>
+          )}
+        </div>
         <Button onClick={() => { resetForm(); setShowAddDialog(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Add Verified ID
         </Button>
       </div>
+      <p className="text-sm text-muted-foreground">
+        {filteredTopups.length} verified ID{filteredTopups.length !== 1 ? "s" : ""} found
+      </p>
 
       <div className="bg-card rounded-xl border border-border shadow-sm">
         <Table>
@@ -145,9 +189,9 @@ export default function AdminVerifiedTopups({ users }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {topups.length === 0 ? (
+            {filteredTopups.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No verified IDs found</TableCell></TableRow>
-            ) : topups.map((t) => (
+            ) : filteredTopups.map((t) => (
               <TableRow key={t.id}>
                 <TableCell className="font-mono font-medium">{t.transaction_id}</TableCell>
                 <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
