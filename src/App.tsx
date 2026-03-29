@@ -79,6 +79,7 @@ const App = () => (
           <BrowserRouter>
             <RecoveryRedirect />
             <RealtimeNotifications />
+            <SiteMessagePopup />
             <FloatingWhatsAppButton />
             <FloatingCartButton />
             <Routes>
