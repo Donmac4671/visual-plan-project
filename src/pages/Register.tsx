@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Register() {
   useCanonical("/register");
   const [searchParams] = useSearchParams();
-  const refCode = searchParams.get("ref") || "";
+  const refFromUrl = searchParams.get("ref") || "";
+  const [referralCode, setReferralCode] = useState(refFromUrl);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
