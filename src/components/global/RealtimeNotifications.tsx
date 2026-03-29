@@ -6,6 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Resume context if suspended (autoplay policy)
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
