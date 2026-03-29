@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Tag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCanonical } from "@/hooks/useCanonical";
@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Register() {
   useCanonical("/register");
   const [searchParams] = useSearchParams();
-  const refCode = searchParams.get("ref") || "";
+  const refFromUrl = searchParams.get("ref") || "";
+  const [referralCode, setReferralCode] = useState(refFromUrl);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,20 +37,19 @@ export default function Register() {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     } else {
       // Process referral if ref code was provided
-      if (refCode && data?.user) {
+      if (referralCode && data?.user) {
         try {
-          // Find the referrer by their referral_code
           const { data: referrerProfile } = await supabase
             .from("profiles")
             .select("user_id")
-            .eq("referral_code", refCode)
+            .eq("referral_code", referralCode.trim().toUpperCase())
             .maybeSingle();
 
           if (referrerProfile) {
             await supabase.from("referrals").insert({
               referrer_id: referrerProfile.user_id,
               referred_id: data.user.id,
-              referral_code: refCode,
+              referral_code: referralCode.trim().toUpperCase(),
             });
           }
         } catch (err) {
@@ -109,6 +109,13 @@ export default function Register() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Referral Code (optional)</label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="e.g., DMH1081ED" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="pl-10" />
               </div>
             </div>
             <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
