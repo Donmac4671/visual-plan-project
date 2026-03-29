@@ -89,7 +89,7 @@ export default function BecomeAgent() {
 
     toast({ title: "Application Submitted!", description: "We'll review your application and get back to you shortly." });
     setUploading(false);
-    setScreenshotFile(null);
+    setTransactionId("");
 
     // Refresh application status
     const { data } = await supabase
