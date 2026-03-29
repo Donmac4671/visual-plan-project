@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
@@ -8,8 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Edit } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Trash2, Plus, Edit, CalendarIcon } from "lucide-react";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface VerifiedTopup {
   id: string;
@@ -34,6 +37,8 @@ export default function AdminVerifiedTopups({ users }: Props) {
   const [txnId, setTxnId] = useState("");
   const [amount, setAmount] = useState("");
   const [network, setNetwork] = useState("MTN");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(new Date());
+  const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
 
   const fetchTopups = async () => {
     const { data } = await supabase
@@ -44,6 +49,15 @@ export default function AdminVerifiedTopups({ users }: Props) {
   };
 
   useEffect(() => { fetchTopups(); }, []);
+
+  const filteredTopups = useMemo(() => {
+    return topups.filter((t) => {
+      const created = parseISO(t.created_at);
+      if (dateFrom && created < startOfDay(dateFrom)) return false;
+      if (dateTo && created > endOfDay(dateTo)) return false;
+      return true;
+    });
+  }, [topups, dateFrom, dateTo]);
 
   const handleAdd = async () => {
     if (!txnId || txnId.length !== 11 || !amount || !network) {
