@@ -349,7 +349,17 @@ export default function Admin() {
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
                     <TableCell>{o.network}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
-                    <TableCell>{o.phone_number}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span>{o.phone_number}</span>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => {
+                          navigator.clipboard.writeText(o.phone_number);
+                          toast({ title: "Copied!", description: `${o.phone_number} copied` });
+                        }}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-semibold">{formatCurrency(o.amount)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={
