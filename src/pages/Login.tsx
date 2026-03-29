@@ -1,15 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, MailCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCanonical } from "@/hooks/useCanonical";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   useCanonical("/login");
+  const [searchParams] = useSearchParams();
+  const justRegistered = searchParams.get("verified") === "pending";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +43,7 @@ export default function Login() {
     }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://visual-plan-project.lovable.app/reset-password",
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
     if (error) {
@@ -63,7 +66,15 @@ export default function Login() {
             {forgotMode ? "Reset your password" : "Sign in to your account"}
           </p>
         </div>
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+        {justRegistered && (
+          <Alert className="mb-4 border-primary/30 bg-primary/5">
+            <MailCheck className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-sm text-foreground">
+              A verification link has been sent to your email. Please check your inbox (and spam folder) and verify your email before signing in.
+            </AlertDescription>
+          </Alert>
+        )}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
           {forgotMode ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               {resetSent ? (

@@ -57,7 +57,7 @@ export default function Register() {
         }
       }
       toast({ title: "Account Created!", description: "Please check your email to verify your account." });
-      navigate("/login");
+      navigate("/login?verified=pending");
     }
   };
 
