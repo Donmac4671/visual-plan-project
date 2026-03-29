@@ -64,25 +64,12 @@ export default function BecomeAgent() {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
-    if (!screenshotFile) {
-      toast({ title: "Error", description: "Please upload proof of payment", variant: "destructive" });
+    if (!transactionId.trim()) {
+      toast({ title: "Error", description: "Please enter your transaction ID", variant: "destructive" });
       return;
     }
 
     setUploading(true);
-
-    const filePath = `${user.id}/${Date.now()}_${screenshotFile.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("agent-payments")
-      .upload(filePath, screenshotFile);
-
-    if (uploadError) {
-      toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from("agent-payments").getPublicUrl(filePath);
 
     const { error } = await supabase.from("agent_applications").insert({
       user_id: user.id,
@@ -91,7 +78,7 @@ export default function BecomeAgent() {
       phone: phone.trim(),
       location: location.trim(),
       reason: reason.trim(),
-      screenshot_url: urlData.publicUrl,
+      screenshot_url: transactionId.trim(),
     });
 
     if (error) {
