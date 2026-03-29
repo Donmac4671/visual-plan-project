@@ -481,6 +481,11 @@ export default function Admin() {
         <TabsContent value="promos">
           <AdminPromoManager />
         </TabsContent>
+
+        {/* SITE MESSAGE TAB */}
+        <TabsContent value="site-message">
+          <AdminSiteMessage />
+        </TabsContent>
       </Tabs>
 
       {/* Wallet Dialog */}
