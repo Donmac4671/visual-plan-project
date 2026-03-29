@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
@@ -349,7 +349,17 @@ export default function Admin() {
                     <TableCell className="font-medium">{o.order_ref}</TableCell>
                     <TableCell>{o.network}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
-                    <TableCell>{o.phone_number}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span>{o.phone_number}</span>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => {
+                          navigator.clipboard.writeText(o.phone_number);
+                          toast({ title: "Copied!", description: `${o.phone_number} copied` });
+                        }}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-semibold">{formatCurrency(o.amount)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={

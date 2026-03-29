@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, Shield, MessageSquare, Crown } from "lucide-react";
+import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, Shield, MessageSquare, Crown, Share2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/data";
@@ -18,6 +18,7 @@ const navItems = [
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
   { label: "Complaints", icon: MessageSquare, path: "/complaints" },
+  { label: "Referrals", icon: Share2, path: "/referrals" },
   { label: "Profile", icon: User, path: "/profile" },
 ];
 

@@ -208,6 +208,7 @@ export type Database = {
           id: string
           is_blocked: boolean
           phone: string
+          referral_code: string
           tier: string
           updated_at: string
           user_id: string
@@ -221,6 +222,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           phone?: string
+          referral_code?: string
           tier?: string
           updated_at?: string
           user_id: string
@@ -234,6 +236,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean
           phone?: string
+          referral_code?: string
           tier?: string
           updated_at?: string
           user_id?: string
@@ -268,6 +271,36 @@ export type Database = {
           id?: string
           is_active?: boolean
           starts_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_amount: number
+          reward_paid: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_amount?: number
+          reward_paid?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_id?: string
+          referrer_id?: string
+          reward_amount?: number
+          reward_paid?: boolean
         }
         Relationships: []
       }

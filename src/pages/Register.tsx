@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCanonical } from "@/hooks/useCanonical";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Register() {
   useCanonical("/register");
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,11 +30,32 @@ export default function Register() {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email, password, name, phone);
+    const { error, data } = await signUp(email, password, name, phone);
     setLoading(false);
     if (error) {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     } else {
+      // Process referral if ref code was provided
+      if (refCode && data?.user) {
+        try {
+          // Find the referrer by their referral_code
+          const { data: referrerProfile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("referral_code", refCode)
+            .maybeSingle();
+
+          if (referrerProfile) {
+            await supabase.from("referrals").insert({
+              referrer_id: referrerProfile.user_id,
+              referred_id: data.user.id,
+              referral_code: refCode,
+            });
+          }
+        } catch (err) {
+          console.error("Referral tracking error:", err);
+        }
+      }
       toast({ title: "Account Created!", description: "Please check your email to verify your account." });
       navigate("/login");
     }

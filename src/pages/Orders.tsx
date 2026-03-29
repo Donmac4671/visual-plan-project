@@ -21,17 +21,31 @@ export default function Orders() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all");
 
+  const fetchOrders = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setOrders(data || []);
+  };
+
   useEffect(() => {
     if (!user) return;
-    const fetchOrders = async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setOrders(data || []);
-    };
     fetchOrders();
+
+    // Realtime subscription for auto-refresh
+    const channel = supabase
+      .channel(`user-orders-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        () => fetchOrders()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const statusCounts = useMemo(() => {
