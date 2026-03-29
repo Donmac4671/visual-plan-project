@@ -56,8 +56,8 @@ export default function Register() {
           console.error("Referral tracking error:", err);
         }
       }
-      toast({ title: "Account Created!", description: "Please check your email to verify your account." });
-      navigate("/login?verified=pending");
+      toast({ title: "Account Created!", description: "You can now sign in." });
+      navigate("/login");
     }
   };
 
