@@ -178,7 +178,7 @@ export default function AdminVerifiedTopups({ users }: Props) {
       </div>
 
       <Dialog open={showAddDialog} onOpenChange={() => resetForm()}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md">
           <DialogHeader>
             <DialogTitle>{editingTopup ? "Edit" : "Add"} Verified ID</DialogTitle>
           </DialogHeader>
@@ -191,7 +191,7 @@ export default function AdminVerifiedTopups({ users }: Props) {
                 onChange={(e) => setTxnId(e.target.value.replace(/\D/g, "").slice(0, 11))}
                 maxLength={11}
                 inputMode="numeric"
-                className="tracking-widest"
+                className="tracking-widest text-base"
               />
             </div>
             <div>
