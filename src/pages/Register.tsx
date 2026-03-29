@@ -111,6 +111,13 @@ export default function Register() {
                 <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
               </div>
             </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Referral Code (optional)</label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="e.g., DMH1081ED" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="pl-10" />
+              </div>
+            </div>
             <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
