@@ -18,7 +18,7 @@ export default function BecomeAgent() {
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [reason, setReason] = useState("");
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [transactionId, setTransactionId] = useState("");
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
