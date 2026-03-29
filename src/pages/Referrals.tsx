@@ -69,7 +69,7 @@ export default function Referrals() {
           <Share2 className="w-5 h-5 text-primary" /> Your Referral Code
         </h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Share your code with friends. Earn <span className="font-bold text-primary">₵0.50</span> for each user referral and <span className="font-bold text-primary">₵10.00</span> for each agent referral when they make their first purchase.
+          Share your code with friends. Earn <span className="font-bold text-primary">₵0.50</span> when your referral makes their first purchase, and <span className="font-bold text-primary">₵10.00</span> when your referral becomes an agent.
         </p>
 
         <div className="flex items-center gap-2 mb-3">
