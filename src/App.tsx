@@ -23,6 +23,7 @@ import Admin from "./pages/Admin";
 import Complaints from "./pages/Complaints";
 import BecomeAgent from "./pages/BecomeAgent";
 import ResetPassword from "./pages/ResetPassword";
+import Referrals from "./pages/Referrals";
 import Flyer from "./pages/Flyer";
 import NotFound from "./pages/NotFound";
 
