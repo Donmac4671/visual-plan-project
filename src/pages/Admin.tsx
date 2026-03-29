@@ -346,7 +346,25 @@ export default function Admin() {
                   <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No orders found</TableCell></TableRow>
                 ) : filteredOrders.map((o) => (
                   <TableRow key={o.id}>
-                    <TableCell className="font-medium">{o.order_ref}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <div>
+                          <span className="font-medium">{o.order_ref}</span>
+                          {(() => {
+                            const orderUser = users.find(u => u.user_id === o.user_id);
+                            return orderUser ? <p className="text-xs text-muted-foreground">{orderUser.full_name}</p> : null;
+                          })()}
+                        </div>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => {
+                          const orderUser = users.find(u => u.user_id === o.user_id);
+                          const text = orderUser ? `${o.order_ref} - ${orderUser.full_name}` : o.order_ref;
+                          navigator.clipboard.writeText(text);
+                          toast({ title: "Copied!", description: `${text} copied` });
+                        }}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>{o.network}</TableCell>
                     <TableCell>{o.bundle_size}</TableCell>
                     <TableCell>
