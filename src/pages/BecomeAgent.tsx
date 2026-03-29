@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Copy, CheckCircle, Smartphone, Crown, Clock, XCircle } from "lucide-react";
+import { Copy, CheckCircle, Smartphone, Crown, Clock, XCircle } from "lucide-react";
 
 export default function BecomeAgent() {
   const { user, profile } = useAuth();
