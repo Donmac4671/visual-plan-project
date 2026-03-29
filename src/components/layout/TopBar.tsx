@@ -18,6 +18,7 @@ const navItems = [
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
   { label: "Complaints", icon: MessageSquare, path: "/complaints" },
+  { label: "Referrals", icon: Share2, path: "/referrals" },
   { label: "Profile", icon: User, path: "/profile" },
 ];
 
