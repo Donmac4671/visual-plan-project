@@ -109,6 +109,8 @@ serve(async (req) => {
       });
     } else {
       console.error(`GHDataConnect order failed [${response.status}]:`, JSON.stringify(result));
+      // Mark the order as failed so user sees it
+      await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
       return new Response(JSON.stringify({ success: false, message: result.message || "Order failed on provider" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
