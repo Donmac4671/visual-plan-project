@@ -12,6 +12,7 @@ interface Profile {
   wallet_balance: number;
   is_blocked: boolean;
   tier: string;
+  referral_code: string;
 }
 
 interface AuthContextType {
