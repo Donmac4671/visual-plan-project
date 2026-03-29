@@ -12,7 +12,7 @@ import { useCanonical } from "@/hooks/useCanonical";
 export default function Login() {
   useCanonical("/login");
   const [searchParams] = useSearchParams();
-  const justRegistered = searchParams.get("verified") === "pending";
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
