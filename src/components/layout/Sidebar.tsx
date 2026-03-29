@@ -11,7 +11,6 @@ const navItems = [
   { label: "Referrals", icon: Share2, path: "/referrals" },
   { label: "Profile", icon: User, path: "/profile" },
   { label: "Become an Agent", icon: Crown, path: "/become-agent", hideForAgents: true },
-  { label: "Become an Agent", icon: Crown, path: "/become-agent", hideForAgents: true },
 ];
 
 export default function Sidebar() {

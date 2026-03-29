@@ -230,22 +230,12 @@ export default function BecomeAgent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Upload Proof of Payment *</label>
-              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  id="payment-proof"
-                  className="hidden"
-                  onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
-                />
-                <label htmlFor="payment-proof" className="cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {screenshotFile ? screenshotFile.name : "Tap to upload screenshot"}
-                  </p>
-                </label>
-              </div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Transaction ID *</label>
+              <Input
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="Enter your MoMo transaction ID"
+              />
             </div>
 
             <Button
