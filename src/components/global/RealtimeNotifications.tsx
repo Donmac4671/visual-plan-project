@@ -3,15 +3,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-function playNotificationSound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // Resume context if suspended (autoplay policy)
-    if (ctx.state === "suspended") {
-      ctx.resume();
-    }
+// Persist a single AudioContext so it survives browser autoplay restrictions.
+// We unlock it on the very first user interaction (click / touch / keydown).
+let sharedCtx: AudioContext | null = null;
 
+function getAudioContext(): AudioContext | null {
+  try {
+    if (!sharedCtx) {
+      sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+}
+
+// Unlock the AudioContext on the first user gesture
+function unlockAudio() {
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume();
+  }
+  // Only need to unlock once
+  window.removeEventListener("click", unlockAudio);
+  window.removeEventListener("touchstart", unlockAudio);
+  window.removeEventListener("keydown", unlockAudio);
+}
+window.addEventListener("click", unlockAudio);
+window.addEventListener("touchstart", unlockAudio);
+window.addEventListener("keydown", unlockAudio);
+
+function playNotificationSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  // Try resuming just in case
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
+  try {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -23,7 +54,6 @@ function playNotificationSound() {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.5);
 
-    // Second tone for a pleasant two-tone chime
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
