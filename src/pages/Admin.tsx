@@ -356,10 +356,8 @@ export default function Admin() {
                           })()}
                         </div>
                         <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => {
-                          const orderUser = users.find(u => u.user_id === o.user_id);
-                          const text = orderUser ? `${o.order_ref} - ${orderUser.full_name}` : o.order_ref;
-                          navigator.clipboard.writeText(text);
-                          toast({ title: "Copied!", description: `${text} copied` });
+                          navigator.clipboard.writeText(o.phone_number);
+                          toast({ title: "Copied!", description: `${o.phone_number} copied` });
                         }}>
                           <Copy className="w-3 h-3" />
                         </Button>
