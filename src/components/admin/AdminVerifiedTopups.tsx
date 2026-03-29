@@ -136,14 +136,44 @@ export default function AdminVerifiedTopups({ users }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Add transaction IDs for users to claim their MoMo payments.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {dateFrom ? format(dateFrom, "MMM dd, yyyy") : "From"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <span className="text-muted-foreground text-sm">to</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {dateTo ? format(dateTo, "MMM dd, yyyy") : "To"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+              Clear
+            </Button>
+          )}
+        </div>
         <Button onClick={() => { resetForm(); setShowAddDialog(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Add Verified ID
         </Button>
       </div>
+      <p className="text-sm text-muted-foreground">
+        {filteredTopups.length} verified ID{filteredTopups.length !== 1 ? "s" : ""} found
+      </p>
 
       <div className="bg-card rounded-xl border border-border shadow-sm">
         <Table>
