@@ -189,9 +189,9 @@ export default function AdminVerifiedTopups({ users }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {topups.length === 0 ? (
+            {filteredTopups.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No verified IDs found</TableCell></TableRow>
-            ) : topups.map((t) => (
+            ) : filteredTopups.map((t) => (
               <TableRow key={t.id}>
                 <TableCell className="font-mono font-medium">{t.transaction_id}</TableCell>
                 <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
