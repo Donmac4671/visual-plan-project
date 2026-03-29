@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Copy, CheckCircle, Smartphone, Crown, Clock, XCircle } from "lucide-react";
+import { Copy, CheckCircle, Smartphone, Crown, Clock, XCircle } from "lucide-react";
 
 export default function BecomeAgent() {
   const { user, profile } = useAuth();
@@ -18,7 +18,7 @@ export default function BecomeAgent() {
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [reason, setReason] = useState("");
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [transactionId, setTransactionId] = useState("");
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
@@ -64,25 +64,12 @@ export default function BecomeAgent() {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
-    if (!screenshotFile) {
-      toast({ title: "Error", description: "Please upload proof of payment", variant: "destructive" });
+    if (!transactionId.trim()) {
+      toast({ title: "Error", description: "Please enter your transaction ID", variant: "destructive" });
       return;
     }
 
     setUploading(true);
-
-    const filePath = `${user.id}/${Date.now()}_${screenshotFile.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("agent-payments")
-      .upload(filePath, screenshotFile);
-
-    if (uploadError) {
-      toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from("agent-payments").getPublicUrl(filePath);
 
     const { error } = await supabase.from("agent_applications").insert({
       user_id: user.id,
@@ -91,7 +78,7 @@ export default function BecomeAgent() {
       phone: phone.trim(),
       location: location.trim(),
       reason: reason.trim(),
-      screenshot_url: urlData.publicUrl,
+      screenshot_url: transactionId.trim(),
     });
 
     if (error) {
@@ -102,7 +89,7 @@ export default function BecomeAgent() {
 
     toast({ title: "Application Submitted!", description: "We'll review your application and get back to you shortly." });
     setUploading(false);
-    setScreenshotFile(null);
+    setTransactionId("");
 
     // Refresh application status
     const { data } = await supabase
@@ -243,22 +230,12 @@ export default function BecomeAgent() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Upload Proof of Payment *</label>
-              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  id="payment-proof"
-                  className="hidden"
-                  onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
-                />
-                <label htmlFor="payment-proof" className="cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {screenshotFile ? screenshotFile.name : "Tap to upload screenshot"}
-                  </p>
-                </label>
-              </div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Transaction ID *</label>
+              <Input
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="Enter your MoMo transaction ID"
+              />
             </div>
 
             <Button

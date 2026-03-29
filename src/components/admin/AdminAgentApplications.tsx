@@ -158,8 +158,7 @@ export default function AdminAgentApplications({ applications, onRefresh }: Prop
               <div><span className="font-medium text-muted-foreground">Status:</span> {statusBadge(viewApp.status)}</div>
               {viewApp.screenshot_url && (
                 <div>
-                  <span className="font-medium text-muted-foreground block mb-1">Payment Proof:</span>
-                  <img src={viewApp.screenshot_url} alt="Payment proof" className="rounded-lg border border-border max-h-64 w-full object-contain" />
+                  <span className="font-medium text-muted-foreground">Transaction ID:</span> {viewApp.screenshot_url}
                 </div>
               )}
             </div>
