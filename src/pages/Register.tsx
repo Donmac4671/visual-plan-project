@@ -37,20 +37,19 @@ export default function Register() {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     } else {
       // Process referral if ref code was provided
-      if (refCode && data?.user) {
+      if (referralCode && data?.user) {
         try {
-          // Find the referrer by their referral_code
           const { data: referrerProfile } = await supabase
             .from("profiles")
             .select("user_id")
-            .eq("referral_code", refCode)
+            .eq("referral_code", referralCode.trim().toUpperCase())
             .maybeSingle();
 
           if (referrerProfile) {
             await supabase.from("referrals").insert({
               referrer_id: referrerProfile.user_id,
               referred_id: data.user.id,
-              referral_code: refCode,
+              referral_code: referralCode.trim().toUpperCase(),
             });
           }
         } catch (err) {
