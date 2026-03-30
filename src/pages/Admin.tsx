@@ -196,17 +196,31 @@ export default function Admin() {
     fetchData();
     toast({ title: "Retrying order...", description: `${order.network} ${order.bundle_size} to ${order.phone_number}` });
     try {
-      const response = await supabase.functions.invoke("fulfill-order", {
-        body: { order_id: order.id, network_id: order.network, phone: order.phone_number, bundle_size_gb: bundleSizeGB },
-      });
-      console.log("Retry fulfill-order response:", JSON.stringify(response));
-      if (response.error) {
-        const errMsg = typeof response.error === 'object' && 'message' in response.error 
-          ? (response.error as any).message 
-          : String(response.error);
-        toast({ title: "Retry Failed", description: errMsg, variant: "destructive" });
-      } else if (response.data && !response.data.success) {
-        toast({ title: "Retry Failed", description: response.data.message || "Provider error", variant: "destructive" });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        toast({ title: "Retry Failed", description: "No active session. Please sign in again.", variant: "destructive" });
+        return;
+      }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fulfill-order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ order_id: order.id, network_id: order.network, phone: order.phone_number, bundle_size_gb: bundleSizeGB }),
+        }
+      );
+
+      const result = await res.json();
+      console.log("Retry fulfill-order response:", res.status, JSON.stringify(result));
+
+      if (!res.ok || !result.success) {
+        toast({ title: "Retry Failed", description: result.message || `Error ${res.status}`, variant: "destructive" });
       } else {
         toast({ title: "Order Retried", description: "Order sent to provider successfully" });
       }
