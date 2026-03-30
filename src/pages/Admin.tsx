@@ -213,7 +213,8 @@ export default function Admin() {
     }
   };
 
-
+  const handleCloseComplaint = async (id: string) => {
+    const { error } = await supabase.from("complaints").update({ status: "closed" }).eq("id", id);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Complaint closed" });
     fetchData();
