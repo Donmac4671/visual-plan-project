@@ -196,18 +196,23 @@ export default function Admin() {
     fetchData();
     toast({ title: "Retrying order...", description: `${order.network} ${order.bundle_size} to ${order.phone_number}` });
     try {
-      const { data, error } = await supabase.functions.invoke("fulfill-order", {
+      const response = await supabase.functions.invoke("fulfill-order", {
         body: { order_id: order.id, network_id: order.network, phone: order.phone_number, bundle_size_gb: bundleSizeGB },
       });
-      if (error) {
-        toast({ title: "Retry Failed", description: error.message, variant: "destructive" });
-      } else if (data && !data.success) {
-        toast({ title: "Retry Failed", description: data.message || "Provider error", variant: "destructive" });
+      console.log("Retry fulfill-order response:", JSON.stringify(response));
+      if (response.error) {
+        const errMsg = typeof response.error === 'object' && 'message' in response.error 
+          ? (response.error as any).message 
+          : String(response.error);
+        toast({ title: "Retry Failed", description: errMsg, variant: "destructive" });
+      } else if (response.data && !response.data.success) {
+        toast({ title: "Retry Failed", description: response.data.message || "Provider error", variant: "destructive" });
       } else {
         toast({ title: "Order Retried", description: "Order sent to provider successfully" });
       }
       fetchData();
     } catch (err: any) {
+      console.error("Retry catch error:", err);
       toast({ title: "Retry Failed", description: err.message || "Unknown error", variant: "destructive" });
       fetchData();
     }
