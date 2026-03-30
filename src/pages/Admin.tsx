@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
@@ -183,6 +183,34 @@ export default function Admin() {
     toast({ title: "Complaint replied & resolved" });
     setReplyDialog(null); setReplyText("");
     fetchData();
+  };
+
+  const handleRetryOrder = async (order: any) => {
+    const bundleSizeGB = parseFloat(order.bundle_size.replace(/[^\d.]/g, ""));
+    if (!bundleSizeGB) {
+      toast({ title: "Retry Failed", description: "Could not parse bundle size", variant: "destructive" });
+      return;
+    }
+    // Set back to processing first
+    await supabase.rpc("admin_update_order_status", { order_id: order.id, new_status: "processing" });
+    fetchData();
+    toast({ title: "Retrying order...", description: `${order.network} ${order.bundle_size} to ${order.phone_number}` });
+    try {
+      const { data, error } = await supabase.functions.invoke("fulfill-order", {
+        body: { order_id: order.id, network_id: order.network, phone: order.phone_number, bundle_size_gb: bundleSizeGB },
+      });
+      if (error) {
+        toast({ title: "Retry Failed", description: error.message, variant: "destructive" });
+      } else if (data && !data.success) {
+        toast({ title: "Retry Failed", description: data.message || "Provider error", variant: "destructive" });
+      } else {
+        toast({ title: "Order Retried", description: "Order sent to provider successfully" });
+      }
+      fetchData();
+    } catch (err: any) {
+      toast({ title: "Retry Failed", description: err.message || "Unknown error", variant: "destructive" });
+      fetchData();
+    }
   };
 
   const handleCloseComplaint = async (id: string) => {
@@ -398,9 +426,16 @@ export default function Admin() {
                     </TableCell>
                     <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        {o.status === "failed" && (
+                          <Button size="sm" variant="outline" className="text-primary" onClick={() => handleRetryOrder(o)}>
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
