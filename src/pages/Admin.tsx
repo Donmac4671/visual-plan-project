@@ -426,9 +426,16 @@ export default function Admin() {
                     </TableCell>
                     <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        {o.status === "failed" && (
+                          <Button size="sm" variant="outline" className="text-primary" onClick={() => handleRetryOrder(o)}>
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(o.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
