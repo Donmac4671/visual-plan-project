@@ -185,8 +185,35 @@ export default function Admin() {
     fetchData();
   };
 
-  const handleCloseComplaint = async (id: string) => {
-    const { error } = await supabase.from("complaints").update({ status: "closed" }).eq("id", id);
+  const handleRetryOrder = async (order: any) => {
+    const bundleSizeGB = parseFloat(order.bundle_size.replace(/[^\d.]/g, ""));
+    if (!bundleSizeGB) {
+      toast({ title: "Retry Failed", description: "Could not parse bundle size", variant: "destructive" });
+      return;
+    }
+    // Set back to processing first
+    await supabase.rpc("admin_update_order_status", { order_id: order.id, new_status: "processing" });
+    fetchData();
+    toast({ title: "Retrying order...", description: `${order.network} ${order.bundle_size} to ${order.phone_number}` });
+    try {
+      const { data, error } = await supabase.functions.invoke("fulfill-order", {
+        body: { order_id: order.id, network_id: order.network, phone: order.phone_number, bundle_size_gb: bundleSizeGB },
+      });
+      if (error) {
+        toast({ title: "Retry Failed", description: error.message, variant: "destructive" });
+      } else if (data && !data.success) {
+        toast({ title: "Retry Failed", description: data.message || "Provider error", variant: "destructive" });
+      } else {
+        toast({ title: "Order Retried", description: "Order sent to provider successfully" });
+      }
+      fetchData();
+    } catch (err: any) {
+      toast({ title: "Retry Failed", description: err.message || "Unknown error", variant: "destructive" });
+      fetchData();
+    }
+  };
+
+
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Complaint closed" });
     fetchData();
