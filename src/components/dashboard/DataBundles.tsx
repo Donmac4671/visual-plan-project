@@ -79,9 +79,49 @@ export default function DataBundles() {
     setExpandedNetwork(expandedNetwork === id ? null : id);
   };
 
+  const networkPrefixes: Record<string, string[]> = {
+    mtn: ["024", "025", "053", "054", "055", "059"],
+    telecel: ["020", "050"],
+    "at-bigtime": ["026", "027", "056", "057"],
+    "at-premium": ["026", "027", "056", "057"],
+  };
+
+  const phonePrefix = phoneNumber.length >= 3 ? phoneNumber.slice(0, 3) : "";
+  const detectedNetwork = useMemo(() => {
+    if (phonePrefix.length < 3) return null;
+    for (const [netId, prefixes] of Object.entries(networkPrefixes)) {
+      if (prefixes.includes(phonePrefix)) return netId;
+    }
+    return "unknown";
+  }, [phonePrefix]);
+
+  const isWrongNetwork = useMemo(() => {
+    if (!selectedBundle || !detectedNetwork || detectedNetwork === "unknown") return false;
+    const selectedId = selectedBundle.network.id;
+    // AirtelTigo networks share prefixes
+    if ((selectedId === "at-bigtime" || selectedId === "at-premium") && (detectedNetwork === "at-bigtime" || detectedNetwork === "at-premium")) return false;
+    return detectedNetwork !== selectedId;
+  }, [detectedNetwork, selectedBundle]);
+
+  const getExpectedNetworkName = (networkId: string) => {
+    if (networkId === "mtn") return "MTN";
+    if (networkId === "telecel") return "Telecel";
+    if (networkId === "at-bigtime" || networkId === "at-premium") return "AirtelTigo";
+    return networkId;
+  };
+
   const handleAddToCart = () => {
     if (!selectedBundle || phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
       toast({ title: "Error", description: "Please enter a valid 10-digit phone number", variant: "destructive" });
+      return;
+    }
+    if (isWrongNetwork) {
+      const expected = getExpectedNetworkName(selectedBundle.network.id);
+      toast({ title: "Wrong Network", description: `This number doesn't belong to ${expected}. Please enter a valid ${expected} number.`, variant: "destructive" });
+      return;
+    }
+    if (detectedNetwork === "unknown") {
+      toast({ title: "Unknown Number", description: "This phone number prefix is not recognized. Please check the number.", variant: "destructive" });
       return;
     }
     let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
