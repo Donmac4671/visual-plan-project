@@ -252,6 +252,14 @@ export default function DataBundles() {
             {phoneNumber.length > 0 && phoneNumber.length < 10 && (
               <p className="text-xs text-destructive mt-1">{10 - phoneNumber.length} more digit(s) needed</p>
             )}
+            {isWrongNetwork && selectedBundle && (
+              <p className="text-xs text-destructive mt-1 font-semibold">
+                ⚠️ This number doesn't look like a {getExpectedNetworkName(selectedBundle.network.id)} number
+              </p>
+            )}
+            {detectedNetwork === "unknown" && phoneNumber.length >= 3 && (
+              <p className="text-xs text-destructive mt-1">⚠️ Unrecognized phone number prefix</p>
+            )}
           </div>
 
           <div className="flex gap-3 mt-4">
