@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Wifi, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
 import { Network, DataBundle, formatCurrency, getBundlePrice } from "@/lib/data";
 import { Button } from "@/components/ui/button";
