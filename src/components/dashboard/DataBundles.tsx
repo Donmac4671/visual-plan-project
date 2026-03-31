@@ -231,7 +231,9 @@ export default function DataBundles() {
             </div>
             <div className="bg-accent rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">⏱ Validity</p>
-              <p className="text-xl font-bold text-foreground">90 Days</p>
+              <p className="text-xl font-bold text-foreground">
+                {selectedBundle?.network.id === "at-bigtime" ? "Non-Expiry" : selectedBundle?.network.id === "at-premium" ? "60 Days" : "90 Days"}
+              </p>
             </div>
           </div>
 
