@@ -66,6 +66,7 @@ export default function AdminPromoManager() {
       setDiscount("");
       setDescription("");
       setExpiresAt("");
+      setTargetAudience("general");
       fetchPromos();
     }
     setCreating(false);
