@@ -58,6 +58,19 @@ export default function Footer() {
               <li>Your wallet is credited <strong>instantly</strong> after successful payment.</li>
             </ol>
           </CollapsibleSection>
+
+          <CollapsibleSection title="How to File a Complaint" icon={AlertTriangle}>
+            <ol className="list-decimal list-inside space-y-1.5">
+              <li>Go to <strong>Complaints</strong> from the sidebar menu.</li>
+              <li>Select the <strong>order</strong> you have an issue with (only orders from the last 48 hours are shown).</li>
+              <li>Enter a <strong>subject</strong> and describe the problem in detail.</li>
+              <li>Click <strong>"Submit Complaint"</strong> to send it for admin review.</li>
+              <li>You'll be notified once the admin responds or resolves your complaint.</li>
+            </ol>
+            <p className="text-xs mt-2 text-muted-foreground/80">
+              💡 Make sure to include the affected phone number and bundle details for faster resolution.
+            </p>
+          </CollapsibleSection>
         </div>
 
         <div className="flex flex-col items-center gap-3 pt-2">
