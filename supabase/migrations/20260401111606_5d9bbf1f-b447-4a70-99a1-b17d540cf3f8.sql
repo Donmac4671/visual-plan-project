@@ -1,0 +1,1 @@
+ALTER TABLE public.promotions ADD COLUMN target_audience text NOT NULL DEFAULT 'general' CHECK (target_audience IN ('general', 'agent', 'everyone'));
