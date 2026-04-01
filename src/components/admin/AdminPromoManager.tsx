@@ -108,7 +108,7 @@ export default function AdminPromoManager() {
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Percent className="w-4 h-4" /> Create Promotion
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Discount %</label>
               <Input
@@ -127,6 +127,18 @@ export default function AdminPromoManager() {
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
               />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Audience</label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+              >
+                <option value="general">General Users</option>
+                <option value="agent">Agents Only</option>
+                <option value="everyone">Everyone</option>
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Description (optional)</label>
