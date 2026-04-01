@@ -53,10 +53,11 @@ export default function AdminPromoManager() {
     setCreating(true);
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
-      description: description || `${pct}% off for general users`,
+      description: description || `${pct}% off for ${targetAudience === 'everyone' ? 'all users' : targetAudience === 'agent' ? 'agents' : 'general users'}`,
       expires_at: new Date(expiresAt).toISOString(),
       is_active: true,
-    });
+      target_audience: targetAudience,
+    } as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
