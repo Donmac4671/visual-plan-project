@@ -6,33 +6,37 @@ export interface ActivePromo {
   discount_percent: number;
   description: string;
   expires_at: string;
+  target_audience: string;
 }
 
-export function useActivePromo() {
-  const [promo, setPromo] = useState<ActivePromo | null>(null);
+export function useActivePromo(userTier?: string) {
+  const [promos, setPromos] = useState<ActivePromo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchPromos = async () => {
       const now = new Date().toISOString();
       const { data } = await supabase
         .from("promotions")
-        .select("id, discount_percent, description, expires_at")
+        .select("id, discount_percent, description, expires_at, target_audience")
         .eq("is_active", true)
         .lte("starts_at", now)
         .gte("expires_at", now)
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .order("created_at", { ascending: false });
       
-      if (data && data.length > 0) {
-        setPromo(data[0] as ActivePromo);
-      } else {
-        setPromo(null);
-      }
+      setPromos((data as ActivePromo[]) || []);
       setLoading(false);
     };
-    fetch();
+    fetchPromos();
   }, []);
+
+  // Find the best applicable promo for the user's tier
+  const promo = promos.find((p) => {
+    if (p.target_audience === "everyone") return true;
+    if (p.target_audience === "agent" && userTier === "agent") return true;
+    if (p.target_audience === "general" && userTier !== "agent") return true;
+    return false;
+  }) || null;
 
   const applyDiscount = (price: number): number => {
     if (!promo) return price;

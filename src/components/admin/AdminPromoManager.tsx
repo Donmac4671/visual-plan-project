@@ -24,6 +24,7 @@ export default function AdminPromoManager() {
   const [discount, setDiscount] = useState("");
   const [description, setDescription] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [targetAudience, setTargetAudience] = useState("general");
   const [creating, setCreating] = useState(false);
 
   const fetchPromos = async () => {
