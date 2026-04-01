@@ -15,6 +15,7 @@ interface Promo {
   expires_at: string;
   is_active: boolean;
   created_at: string;
+  target_audience: string;
 }
 
 export default function AdminPromoManager() {
@@ -45,27 +46,41 @@ export default function AdminPromoManager() {
       toast({ title: "Missing fields", description: "Please enter discount % and expiry date", variant: "destructive" });
       return;
     }
+
     const pct = parseFloat(discount);
     if (isNaN(pct) || pct <= 0 || pct > 100) {
       toast({ title: "Invalid discount", description: "Must be between 1 and 100", variant: "destructive" });
       return;
     }
-    if (new Date(expiresAt) <= new Date()) {
+
+    const startsAt = new Date();
+    const expiresDate = new Date(expiresAt);
+
+    if (Number.isNaN(expiresDate.getTime())) {
+      toast({ title: "Invalid expiry", description: "Please choose a valid expiry date", variant: "destructive" });
+      return;
+    }
+
+    if (expiresDate <= startsAt) {
       toast({ title: "Invalid expiry", description: "Expiry date must be in the future", variant: "destructive" });
       return;
     }
+
+    const audienceLabel = targetAudience === "everyone" ? "all users" : targetAudience === "agent" ? "agents" : "general users";
+
     setCreating(true);
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
-      description: description || `${pct}% off for ${targetAudience === 'everyone' ? 'all users' : targetAudience === 'agent' ? 'agents' : 'general users'}`,
-      expires_at: new Date(expiresAt).toISOString(),
+      description: description || `${pct}% off for ${audienceLabel}`,
+      starts_at: startsAt.toISOString(),
+      expires_at: expiresDate.toISOString(),
       is_active: true,
       target_audience: targetAudience,
     } as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Promo created!", description: `${pct}% discount active for general users` });
+      toast({ title: "Promo created!", description: `${pct}% discount active for ${audienceLabel}` });
       setShowForm(false);
       setDiscount("");
       setDescription("");
