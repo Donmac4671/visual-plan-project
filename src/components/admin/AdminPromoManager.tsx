@@ -96,7 +96,7 @@ export default function AdminPromoManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Create time-limited percentage discounts for general users. Agent prices are not affected.
+          Create time-limited percentage discounts targeting general users, agents, or everyone.
         </p>
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1">
           <Plus className="w-4 h-4" /> New Promo
