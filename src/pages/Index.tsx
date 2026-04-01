@@ -16,7 +16,7 @@ export default function Index() {
         <WalletTopUp />
         <ClaimPayment />
         <DataBundles />
-        <p className="text-center text-xs text-muted-foreground pb-4">© 2026 Donmac Data Hub. All rights reserved.</p>
+        
       </div>
     </DashboardLayout>
   );
