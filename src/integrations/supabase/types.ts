@@ -253,6 +253,7 @@ export type Database = {
           id: string
           is_active: boolean
           starts_at: string
+          target_audience: string
         }
         Insert: {
           created_at?: string
@@ -262,6 +263,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           starts_at?: string
+          target_audience?: string
         }
         Update: {
           created_at?: string
@@ -271,6 +273,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           starts_at?: string
+          target_audience?: string
         }
         Relationships: []
       }

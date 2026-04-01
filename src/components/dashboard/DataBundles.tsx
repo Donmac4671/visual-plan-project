@@ -36,7 +36,7 @@ function NetworkIcon({ network }: { network: Network }) {
 function BundleCard({ bundle, network, tier, onSelect, applyDiscount }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number }) {
   const gradientClass = network.gradient;
   const basePrice = getBundlePrice(bundle, tier);
-  const displayPrice = (tier !== "agent" && applyDiscount) ? applyDiscount(basePrice) : basePrice;
+  const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
 
   return (
@@ -71,9 +71,8 @@ export default function DataBundles() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const { networks: mergedNetworks } = useCustomBundles();
-  const { promo, applyDiscount } = useActivePromo();
-
   const userTier = profile?.tier || "general";
+  const { promo, applyDiscount } = useActivePromo(userTier);
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
@@ -125,7 +124,7 @@ export default function DataBundles() {
       return;
     }
     let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
-    if (userTier !== "agent" && promo) {
+    if (promo) {
       effectivePrice = applyDiscount(effectivePrice);
     }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
@@ -219,7 +218,7 @@ export default function DataBundles() {
               {(() => {
                 if (!selectedBundle) return null;
                 const base = getBundlePrice(selectedBundle.bundle, userTier);
-                const final = (userTier !== "agent" && promo) ? applyDiscount(base) : base;
+                const final = promo ? applyDiscount(base) : base;
                 const hasDiscount = final < base;
                 return (
                   <>

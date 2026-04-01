@@ -24,6 +24,7 @@ export default function AdminPromoManager() {
   const [discount, setDiscount] = useState("");
   const [description, setDescription] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [targetAudience, setTargetAudience] = useState("general");
   const [creating, setCreating] = useState(false);
 
   const fetchPromos = async () => {
@@ -52,10 +53,11 @@ export default function AdminPromoManager() {
     setCreating(true);
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
-      description: description || `${pct}% off for general users`,
+      description: description || `${pct}% off for ${targetAudience === 'everyone' ? 'all users' : targetAudience === 'agent' ? 'agents' : 'general users'}`,
       expires_at: new Date(expiresAt).toISOString(),
       is_active: true,
-    });
+      target_audience: targetAudience,
+    } as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
@@ -64,6 +66,7 @@ export default function AdminPromoManager() {
       setDiscount("");
       setDescription("");
       setExpiresAt("");
+      setTargetAudience("general");
       fetchPromos();
     }
     setCreating(false);
@@ -93,7 +96,7 @@ export default function AdminPromoManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Create time-limited percentage discounts for general users. Agent prices are not affected.
+          Create time-limited percentage discounts targeting general users, agents, or everyone.
         </p>
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1">
           <Plus className="w-4 h-4" /> New Promo
@@ -105,7 +108,7 @@ export default function AdminPromoManager() {
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Percent className="w-4 h-4" /> Create Promotion
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Discount %</label>
               <Input
@@ -124,6 +127,18 @@ export default function AdminPromoManager() {
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
               />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Audience</label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+              >
+                <option value="general">General Users</option>
+                <option value="agent">Agents Only</option>
+                <option value="everyone">Everyone</option>
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Description (optional)</label>
@@ -158,6 +173,9 @@ export default function AdminPromoManager() {
                     {active && <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>}
                     {expired && <Badge variant="outline" className="bg-destructive/10 text-destructive">Expired</Badge>}
                     {!p.is_active && !expired && <Badge variant="outline" className="bg-muted text-muted-foreground">Paused</Badge>}
+                    <Badge variant="outline" className="text-xs">
+                      {(p as any).target_audience === 'agent' ? '🎯 Agents' : (p as any).target_audience === 'everyone' ? '🌍 Everyone' : '👤 General'}
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{p.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">
