@@ -218,7 +218,7 @@ export default function DataBundles() {
               {(() => {
                 if (!selectedBundle) return null;
                 const base = getBundlePrice(selectedBundle.bundle, userTier);
-                const final = (userTier !== "agent" && promo) ? applyDiscount(base) : base;
+                const final = promo ? applyDiscount(base) : base;
                 const hasDiscount = final < base;
                 return (
                   <>
