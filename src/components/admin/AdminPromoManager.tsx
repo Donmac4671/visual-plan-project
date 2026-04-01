@@ -50,6 +50,10 @@ export default function AdminPromoManager() {
       toast({ title: "Invalid discount", description: "Must be between 1 and 100", variant: "destructive" });
       return;
     }
+    if (new Date(expiresAt) <= new Date()) {
+      toast({ title: "Invalid expiry", description: "Expiry date must be in the future", variant: "destructive" });
+      return;
+    }
     setCreating(true);
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
