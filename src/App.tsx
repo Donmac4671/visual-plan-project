@@ -81,7 +81,7 @@ const App = () => (
             <RecoveryRedirect />
             <RealtimeNotifications />
             <SiteMessagePopup />
-            <FloatingWhatsAppButton />
+            
             <FloatingCartButton />
             <Routes>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
