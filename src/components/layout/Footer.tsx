@@ -32,7 +32,7 @@ export default function Footer() {
               <li>Enter the <strong>recipient phone number</strong> (10 digits).</li>
               <li>Add to cart — you can add multiple bundles for different numbers.</li>
               <li>Go to <strong>Cart</strong> and choose to pay with your <strong>Wallet balance</strong> or <strong>Paystack</strong>.</li>
-              <li>Confirm your order and the data will be delivered automatically.</li>
+              <li>Confirm your order and the data will be delivered within <strong>3 minutes to 4 hours</strong> or more, depending on the network.</li>
             </ol>
           </CollapsibleSection>
 
