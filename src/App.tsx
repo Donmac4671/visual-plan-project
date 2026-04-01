@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import FloatingWhatsAppButton from "@/components/global/FloatingWhatsAppButton";
+
 import FloatingCartButton from "@/components/global/FloatingCartButton";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
