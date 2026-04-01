@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink, AlertTriangle } from "lucide-react";
 
 function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: React.ElementType; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -57,6 +57,19 @@ export default function Footer() {
               <li>Complete payment using your <strong>card, mobile money, or bank transfer</strong>.</li>
               <li>Your wallet is credited <strong>instantly</strong> after successful payment.</li>
             </ol>
+          </CollapsibleSection>
+
+          <CollapsibleSection title="How to File a Complaint" icon={AlertTriangle}>
+            <ol className="list-decimal list-inside space-y-1.5">
+              <li>Go to <strong>Complaints</strong> from the sidebar menu.</li>
+              <li>Select the <strong>order</strong> you have an issue with (only orders from the last 48 hours are shown).</li>
+              <li>Enter a <strong>subject</strong> and describe the problem in detail.</li>
+              <li>Click <strong>"Submit Complaint"</strong> to send it for admin review.</li>
+              <li>You'll be notified once the admin responds or resolves your complaint.</li>
+            </ol>
+            <p className="text-xs mt-2 text-muted-foreground/80">
+              💡 Make sure to include the affected phone number and bundle details for faster resolution.
+            </p>
           </CollapsibleSection>
         </div>
 
