@@ -36,7 +36,7 @@ function NetworkIcon({ network }: { network: Network }) {
 function BundleCard({ bundle, network, tier, onSelect, applyDiscount }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number }) {
   const gradientClass = network.gradient;
   const basePrice = getBundlePrice(bundle, tier);
-  const displayPrice = (tier !== "agent" && applyDiscount) ? applyDiscount(basePrice) : basePrice;
+  const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
 
   return (
