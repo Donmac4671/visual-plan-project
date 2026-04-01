@@ -18,7 +18,7 @@ const deliveryInfo: Record<string, string> = {
 
 export default function Flyer() {
   const { networks } = useCustomBundles();
-  const { promo, applyDiscount } = useActivePromo();
+  const { promo, applyDiscount } = useActivePromo("general");
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 print:p-0 print:bg-white">
