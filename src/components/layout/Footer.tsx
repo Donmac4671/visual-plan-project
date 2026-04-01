@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink, AlertTriangle } from "lucide-react";
 
 function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: React.ElementType; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
