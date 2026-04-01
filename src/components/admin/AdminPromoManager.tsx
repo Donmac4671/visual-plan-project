@@ -173,6 +173,9 @@ export default function AdminPromoManager() {
                     {active && <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>}
                     {expired && <Badge variant="outline" className="bg-destructive/10 text-destructive">Expired</Badge>}
                     {!p.is_active && !expired && <Badge variant="outline" className="bg-muted text-muted-foreground">Paused</Badge>}
+                    <Badge variant="outline" className="text-xs">
+                      {(p as any).target_audience === 'agent' ? '🎯 Agents' : (p as any).target_audience === 'everyone' ? '🌍 Everyone' : '👤 General'}
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{p.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">

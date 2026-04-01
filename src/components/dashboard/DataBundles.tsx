@@ -125,7 +125,7 @@ export default function DataBundles() {
       return;
     }
     let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
-    if (userTier !== "agent" && promo) {
+    if (promo) {
       effectivePrice = applyDiscount(effectivePrice);
     }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
