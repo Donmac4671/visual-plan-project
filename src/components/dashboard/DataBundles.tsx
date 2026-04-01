@@ -71,7 +71,7 @@ export default function DataBundles() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const { networks: mergedNetworks } = useCustomBundles();
-  const { promo, applyDiscount } = useActivePromo();
+  const { promo, applyDiscount } = useActivePromo(userTier);
 
   const userTier = profile?.tier || "general";
 
