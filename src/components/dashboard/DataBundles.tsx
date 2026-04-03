@@ -85,14 +85,19 @@ export default function DataBundles() {
     "at-premium": ["026", "027", "056", "057"],
   };
 
+  // Special exceptions: specific numbers that work on a different network
+  const mtnExceptions = ["0278213799"];
+
   const phonePrefix = phoneNumber.length >= 3 ? phoneNumber.slice(0, 3) : "";
   const detectedNetwork = useMemo(() => {
     if (phonePrefix.length < 3) return null;
+    // Check exceptions first
+    if (mtnExceptions.includes(phoneNumber)) return "mtn";
     for (const [netId, prefixes] of Object.entries(networkPrefixes)) {
       if (prefixes.includes(phonePrefix)) return netId;
     }
     return "unknown";
-  }, [phonePrefix]);
+  }, [phonePrefix, phoneNumber]);
 
   const isWrongNetwork = useMemo(() => {
     if (!selectedBundle || !detectedNetwork || detectedNetwork === "unknown") return false;
