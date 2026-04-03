@@ -62,11 +62,14 @@ export default function Orders() {
     if (statusFilter !== "all") {
       result = result.filter((o) => o.status === statusFilter);
     }
+    if (phoneSearch.trim()) {
+      result = result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
+    }
     if (selectedDate) {
       result = result.filter((o) => isSameDay(parseISO(o.created_at), selectedDate));
     }
     return result;
-  }, [orders, statusFilter, selectedDate]);
+  }, [orders, statusFilter, phoneSearch, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
