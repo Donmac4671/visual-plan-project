@@ -106,8 +106,9 @@ export default function Admin() {
   const filteredOrders = useMemo(() => {
     let result = orders;
     if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
+    if (orderPhoneSearch.trim()) result = result.filter(o => o.phone_number?.includes(orderPhoneSearch.trim()));
     return filterByDate(result, orderDateFrom, orderDateTo);
-  }, [orders, orderStatusFilter, orderDateFrom, orderDateTo]);
+  }, [orders, orderStatusFilter, orderPhoneSearch, orderDateFrom, orderDateTo]);
 
   const filteredComplaints = useMemo(() => {
     let result = complaints;
