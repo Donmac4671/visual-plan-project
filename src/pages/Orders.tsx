@@ -60,11 +60,12 @@ export default function Orders() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
+    // When searching by phone, show ALL orders for that number (bypass other filters)
+    if (phoneSearch.trim()) {
+      return result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
+    }
     if (statusFilter !== "all") {
       result = result.filter((o) => o.status === statusFilter);
-    }
-    if (phoneSearch.trim()) {
-      result = result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
     }
     if (selectedDate) {
       result = result.filter((o) => isSameDay(parseISO(o.created_at), selectedDate));
