@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/data";
 import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
+import { useCanonical } from "@/hooks/useCanonical";
 
 const networkStyles: Record<string, { bg: string; header: string; text: string }> = {
   mtn: { bg: "bg-yellow-400", header: "bg-yellow-500", text: "text-yellow-900" },
@@ -17,6 +18,7 @@ const deliveryInfo: Record<string, string> = {
 };
 
 export default function Flyer() {
+  useCanonical("/flyer");
   const { networks } = useCustomBundles();
   const { promo, applyDiscount } = useActivePromo("general");
 
