@@ -106,8 +106,11 @@ export default function Admin() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
+    // When searching by phone, show ALL orders for that number (bypass other filters)
+    if (orderPhoneSearch.trim()) {
+      return result.filter(o => o.phone_number?.includes(orderPhoneSearch.trim()));
+    }
     if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
-    if (orderPhoneSearch.trim()) result = result.filter(o => o.phone_number?.includes(orderPhoneSearch.trim()));
     return filterByDate(result, orderDateFrom, orderDateTo);
   }, [orders, orderStatusFilter, orderPhoneSearch, orderDateFrom, orderDateTo]);
 
