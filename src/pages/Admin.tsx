@@ -42,6 +42,7 @@ export default function Admin() {
   // Filters
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderPhoneSearch, setOrderPhoneSearch] = useState("");
   const today = new Date();
   const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
   const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
