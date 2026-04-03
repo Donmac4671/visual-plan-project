@@ -18,6 +18,7 @@ const deliveryInfo: Record<string, string> = {
 };
 
 export default function Flyer() {
+  useCanonical("/flyer");
   const { networks } = useCustomBundles();
   const { promo, applyDiscount } = useActivePromo("general");
 
