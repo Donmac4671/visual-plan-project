@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckCircle, Clock, XCircle, List, Loader } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, XCircle, List, Loader, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { format, isSameDay, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +21,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all");
+  const [phoneSearch, setPhoneSearch] = useState("");
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -61,11 +63,14 @@ export default function Orders() {
     if (statusFilter !== "all") {
       result = result.filter((o) => o.status === statusFilter);
     }
+    if (phoneSearch.trim()) {
+      result = result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
+    }
     if (selectedDate) {
       result = result.filter((o) => isSameDay(parseISO(o.created_at), selectedDate));
     }
     return result;
-  }, [orders, statusFilter, selectedDate]);
+  }, [orders, statusFilter, phoneSearch, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -104,9 +109,13 @@ export default function Orders() {
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border flex-wrap gap-2">
           <h2 className="font-semibold text-foreground">Order History</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search phone" value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} className="pl-8 w-[160px] h-9" />
+            </div>
             {selectedDate && (
               <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear</Button>
             )}

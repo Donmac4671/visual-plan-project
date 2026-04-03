@@ -42,6 +42,7 @@ export default function Admin() {
   // Filters
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderPhoneSearch, setOrderPhoneSearch] = useState("");
   const today = new Date();
   const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
   const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
@@ -106,8 +107,9 @@ export default function Admin() {
   const filteredOrders = useMemo(() => {
     let result = orders;
     if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
+    if (orderPhoneSearch.trim()) result = result.filter(o => o.phone_number?.includes(orderPhoneSearch.trim()));
     return filterByDate(result, orderDateFrom, orderDateTo);
-  }, [orders, orderStatusFilter, orderDateFrom, orderDateTo]);
+  }, [orders, orderStatusFilter, orderPhoneSearch, orderDateFrom, orderDateTo]);
 
   const filteredComplaints = useMemo(() => {
     let result = complaints;
@@ -343,6 +345,10 @@ export default function Admin() {
         {/* ORDERS TAB */}
         <TabsContent value="orders">
           <div className="mb-4 flex flex-wrap gap-3 items-end">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search phone number" value={orderPhoneSearch} onChange={e => setOrderPhoneSearch(e.target.value)} className="pl-8 w-[200px]" />
+            </div>
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
