@@ -345,6 +345,10 @@ export default function Admin() {
         {/* ORDERS TAB */}
         <TabsContent value="orders">
           <div className="mb-4 flex flex-wrap gap-3 items-end">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search phone number" value={orderPhoneSearch} onChange={e => setOrderPhoneSearch(e.target.value)} className="pl-8 w-[200px]" />
+            </div>
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>

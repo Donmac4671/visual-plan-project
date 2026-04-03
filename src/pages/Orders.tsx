@@ -109,9 +109,13 @@ export default function Orders() {
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border flex-wrap gap-2">
           <h2 className="font-semibold text-foreground">Order History</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search phone" value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} className="pl-8 w-[160px] h-9" />
+            </div>
             {selectedDate && (
               <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear</Button>
             )}
