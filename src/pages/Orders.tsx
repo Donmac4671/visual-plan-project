@@ -20,6 +20,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all");
+  const [phoneSearch, setPhoneSearch] = useState("");
 
   const fetchOrders = async () => {
     if (!user) return;
