@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, Paperclip, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,9 @@ export default function LiveChatWidget() {
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -50,23 +52,40 @@ export default function LiveChatWidget() {
     if (data) setMessages(data);
   };
 
-  const sendMessage = async () => {
-    if (!newMsg.trim() || !user || sending) return;
+  const sendMessage = async (mediaUrl?: string) => {
+    if ((!newMsg.trim() && !mediaUrl) || !user || sending) return;
     setSending(true);
     await supabase.from("chat_messages").insert({
       user_id: user.id,
-      message: newMsg.trim(),
+      message: newMsg.trim() || (mediaUrl ? "📎 Media" : ""),
       sender_role: "user",
+      media_url: mediaUrl || null,
     });
     setNewMsg("");
     setSending(false);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("chat-media").upload(path, file);
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      await sendMessage(urlData.publicUrl);
+    }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
+
   if (!user) return null;
 
   return (
     <>
-      {/* Chat bubble */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -81,10 +100,8 @@ export default function LiveChatWidget() {
         </button>
       )}
 
-      {/* Chat window */}
       {open && (
         <div className="fixed bottom-4 left-4 z-50 w-80 sm:w-96 h-[28rem] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-          {/* Header */}
           <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5" />
@@ -95,7 +112,6 @@ export default function LiveChatWidget() {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {messages.length === 0 && (
               <p className="text-center text-muted-foreground text-xs mt-8">
@@ -111,7 +127,19 @@ export default function LiveChatWidget() {
                       : "bg-muted text-foreground rounded-bl-sm"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                  {m.media_url && isImage(m.media_url) && (
+                    <a href={m.media_url} target="_blank" rel="noopener noreferrer">
+                      <img src={m.media_url} alt="media" className="rounded-lg max-w-full max-h-40 mb-1 cursor-pointer" />
+                    </a>
+                  )}
+                  {m.media_url && !isImage(m.media_url) && (
+                    <a href={m.media_url} target="_blank" rel="noopener noreferrer" className="underline text-xs block mb-1">
+                      📎 View attachment
+                    </a>
+                  )}
+                  {m.message && m.message !== "📎 Media" && (
+                    <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                  )}
                   <p className={`text-[10px] mt-1 ${m.sender_role === "user" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                     {format(new Date(m.created_at), "h:mm a")}
                   </p>
@@ -121,16 +149,20 @@ export default function LiveChatWidget() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-2 border-t border-border flex gap-2">
+          <div className="p-2 border-t border-border flex gap-1.5 items-center">
+            <input ref={fileRef} type="file" accept="image/*,video/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
+            <Button size="icon" variant="ghost" className="shrink-0 h-9 w-9" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Paperclip className="w-4 h-4" />
+            </Button>
             <Input
               value={newMsg}
               onChange={(e) => setNewMsg(e.target.value)}
-              placeholder="Type a message..."
-              className="text-sm"
+              placeholder={uploading ? "Uploading..." : "Type a message..."}
+              className="text-sm h-9"
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              disabled={uploading}
             />
-            <Button size="icon" onClick={sendMessage} disabled={sending || !newMsg.trim()}>
+            <Button size="icon" className="shrink-0 h-9 w-9" onClick={() => sendMessage()} disabled={sending || uploading || !newMsg.trim()}>
               <Send className="w-4 h-4" />
             </Button>
           </div>
