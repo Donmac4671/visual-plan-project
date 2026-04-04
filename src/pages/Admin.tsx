@@ -577,6 +577,11 @@ export default function Admin() {
         <TabsContent value="site-message">
           <AdminSiteMessage />
         </TabsContent>
+
+        {/* LIVE CHAT TAB */}
+        <TabsContent value="live-chat">
+          <AdminLiveChat />
+        </TabsContent>
       </Tabs>
 
       {/* Wallet Dialog */}
