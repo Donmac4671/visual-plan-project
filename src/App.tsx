@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 import FloatingCartButton from "@/components/global/FloatingCartButton";
+import LiveChatWidget from "@/components/global/LiveChatWidget";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
 import Index from "./pages/Index";
