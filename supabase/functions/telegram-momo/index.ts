@@ -6,7 +6,13 @@ const MIN_REMAINING_MS = 5_000;
 
 // Parse MoMo SMS to extract transaction details
 function parseMomoSms(smsBody: string): { transactionId: string; amount: number; network: string } | null {
-  const text = smsBody.trim();
+  let text = smsBody.trim();
+
+  // Strip SMS forwarder header (e.g. "Forwarded using ... ************\n")
+  const separatorIndex = text.indexOf("************");
+  if (separatorIndex !== -1) {
+    text = text.substring(separatorIndex + 12).trim();
+  }
 
   // Try to find an 11-digit transaction ID
   const txnMatch = text.match(/\b(\d{11})\b/);
