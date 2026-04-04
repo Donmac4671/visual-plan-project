@@ -13,13 +13,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
 import AdminPromoManager from "@/components/admin/AdminPromoManager";
 import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
 import AdminSiteMessage from "@/components/admin/AdminSiteMessage";
+import AdminLiveChat from "@/components/admin/AdminLiveChat";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -257,6 +258,7 @@ export default function Admin() {
           <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
           <TabsTrigger value="promos" className="gap-2"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
           <TabsTrigger value="site-message" className="gap-2"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
+          <TabsTrigger value="live-chat" className="gap-2"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
         </TabsList>
 
         {/* ANALYTICS TAB */}
@@ -574,6 +576,11 @@ export default function Admin() {
         {/* SITE MESSAGE TAB */}
         <TabsContent value="site-message">
           <AdminSiteMessage />
+        </TabsContent>
+
+        {/* LIVE CHAT TAB */}
+        <TabsContent value="live-chat">
+          <AdminLiveChat />
         </TabsContent>
       </Tabs>
 

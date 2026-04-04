@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 import FloatingCartButton from "@/components/global/FloatingCartButton";
+import LiveChatWidget from "@/components/global/LiveChatWidget";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
 import Index from "./pages/Index";
@@ -83,6 +84,7 @@ const App = () => (
             <SiteMessagePopup />
             
             <FloatingCartButton />
+            <LiveChatWidget />
             <Routes>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
