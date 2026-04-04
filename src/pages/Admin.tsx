@@ -349,7 +349,7 @@ export default function Admin() {
 
         {/* ORDERS TAB */}
         <TabsContent value="orders">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
             <div className="bg-card rounded-xl border border-border p-3 text-center">
               <p className="text-lg font-bold text-foreground">{orders.length}</p>
               <p className="text-xs text-muted-foreground">Total Orders</p>
@@ -365,6 +365,10 @@ export default function Admin() {
             <div className="bg-card rounded-xl border border-border p-3 text-center">
               <p className="text-lg font-bold text-success">{orders.filter(o => o.status === "completed").length}</p>
               <p className="text-xs text-muted-foreground">Delivered</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-3 text-center">
+              <p className="text-lg font-bold text-destructive">{orders.filter(o => o.status === "failed").length}</p>
+              <p className="text-xs text-muted-foreground">Failed</p>
             </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
