@@ -8,10 +8,10 @@ const MIN_REMAINING_MS = 5_000;
 function parseMomoSms(smsBody: string): { transactionId: string; amount: number; network: string } | null {
   let text = smsBody.trim();
 
-  // Strip SMS forwarder header (e.g. "Forwarded using ... ************\n")
-  const separatorIndex = text.indexOf("************");
-  if (separatorIndex !== -1) {
-    text = text.substring(separatorIndex + 12).trim();
+  // Strip SMS forwarder header — match 4+ asterisks as separator
+  const separatorMatch = text.match(/\*{4,}/);
+  if (separatorMatch) {
+    text = text.substring(separatorMatch.index! + separatorMatch[0].length).trim();
   }
 
   // Try to find transaction ID - prefer labeled patterns first
@@ -107,10 +107,15 @@ Deno.serve(async () => {
 
     for (const update of updates) {
       const msg = update.message;
-      if (!msg?.text) continue;
+      if (!msg?.text) {
+        console.log("Skipping update (no text):", update.update_id, JSON.stringify(msg?.forward_origin ?? msg?.forward_from ?? "no-forward-info"));
+        continue;
+      }
 
       const chatId = msg.chat.id;
       const text = msg.text;
+
+      console.log(`Processing msg from chat ${chatId}, length=${text.length}, isForward=${!!msg.forward_origin || !!msg.forward_from}`);
 
       // Try to parse as MoMo SMS
       const parsed = parseMomoSms(text);
