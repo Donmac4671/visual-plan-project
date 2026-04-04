@@ -14,8 +14,9 @@ function parseMomoSms(smsBody: string): { transactionId: string; amount: number;
     text = text.substring(separatorIndex + 12).trim();
   }
 
-  // Try to find an 11-digit transaction ID
-  const txnMatch = text.match(/\b(\d{11})\b/);
+  // Try to find transaction ID - prefer labeled patterns first
+  const txnMatch = text.match(/(?:Financial Transaction Id|Transaction Id|External Transaction Id)[:\s]*(\d{11})/i)
+    || text.match(/\b(\d{11})\b/);
   if (!txnMatch) return null;
   const transactionId = txnMatch[1];
 
