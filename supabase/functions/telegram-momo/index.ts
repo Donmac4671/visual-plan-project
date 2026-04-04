@@ -107,10 +107,15 @@ Deno.serve(async () => {
 
     for (const update of updates) {
       const msg = update.message;
-      if (!msg?.text) continue;
+      if (!msg?.text) {
+        console.log("Skipping update (no text):", update.update_id, JSON.stringify(msg?.forward_origin ?? msg?.forward_from ?? "no-forward-info"));
+        continue;
+      }
 
       const chatId = msg.chat.id;
       const text = msg.text;
+
+      console.log(`Processing msg from chat ${chatId}, length=${text.length}, isForward=${!!msg.forward_origin || !!msg.forward_from}`);
 
       // Try to parse as MoMo SMS
       const parsed = parseMomoSms(text);
