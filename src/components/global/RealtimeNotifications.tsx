@@ -202,5 +202,54 @@ export default function RealtimeNotifications() {
     };
   }, [user, isAdmin, toast, adminAlert]);
 
+  // Chat message notifications – notify when an admin/user reply arrives
+  useEffect(() => {
+    if (!user) return;
+
+    const chatChannel = supabase
+      .channel(`chat-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          ...(isAdmin
+            ? {} // admins listen to all messages
+            : { filter: `user_id=eq.${user.id}` }),
+        },
+        (payload) => {
+          const msg = payload.new as {
+            sender_role?: string;
+            user_id?: string;
+            message?: string;
+          };
+
+          // Users only care about admin replies; admins only care about user messages
+          if (isAdmin && msg.sender_role === "admin") return;
+          if (!isAdmin && msg.sender_role === "user") return;
+          // Admin shouldn't be notified of their own replies
+          if (isAdmin && msg.user_id === user.id && msg.sender_role === "user") {
+            // This is a user message to admin – notify
+          }
+
+          playNotificationSound();
+          vibrate();
+
+          toast({
+            title: isAdmin ? "💬 New Chat Message" : "💬 New Reply",
+            description: isAdmin
+              ? `A user sent: "${(msg.message ?? "").slice(0, 60)}${(msg.message ?? "").length > 60 ? "…" : ""}"`
+              : `Support replied: "${(msg.message ?? "").slice(0, 60)}${(msg.message ?? "").length > 60 ? "…" : ""}"`,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(chatChannel);
+    };
+  }, [user, isAdmin, toast]);
+
   return null;
 }
