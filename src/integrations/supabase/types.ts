@@ -64,6 +64,7 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean
+          media_url: string | null
           message: string
           sender_role: string
           user_id: string
@@ -72,6 +73,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          media_url?: string | null
           message: string
           sender_role?: string
           user_id: string
@@ -80,6 +82,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          media_url?: string | null
           message?: string
           sender_role?: string
           user_id?: string
