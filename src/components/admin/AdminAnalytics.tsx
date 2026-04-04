@@ -478,6 +478,23 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Profit (Last 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={profitChartConfig} className="h-[250px] w-full">
+              <BarChart data={profitPerDay}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="profit" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Order Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
