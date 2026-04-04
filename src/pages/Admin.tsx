@@ -258,6 +258,7 @@ export default function Admin() {
           <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
           <TabsTrigger value="promos" className="gap-2"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
           <TabsTrigger value="site-message" className="gap-2"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
+          <TabsTrigger value="live-chat" className="gap-2"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
         </TabsList>
 
         {/* ANALYTICS TAB */}
