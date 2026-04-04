@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, MessageCircle } from "lucide-react";
+import { Send, Search, MessageCircle, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 
 interface ChatThread {
@@ -22,7 +22,9 @@ export default function AdminLiveChat() {
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchThreads();
@@ -43,7 +45,6 @@ export default function AdminLiveChat() {
   }, [messages]);
 
   const fetchThreads = async () => {
-    // Get all chat messages with profile info
     const { data: allMessages } = await supabase
       .from("chat_messages")
       .select("*")
@@ -51,10 +52,7 @@ export default function AdminLiveChat() {
 
     if (!allMessages) return;
 
-    // Get unique user IDs
     const userIds = [...new Set(allMessages.map((m) => m.user_id))];
-
-    // Fetch profiles
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, email")
@@ -92,7 +90,6 @@ export default function AdminLiveChat() {
       .order("created_at", { ascending: true });
     if (data) setMessages(data);
 
-    // Mark as read
     await supabase
       .from("chat_messages")
       .update({ is_read: true })
@@ -106,19 +103,37 @@ export default function AdminLiveChat() {
     fetchMessages(userId);
   };
 
-  const sendReply = async () => {
-    if (!newMsg.trim() || !selectedUser || sending) return;
+  const sendReply = async (mediaUrl?: string) => {
+    if ((!newMsg.trim() && !mediaUrl) || !selectedUser || sending) return;
     setSending(true);
     await supabase.from("chat_messages").insert({
       user_id: selectedUser,
-      message: newMsg.trim(),
+      message: newMsg.trim() || (mediaUrl ? "📎 Media" : ""),
       sender_role: "admin",
+      media_url: mediaUrl || null,
     });
     setNewMsg("");
     setSending(false);
     fetchMessages(selectedUser);
     fetchThreads();
   };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `admin/${selectedUser}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("chat-media").upload(path, file);
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      await sendReply(urlData.publicUrl);
+    }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
 
   const filteredThreads = threads.filter(
     (t) =>
@@ -135,12 +150,7 @@ export default function AdminLiveChat() {
         <div className="p-2 border-b border-border">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 text-sm h-9"
-            />
+            <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 text-sm h-9" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -195,7 +205,19 @@ export default function AdminLiveChat() {
                         : "bg-muted text-foreground rounded-bl-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                    {m.media_url && isImage(m.media_url) && (
+                      <a href={m.media_url} target="_blank" rel="noopener noreferrer">
+                        <img src={m.media_url} alt="media" className="rounded-lg max-w-full max-h-40 mb-1 cursor-pointer" />
+                      </a>
+                    )}
+                    {m.media_url && !isImage(m.media_url) && (
+                      <a href={m.media_url} target="_blank" rel="noopener noreferrer" className="underline text-xs block mb-1">
+                        📎 View attachment
+                      </a>
+                    )}
+                    {m.message && m.message !== "📎 Media" && (
+                      <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                    )}
                     <p className={`text-[10px] mt-1 ${m.sender_role === "admin" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                       {format(new Date(m.created_at), "h:mm a")}
                     </p>
@@ -204,15 +226,20 @@ export default function AdminLiveChat() {
               ))}
               <div ref={bottomRef} />
             </div>
-            <div className="p-2 border-t border-border flex gap-2">
+            <div className="p-2 border-t border-border flex gap-1.5 items-center">
+              <input ref={fileRef} type="file" accept="image/*,video/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
+              <Button size="icon" variant="ghost" className="shrink-0 h-9 w-9" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                <Paperclip className="w-4 h-4" />
+              </Button>
               <Input
                 value={newMsg}
                 onChange={(e) => setNewMsg(e.target.value)}
-                placeholder="Type a reply..."
-                className="text-sm"
+                placeholder={uploading ? "Uploading..." : "Type a reply..."}
+                className="text-sm h-9"
                 onKeyDown={(e) => e.key === "Enter" && sendReply()}
+                disabled={uploading}
               />
-              <Button size="icon" onClick={sendReply} disabled={sending || !newMsg.trim()}>
+              <Button size="icon" className="shrink-0 h-9 w-9" onClick={() => sendReply()} disabled={sending || uploading || !newMsg.trim()}>
                 <Send className="w-4 h-4" />
               </Button>
             </div>
