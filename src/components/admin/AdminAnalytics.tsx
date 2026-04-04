@@ -172,6 +172,9 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const blockedUsers = users.filter(u => u.is_blocked).length;
     const pendingTopups = filteredTopups.filter(t => t.status === "pending").length;
 
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+    const totalProfit = totalRevenue - totalCost;
+
     return {
       totalUsers: users.length,
       totalRevenue,
@@ -185,8 +188,25 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       totalWalletBalance,
       blockedUsers,
       pendingTopups,
+      totalCost,
+      totalProfit,
     };
   }, [users, filteredOrders, filteredTopups, filteredComplaints]);
+
+  // Profit per day (last 7 days)
+  const profitPerDay = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(dateTo || new Date(), 6 - i);
+      return { date: startOfDay(date), label: format(date, "EEE dd") };
+    });
+
+    return days.map(({ date, label }) => {
+      const dayOrders = filteredOrders.filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
+      const revenue = dayOrders.reduce((sum, o) => sum + Number(o.amount), 0);
+      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+      return { day: label, profit: Math.round((revenue - cost) * 100) / 100 };
+    });
+  }, [filteredOrders, dateTo]);
 
   // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {
