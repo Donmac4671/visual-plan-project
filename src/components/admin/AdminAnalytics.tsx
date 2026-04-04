@@ -31,12 +31,43 @@ const revenueChartConfig: ChartConfig = {
   revenue: { label: "Revenue", color: "hsl(var(--success))" },
 };
 
+const profitChartConfig: ChartConfig = {
+  profit: { label: "Profit", color: "hsl(var(--primary))" },
+};
+
 const PIE_COLORS = [
   "hsl(var(--warning))",
   "hsl(var(--primary))",
   "hsl(var(--success))",
   "hsl(var(--destructive))",
 ];
+
+// Original cost prices per network/bundle
+const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
+  "MTN": {
+    '1GB': 3.94, '2GB': 7.98, '3GB': 12.00, '4GB': 16.06, '5GB': 20.10,
+    '6GB': 23.94, '8GB': 32.12, '10GB': 39.30, '15GB': 57.77, '20GB': 76.96,
+    '25GB': 97.16, '30GB': 117.67, '40GB': 154.53, '50GB': 194.93,
+  },
+  "TELECEL": {
+    '2GB': 9.09, '3GB': 13.54, '5GB': 19.09, '10GB': 36.26, '15GB': 53.43,
+    '20GB': 70.70, '30GB': 104.03, '40GB': 138.37, '50GB': 172.71,
+  },
+  "AT BIG TIME": {
+    '15GB': 47.47, '20GB': 55.55, '30GB': 65.65, '40GB': 78.78, '50GB': 86.86,
+    '60GB': 98.98, '70GB': 121.20, '80GB': 141.40, '90GB': 151.50,
+    '100GB': 161.60, '130GB': 202.00, '140GB': 225.23, '150GB': 250.48, '200GB': 321.18,
+  },
+  "AT PREMIUM": {
+    '1GB': 3.73, '2GB': 7.46, '3GB': 11.21, '4GB': 14.95, '5GB': 18.69,
+    '6GB': 22.42, '7GB': 26.16, '8GB': 29.90, '10GB': 37.27, '12GB': 44.84,
+    '15GB': 56.05, '20GB': 74.74, '25GB': 93.43, '30GB': 112.11,
+  },
+};
+
+function getOrderCost(network: string, bundleSize: string): number {
+  return ORIGINAL_PRICES[network]?.[bundleSize] ?? 0;
+}
 
 function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClear }: {
   dateFrom?: Date;
