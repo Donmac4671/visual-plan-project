@@ -251,7 +251,7 @@ export default function Admin() {
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
-          <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
+          <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length}</Badge></TabsTrigger>
           <TabsTrigger value="verified-id" className="gap-2"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
           <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
           <TabsTrigger value="agent-apps" className="gap-2"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
