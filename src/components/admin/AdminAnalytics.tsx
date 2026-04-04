@@ -320,6 +320,21 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
           </CardContent>
         </Card>
 
+        <Card className="border-success/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-success/10">
+                <DollarSign className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Profit</p>
+                <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(stats.totalProfit)}</p>
+                <p className="text-xs text-muted-foreground">Cost: {formatCurrency(stats.totalCost)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
