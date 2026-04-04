@@ -42,6 +42,7 @@ function parseMomoSms(smsBody: string): { transactionId: string; amount: number;
 }
 
 Deno.serve(async () => {
+  console.log("telegram-momo invoked");
   const startTime = Date.now();
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
