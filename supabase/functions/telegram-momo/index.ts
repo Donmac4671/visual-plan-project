@@ -8,10 +8,10 @@ const MIN_REMAINING_MS = 5_000;
 function parseMomoSms(smsBody: string): { transactionId: string; amount: number; network: string } | null {
   let text = smsBody.trim();
 
-  // Strip SMS forwarder header (e.g. "Forwarded using ... ************\n")
-  const separatorIndex = text.indexOf("************");
-  if (separatorIndex !== -1) {
-    text = text.substring(separatorIndex + 12).trim();
+  // Strip SMS forwarder header — match 4+ asterisks as separator
+  const separatorMatch = text.match(/\*{4,}/);
+  if (separatorMatch) {
+    text = text.substring(separatorMatch.index! + separatorMatch[0].length).trim();
   }
 
   // Try to find transaction ID - prefer labeled patterns first
