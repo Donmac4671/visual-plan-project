@@ -83,6 +83,7 @@ Deno.serve(async () => {
     const timeout = Math.min(50, Math.floor(remainingMs / 1000) - 5);
     if (timeout < 1) break;
 
+    console.log(`Polling getUpdates: offset=${currentOffset}, timeout=${timeout}`);
     const response = await fetch(`${GATEWAY_URL}/getUpdates`, {
       method: "POST",
       headers: {
@@ -99,10 +100,12 @@ Deno.serve(async () => {
 
     const data = await response.json();
     if (!response.ok) {
+      console.error("getUpdates failed:", response.status, JSON.stringify(data));
       return new Response(JSON.stringify({ error: data }), { status: 502 });
     }
 
     const updates = data.result ?? [];
+    console.log(`getUpdates returned ${updates.length} updates`);
     if (updates.length === 0) continue;
 
     for (const update of updates) {
