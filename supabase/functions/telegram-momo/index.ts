@@ -55,6 +55,19 @@ Deno.serve(async () => {
     return new Response(JSON.stringify({ error: "TELEGRAM_API_KEY is not configured" }), { status: 500 });
   }
 
+  // Ensure no webhook is set (webhooks prevent getUpdates from working)
+  const delWebhook = await fetch(`${GATEWAY_URL}/deleteWebhook`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      "X-Connection-Api-Key": TELEGRAM_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ drop_pending_updates: false }),
+  });
+  const webhookResult = await delWebhook.json();
+  console.log("deleteWebhook result:", JSON.stringify(webhookResult));
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
