@@ -11,7 +11,7 @@ const jsonHeaders = {
   "Content-Type": "application/json",
 };
 
-const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload"];
+const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload", "key"];
 
 type ParsedMomoSms = {
   transactionId: string;
