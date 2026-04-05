@@ -4,39 +4,73 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
 const MAX_RUNTIME_MS = 55_000;
 const MIN_REMAINING_MS = 5_000;
 
-// Parse MoMo SMS to extract transaction details
-function parseMomoSms(smsBody: string): { transactionId: string; amount: number; network: string } | null {
-  let text = smsBody.trim();
+function normalizeSmsText(smsBody: string): string {
+  let text = smsBody.replace(/\u00a0/g, " ").trim();
 
-  // Strip SMS forwarder header — match 4+ asterisks as separator
   const separatorMatch = text.match(/\*{4,}/);
   if (separatorMatch) {
     text = text.substring(separatorMatch.index! + separatorMatch[0].length).trim();
   }
 
-  // Try to find transaction ID - prefer labeled patterns first
-  const txnMatch = text.match(/(?:Financial Transaction Id|Transaction Id|External Transaction Id)[:\s]*(\d{11})/i)
+  text = text.replace(/\n+\s*Reply:\s*https?:\/\/\S+\s*$/i, "").trim();
+
+  return text;
+}
+
+function detectNetwork(smsBody: string): string {
+  const text = smsBody
+    .replace(
+      /Reference:.*?(?=(?:Financial Transaction Id|Transaction Id|External Transaction Id|Trans(?:action)? ID|Txn ID|$))/is,
+      " ",
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (
+    /\bto\s+mtn(?:\s+(?:airtime|momo|mobile money))?\b/i.test(text)
+    || /\bmtn\s+(?:airtime|momo|mobile money)\b/i.test(text)
+    || /^mtn\b/i.test(text)
+  ) {
+    return "MTN";
+  }
+
+  if (
+    /\bto\s+(?:telecel|vodafone)(?:\s+(?:cash|airtime|momo|mobile money))?\b/i.test(text)
+    || /\b(?:telecel|vodafone)\s+(?:cash|airtime|momo|mobile money)\b/i.test(text)
+    || /^(?:telecel|vodafone)\b/i.test(text)
+  ) {
+    return "Telecel";
+  }
+
+  if (
+    /\bto\s+(?:airteltigo|airtel|tigo)(?:\s+(?:cash|airtime|money))?\b/i.test(text)
+    || /\b(?:airteltigo|airtel|tigo)\s+(?:cash|airtime|money)\b/i.test(text)
+    || /^(?:airteltigo|airtel|tigo)\b/i.test(text)
+  ) {
+    return "AirtelTigo";
+  }
+
+  return "MTN";
+}
+
+// Parse MoMo SMS to extract transaction details
+function parseMomoSms(smsBody: string): { transactionId: string; amount: number; network: string } | null {
+  const text = normalizeSmsText(smsBody);
+
+  const txnMatch = text.match(/(?:Financial Transaction Id|Transaction Id|External Transaction Id|Trans(?:action)? ID|Txn ID)[:\s#-]*(\d{11})/i)
     || text.match(/\b(\d{11})\b/);
   if (!txnMatch) return null;
   const transactionId = txnMatch[1];
 
-  // Try to extract amount - look for GHS/GHC/cedis patterns
-  const amountMatch = text.match(/GH[SC]\s*([\d,]+\.?\d*)/i)
-    || text.match(/([\d,]+\.?\d*)\s*(?:GH[SC]|cedis?)/i)
-    || text.match(/(?:amount|received|sent|of)\s*(?:GH[SC])?\s*([\d,]+\.?\d*)/i);
+  const amountMatch = text.match(/(?:GH[SC]|GH¢|¢)\s*([\d,]+\.?\d*)/i)
+    || text.match(/([\d,]+\.?\d*)\s*(?:GH[SC]|GH¢|¢|cedis?)/i)
+    || text.match(/(?:amount|received|sent|payment(?: received)?(?: for)?|cash in received|of)\s*(?:GH[SC]|GH¢|¢)?\s*([\d,]+\.?\d*)/i);
 
   if (!amountMatch) return null;
   const amount = parseFloat(amountMatch[1].replace(/,/g, ""));
   if (isNaN(amount) || amount <= 0) return null;
 
-  // Detect network from SMS content
-  let network = "MTN";
-  const lowerText = text.toLowerCase();
-  if (lowerText.includes("telecel") || lowerText.includes("vodafone")) {
-    network = "Telecel";
-  } else if (lowerText.includes("airtel") || lowerText.includes("tigo") || lowerText.includes("airteltigo")) {
-    network = "AirtelTigo";
-  }
+  const network = detectNetwork(text);
 
   return { transactionId, amount, network };
 }
@@ -124,15 +158,16 @@ Deno.serve(async () => {
 
     for (const update of updates) {
       const msg = update.message;
-      if (!msg?.text) {
+      const text = msg?.text ?? msg?.caption ?? "";
+
+      if (!text) {
         console.log("Skipping update (no text):", update.update_id, JSON.stringify(msg?.forward_origin ?? msg?.forward_from ?? "no-forward-info"));
         continue;
       }
 
       const chatId = msg.chat.id;
-      const text = msg.text;
 
-      console.log(`Processing msg from chat ${chatId}, length=${text.length}, isForward=${!!msg.forward_origin || !!msg.forward_from}`);
+      console.log(`Processing msg from chat ${chatId}, length=${text.length}, hasText=${!!msg.text}, hasCaption=${!!msg.caption}, isForward=${!!msg.forward_origin || !!msg.forward_from}`);
 
       // Try to parse as MoMo SMS
       const parsed = parseMomoSms(text);
@@ -189,7 +224,7 @@ Deno.serve(async () => {
       .map((u: any) => ({
         update_id: u.update_id,
         chat_id: u.message.chat.id,
-        text: u.message.text ?? null,
+        text: u.message.text ?? u.message.caption ?? null,
         raw_update: u,
         processed: true,
       }));
