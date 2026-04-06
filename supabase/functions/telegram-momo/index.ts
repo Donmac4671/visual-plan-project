@@ -252,11 +252,17 @@ Deno.serve(async () => {
           }
         }
       } else {
-        // Not a MoMo SMS - send help message
-        await sendTelegramMessage(
-          LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId,
-          `📲 Forward your MoMo payment SMS here and I'll automatically capture the transaction for your customers to claim.`
-        );
+        // Try to parse as an order command
+        const orderCmd = parseOrderCommand(text);
+        if (orderCmd) {
+          await handleOrderCommand(supabase, LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId, orderCmd);
+        } else {
+          // Not a MoMo SMS or order - send help message
+          await sendTelegramMessage(
+            LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId,
+            `📲 Forward your MoMo payment SMS here to auto-capture transactions.\n\n📦 To place an order, send:\n<code>0241234567 MTN 1GB</code>\n\nSupported networks: MTN, Telecel, AT BigTime, AT Premium`
+          );
+        }
       }
 
       totalProcessed++;
