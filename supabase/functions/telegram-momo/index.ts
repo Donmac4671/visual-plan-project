@@ -75,6 +75,50 @@ function parseMomoSms(smsBody: string): { transactionId: string; amount: number;
   return { transactionId, amount, network };
 }
 
+// Parse order command like "0241234567 MTN 1GB" or "0549358359 at premium 5gb"
+const NETWORK_ALIASES: Record<string, string> = {
+  mtn: "mtn",
+  telecel: "telecel",
+  vodafone: "telecel",
+  "at bigtime": "at-bigtime",
+  "at big time": "at-bigtime",
+  "at-bigtime": "at-bigtime",
+  "airteltigo bigtime": "at-bigtime",
+  "airteltigo big time": "at-bigtime",
+  "at premium": "at-premium",
+  "at-premium": "at-premium",
+  "airteltigo premium": "at-premium",
+  "airteltigo": "at-bigtime",
+};
+
+const GH_API_BASE = "https://ghdataconnect.com/api";
+
+const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string; capacityInMB?: boolean }> = {
+  mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
+  telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
+  "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
+  "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
+};
+
+function parseOrderCommand(text: string): { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string } | null {
+  // Match: phone network size (e.g., "0241234567 MTN 1GB" or "0549358359 at premium 5gb")
+  const match = text.trim().match(/^(0\d{9})\s+(.+?)\s+(\d+(?:\.\d+)?)\s*gb$/i);
+  if (!match) return null;
+
+  const phone = match[1];
+  const rawNetwork = match[2].trim().toLowerCase();
+  const sizeGB = parseFloat(match[3]);
+
+  const networkId = NETWORK_ALIASES[rawNetwork];
+  if (!networkId) return null;
+
+  const displayNames: Record<string, string> = {
+    mtn: "MTN", telecel: "TELECEL", "at-bigtime": "AT BIG TIME", "at-premium": "AT PREMIUM",
+  };
+
+  return { phone, networkId, networkDisplay: displayNames[networkId] || networkId, sizeGB, sizeLabel: `${sizeGB}GB` };
+}
+
 Deno.serve(async () => {
   console.log("telegram-momo invoked");
   const startTime = Date.now();
