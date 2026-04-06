@@ -75,6 +75,50 @@ function parseMomoSms(smsBody: string): { transactionId: string; amount: number;
   return { transactionId, amount, network };
 }
 
+// Parse order command like "0241234567 MTN 1GB" or "0549358359 at premium 5gb"
+const NETWORK_ALIASES: Record<string, string> = {
+  mtn: "mtn",
+  telecel: "telecel",
+  vodafone: "telecel",
+  "at bigtime": "at-bigtime",
+  "at big time": "at-bigtime",
+  "at-bigtime": "at-bigtime",
+  "airteltigo bigtime": "at-bigtime",
+  "airteltigo big time": "at-bigtime",
+  "at premium": "at-premium",
+  "at-premium": "at-premium",
+  "airteltigo premium": "at-premium",
+  "airteltigo": "at-bigtime",
+};
+
+const GH_API_BASE = "https://ghdataconnect.com/api";
+
+const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string; capacityInMB?: boolean }> = {
+  mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
+  telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
+  "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
+  "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
+};
+
+function parseOrderCommand(text: string): { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string } | null {
+  // Match: phone network size (e.g., "0241234567 MTN 1GB" or "0549358359 at premium 5gb")
+  const match = text.trim().match(/^(0\d{9})\s+(.+?)\s+(\d+(?:\.\d+)?)\s*gb$/i);
+  if (!match) return null;
+
+  const phone = match[1];
+  const rawNetwork = match[2].trim().toLowerCase();
+  const sizeGB = parseFloat(match[3]);
+
+  const networkId = NETWORK_ALIASES[rawNetwork];
+  if (!networkId) return null;
+
+  const displayNames: Record<string, string> = {
+    mtn: "MTN", telecel: "TELECEL", "at-bigtime": "AT BIG TIME", "at-premium": "AT PREMIUM",
+  };
+
+  return { phone, networkId, networkDisplay: displayNames[networkId] || networkId, sizeGB, sizeLabel: `${sizeGB}GB` };
+}
+
 Deno.serve(async () => {
   console.log("telegram-momo invoked");
   const startTime = Date.now();
@@ -208,11 +252,17 @@ Deno.serve(async () => {
           }
         }
       } else {
-        // Not a MoMo SMS - send help message
-        await sendTelegramMessage(
-          LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId,
-          `📲 Forward your MoMo payment SMS here and I'll automatically capture the transaction for your customers to claim.`
-        );
+        // Try to parse as an order command
+        const orderCmd = parseOrderCommand(text);
+        if (orderCmd) {
+          await handleOrderCommand(supabase, LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId, orderCmd);
+        } else {
+          // Not a MoMo SMS or order - send help message
+          await sendTelegramMessage(
+            LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId,
+            `📲 Forward your MoMo payment SMS here to auto-capture transactions.\n\n📦 To place an order, send:\n<code>0241234567 MTN 1GB</code>\n\nSupported networks: MTN, Telecel, AT BigTime, AT Premium`
+          );
+        }
       }
 
       totalProcessed++;
@@ -260,5 +310,125 @@ async function sendTelegramMessage(lovableKey: string, telegramKey: string, chat
     await res.text(); // consume body
   } catch (e) {
     console.error("Failed to send Telegram message:", e);
+  }
+}
+
+async function handleOrderCommand(
+  supabase: any,
+  lovableKey: string,
+  telegramKey: string,
+  chatId: number,
+  order: { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string }
+) {
+  const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
+  if (!GH_API_KEY) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ GHDataConnect API key not configured.`);
+    return;
+  }
+
+  // Find admin user to debit wallet
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin")
+    .limit(1)
+    .single();
+
+  if (!adminRole) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No admin account found.`);
+    return;
+  }
+
+  const adminUserId = adminRole.user_id;
+
+  // Look up bundle price from custom_bundles first, then fall back to 0 (admin order)
+  const { data: customBundle } = await supabase
+    .from("custom_bundles")
+    .select("agent_price")
+    .eq("network_id", order.networkId)
+    .eq("size_gb", order.sizeGB)
+    .maybeSingle();
+
+  const amount = customBundle?.agent_price ?? 0;
+
+  // Create order record
+  const { data: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
+  const orderRef = `DMH${String((orderCount?.length ?? 0) + 1).padStart(3, "0")}`;
+  const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+  const { data: newOrder, error: orderErr } = await supabase.from("orders").insert({
+    user_id: adminUserId,
+    order_ref: orderRef,
+    network: order.networkDisplay,
+    phone_number: order.phone,
+    bundle_size: order.sizeLabel,
+    amount,
+    status: "processing",
+    payment_method: "wallet",
+  }).select("id").single();
+
+  if (orderErr) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to create order: ${orderErr.message}`);
+    return;
+  }
+
+  // Call GHDataConnect directly
+  const networkConfig = FULFILL_NETWORK_MAP[order.networkId];
+  if (!networkConfig) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Unknown network config for ${order.networkId}`);
+    return;
+  }
+
+  const capacity = networkConfig.capacityInMB ? order.sizeGB * 1000 : order.sizeGB;
+  let requestBody: Record<string, unknown>;
+  if (networkConfig.endpoint === "/v1/createIshareBundleOrder") {
+    requestBody = { reference, msisdn: order.phone, capacity };
+  } else {
+    requestBody = { network: networkConfig.key, reference, msisdn: order.phone, capacity };
+  }
+
+  console.log(`Telegram order: ${order.networkDisplay} ${order.sizeLabel} to ${order.phone}`);
+
+  try {
+    const response = await fetch(`${GH_API_BASE}${networkConfig.endpoint}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GH_API_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const result = await response.json();
+    console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
+
+    if (result.success) {
+      await supabase.from("orders").update({ gh_reference: reference }).eq("id", newOrder.id);
+
+      // Debit admin wallet
+      if (amount > 0) {
+        await supabase.from("profiles").update({ wallet_balance: supabase.rpc ? undefined : 0 }).eq("user_id", adminUserId);
+        // Use raw SQL-like approach: decrement wallet
+        const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
+        if (profile) {
+          await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance - amount }).eq("user_id", adminUserId);
+        }
+      }
+
+      await sendTelegramMessage(lovableKey, telegramKey, chatId,
+        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${reference}`
+      );
+    } else {
+      await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
+      await sendTelegramMessage(lovableKey, telegramKey, chatId,
+        `❌ Order Failed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n⚠️ ${result.message || "Provider error"}`
+      );
+    }
+  } catch (err) {
+    await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
+    await sendTelegramMessage(lovableKey, telegramKey, chatId,
+      `❌ Order Error: ${err instanceof Error ? err.message : "Unknown error"}`
+    );
   }
 }

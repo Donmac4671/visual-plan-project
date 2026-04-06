@@ -68,7 +68,8 @@ serve(async (req) => {
 
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
 
-    const networkKey = network_id.toLowerCase();
+    // Normalize network name: "AT BIG TIME" → "at-bigtime", "AT PREMIUM" → "at-premium"
+    const networkKey = network_id.toLowerCase().replace(/\s+/g, "-");
     const networkConfig = NETWORK_MAP[networkKey];
     if (!networkConfig) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {
