@@ -584,6 +584,7 @@ export type Database = {
         }
         Returns: string
       }
+      process_pending_orders: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
