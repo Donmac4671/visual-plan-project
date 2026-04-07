@@ -351,10 +351,32 @@ async function handleOrderCommand(
 
   const amount = customBundle?.agent_price ?? 0;
 
-  // Create order record
-  const { data: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
-  const orderRef = `DMH${String((orderCount?.length ?? 0) + 1).padStart(3, "0")}`;
-  const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  // Get actual order count for reference numbering
+  const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
+  const orderRef = `DMH${String((orderCount ?? 0) + 1).padStart(3, "0")}`;
+  const ghReference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+  // Debit admin wallet BEFORE placing the order
+  if (amount > 0) {
+    const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
+    if (!profile || profile.wallet_balance < amount) {
+      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Insufficient admin wallet balance. Balance: GHS ${profile?.wallet_balance ?? 0}, Required: GHS ${amount}`);
+      return;
+    }
+    const { error: debitErr } = await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance - amount }).eq("user_id", adminUserId);
+    if (debitErr) {
+      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to debit wallet: ${debitErr.message}`);
+      return;
+    }
+    // Record the transaction
+    await supabase.from("transactions").insert({
+      user_id: adminUserId,
+      type: "purchase",
+      description: `${order.networkDisplay} ${order.sizeLabel} to ${order.phone} (Telegram)`,
+      amount: -amount,
+      status: "completed",
+    });
+  }
 
   const { data: newOrder, error: orderErr } = await supabase.from("orders").insert({
     user_id: adminUserId,
@@ -368,6 +390,13 @@ async function handleOrderCommand(
   }).select("id").single();
 
   if (orderErr) {
+    // Refund wallet if order creation fails
+    if (amount > 0) {
+      const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
+      if (profile) {
+        await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance + amount }).eq("user_id", adminUserId);
+      }
+    }
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to create order: ${orderErr.message}`);
     return;
   }
@@ -382,9 +411,9 @@ async function handleOrderCommand(
   const capacity = networkConfig.capacityInMB ? order.sizeGB * 1000 : order.sizeGB;
   let requestBody: Record<string, unknown>;
   if (networkConfig.endpoint === "/v1/createIshareBundleOrder") {
-    requestBody = { reference, msisdn: order.phone, capacity };
+    requestBody = { reference: ghReference, msisdn: order.phone, capacity };
   } else {
-    requestBody = { network: networkConfig.key, reference, msisdn: order.phone, capacity };
+    requestBody = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
   }
 
   console.log(`Telegram order: ${order.networkDisplay} ${order.sizeLabel} to ${order.phone}`);
@@ -404,20 +433,10 @@ async function handleOrderCommand(
     console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
 
     if (result.success) {
-      await supabase.from("orders").update({ gh_reference: reference }).eq("id", newOrder.id);
-
-      // Debit admin wallet
-      if (amount > 0) {
-        await supabase.from("profiles").update({ wallet_balance: supabase.rpc ? undefined : 0 }).eq("user_id", adminUserId);
-        // Use raw SQL-like approach: decrement wallet
-        const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
-        if (profile) {
-          await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance - amount }).eq("user_id", adminUserId);
-        }
-      }
+      await supabase.from("orders").update({ gh_reference: ghReference }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${reference}`
+        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${ghReference}`
       );
     } else {
       await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
