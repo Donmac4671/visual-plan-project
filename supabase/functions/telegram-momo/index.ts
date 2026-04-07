@@ -100,6 +100,14 @@ const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string; capac
   "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
 };
 
+// Fallback prices when custom_bundles table is empty (agent prices from data.ts)
+const FALLBACK_PRICES: Record<string, Record<number, number>> = {
+  mtn: { 1: 4.60, 2: 9.30, 3: 13.90, 4: 18.50, 5: 23.20, 6: 27.80, 8: 37, 10: 43.50, 15: 64, 20: 84, 25: 105, 30: 126, 40: 164, 50: 205 },
+  telecel: { 2: 10.20, 3: 15.40, 5: 23, 10: 42, 15: 62, 20: 82, 25: 100, 30: 123, 40: 163, 50: 202 },
+  "at-bigtime": { 15: 58, 20: 65, 30: 75, 40: 86, 50: 95, 60: 106, 70: 138, 80: 152, 90: 163, 100: 177, 130: 222, 140: 248, 150: 275, 200: 370 },
+  "at-premium": { 1: 4.40, 2: 8.90, 3: 13.40, 4: 17.80, 5: 22.20, 6: 26.80, 7: 31.30, 8: 35.70, 10: 41.20, 12: 50, 15: 63, 20: 82, 25: 105, 30: 125 },
+};
+
 function parseOrderCommand(text: string): { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string } | null {
   // Match: phone network size (e.g., "0241234567 MTN 1GB" or "0549358359 at premium 5gb")
   const match = text.trim().match(/^(0\d{9})\s+(.+?)\s+(\d+(?:\.\d+)?)\s*gb$/i);
