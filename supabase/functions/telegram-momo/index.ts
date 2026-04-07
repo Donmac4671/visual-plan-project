@@ -341,7 +341,7 @@ async function handleOrderCommand(
 
   const adminUserId = adminRole.user_id;
 
-  // Look up bundle price from custom_bundles first, then fall back to 0 (admin order)
+  // Look up bundle price from custom_bundles
   const { data: customBundle } = await supabase
     .from("custom_bundles")
     .select("agent_price")
@@ -349,7 +349,12 @@ async function handleOrderCommand(
     .eq("size_gb", order.sizeGB)
     .maybeSingle();
 
-  const amount = customBundle?.agent_price ?? 0;
+  if (!customBundle) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}. Please add it in admin panel first.`);
+    return;
+  }
+
+  const amount = customBundle.agent_price;
 
   // Get actual order count for reference numbering
   const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
@@ -433,10 +438,12 @@ async function handleOrderCommand(
     console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
 
     if (result.success) {
-      await supabase.from("orders").update({ gh_reference: ghReference }).eq("id", newOrder.id);
+      // Use the reference from GHDataConnect response, not our generated one
+      const actualGhRef = result.data?.reference ?? ghReference;
+      await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${ghReference}`
+        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${actualGhRef}`
       );
     } else {
       await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
