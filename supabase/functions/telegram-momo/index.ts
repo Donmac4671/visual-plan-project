@@ -438,10 +438,12 @@ async function handleOrderCommand(
     console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
 
     if (result.success) {
-      await supabase.from("orders").update({ gh_reference: ghReference }).eq("id", newOrder.id);
+      // Use the reference from GHDataConnect response, not our generated one
+      const actualGhRef = result.data?.reference ?? ghReference;
+      await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${ghReference}`
+        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${actualGhRef}`
       );
     } else {
       await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
