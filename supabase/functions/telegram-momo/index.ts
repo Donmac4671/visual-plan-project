@@ -341,7 +341,7 @@ async function handleOrderCommand(
 
   const adminUserId = adminRole.user_id;
 
-  // Look up bundle price from custom_bundles first, then fall back to 0 (admin order)
+  // Look up bundle price from custom_bundles
   const { data: customBundle } = await supabase
     .from("custom_bundles")
     .select("agent_price")
@@ -349,7 +349,12 @@ async function handleOrderCommand(
     .eq("size_gb", order.sizeGB)
     .maybeSingle();
 
-  const amount = customBundle?.agent_price ?? 0;
+  if (!customBundle) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}. Please add it in admin panel first.`);
+    return;
+  }
+
+  const amount = customBundle.agent_price;
 
   // Get actual order count for reference numbering
   const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
