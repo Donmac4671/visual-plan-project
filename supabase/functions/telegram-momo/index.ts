@@ -357,12 +357,18 @@ async function handleOrderCommand(
     .eq("size_gb", order.sizeGB)
     .maybeSingle();
 
-  if (!customBundle) {
-    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}. Please add it in admin panel first.`);
-    return;
+  let amount: number;
+  if (customBundle) {
+    amount = customBundle.agent_price;
+  } else {
+    // Fallback to hardcoded prices
+    const fallback = FALLBACK_PRICES[order.networkId]?.[order.sizeGB];
+    if (fallback === undefined) {
+      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}.`);
+      return;
+    }
+    amount = fallback;
   }
-
-  const amount = customBundle.agent_price;
 
   // Get actual order count for reference numbering
   const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
