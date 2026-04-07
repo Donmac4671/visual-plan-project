@@ -436,7 +436,7 @@ async function handleOrderCommand(
       await supabase.from("orders").update({ gh_reference: ghReference }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${reference}`
+        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${ghReference}`
       );
     } else {
       await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
