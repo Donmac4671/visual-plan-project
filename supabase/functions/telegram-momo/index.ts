@@ -93,11 +93,11 @@ const NETWORK_ALIASES: Record<string, string> = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string; capacityInMB?: boolean }> = {
+const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
   mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
   telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
   "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
-  "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
+  "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
 };
 
 // Fallback prices when custom_bundles table is empty (agent prices from data.ts)
