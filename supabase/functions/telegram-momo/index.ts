@@ -100,12 +100,19 @@ const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
   "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
 };
 
-// Fallback prices when custom_bundles table is empty (agent prices from data.ts)
-const FALLBACK_PRICES: Record<string, Record<number, number>> = {
+// Fallback prices when custom_bundles table is empty
+const FALLBACK_AGENT_PRICES: Record<string, Record<number, number>> = {
   mtn: { 1: 4.60, 2: 9.30, 3: 13.90, 4: 18.50, 5: 23.20, 6: 27.80, 8: 37, 10: 43.50, 15: 64, 20: 84, 25: 105, 30: 126, 40: 164, 50: 205 },
   telecel: { 2: 10.20, 3: 15.40, 5: 23, 10: 42, 15: 62, 20: 82, 25: 100, 30: 123, 40: 163, 50: 202 },
   "at-bigtime": { 15: 58, 20: 65, 30: 75, 40: 86, 50: 95, 60: 106, 70: 138, 80: 152, 90: 163, 100: 177, 130: 222, 140: 248, 150: 275, 200: 370 },
   "at-premium": { 1: 4.40, 2: 8.90, 3: 13.40, 4: 17.80, 5: 22.20, 6: 26.80, 7: 31.30, 8: 35.70, 10: 41.20, 12: 50, 15: 63, 20: 82, 25: 105, 30: 125 },
+};
+
+const FALLBACK_GENERAL_PRICES: Record<string, Record<number, number>> = {
+  mtn: { 1: 5, 2: 10, 3: 15, 4: 20, 5: 25, 6: 30, 8: 40, 10: 48, 15: 70, 20: 93, 25: 115, 30: 138, 40: 180, 50: 225 },
+  telecel: { 2: 12, 3: 17, 5: 26, 10: 48, 15: 68, 20: 90, 25: 112, 30: 135, 40: 178, 50: 220 },
+  "at-bigtime": { 15: 65, 20: 73, 30: 85, 40: 96, 50: 108, 60: 120, 70: 150, 80: 168, 90: 180, 100: 195, 130: 245, 140: 273, 150: 300, 200: 400 },
+  "at-premium": { 1: 5, 2: 10, 3: 15, 4: 20, 5: 25, 6: 30, 7: 35, 8: 40, 10: 46, 12: 56, 15: 70, 20: 90, 25: 115, 30: 138 },
 };
 
 function parseOrderCommand(text: string): { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string } | null {
@@ -370,8 +377,9 @@ async function handleOrderCommand(
   if (customBundle) {
     amount = customBundle[priceField];
   } else {
-    // Fallback to hardcoded prices (agent prices)
-    const fallback = FALLBACK_PRICES[order.networkId]?.[order.sizeGB];
+    // Fallback to hardcoded prices based on admin's tier
+    const fallbackMap = adminProfile.tier === "agent" ? FALLBACK_AGENT_PRICES : FALLBACK_GENERAL_PRICES;
+    const fallback = fallbackMap[order.networkId]?.[order.sizeGB];
     if (fallback === undefined) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}.`);
       return;
