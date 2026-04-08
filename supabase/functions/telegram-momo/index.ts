@@ -386,12 +386,11 @@ async function handleOrderCommand(
 
   // Debit admin wallet BEFORE placing the order
   if (amount > 0) {
-    const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
-    if (!profile || profile.wallet_balance < amount) {
-      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Insufficient admin wallet balance. Balance: GHS ${profile?.wallet_balance ?? 0}, Required: GHS ${amount}`);
+    if (adminProfile.wallet_balance < amount) {
+      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Insufficient admin wallet balance. Balance: GHS ${adminProfile.wallet_balance}, Required: GHS ${amount}`);
       return;
     }
-    const { error: debitErr } = await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance - amount }).eq("user_id", adminUserId);
+    const { error: debitErr } = await supabase.from("profiles").update({ wallet_balance: adminProfile.wallet_balance - amount }).eq("user_id", adminUserId);
     if (debitErr) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to debit wallet: ${debitErr.message}`);
       return;
@@ -436,13 +435,8 @@ async function handleOrderCommand(
     return;
   }
 
-  const capacity = networkConfig.capacityInMB ? order.sizeGB * 1000 : order.sizeGB;
-  let requestBody: Record<string, unknown>;
-  if (networkConfig.endpoint === "/v1/createIshareBundleOrder") {
-    requestBody = { reference: ghReference, msisdn: order.phone, capacity };
-  } else {
-    requestBody = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
-  }
+  const capacity = order.sizeGB;
+  const requestBody: Record<string, unknown> = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
 
   console.log(`Telegram order: ${order.networkDisplay} ${order.sizeLabel} to ${order.phone}`);
 
