@@ -99,9 +99,11 @@ serve(async (req) => {
     console.log(`GHDataConnect response for order ${order_id}:`, JSON.stringify(result));
 
     if (result.success) {
-      // Store the GH reference on the order for webhook matching
-      await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
-      return new Response(JSON.stringify({ success: true, data: result.data, reference }), {
+      // Store the actual GH reference from the response
+      const actualRef = result.data?.reference ?? result.data?.id ?? result.reference ?? reference;
+      console.log(`GH Ref extracted: ${actualRef}, full data:`, JSON.stringify(result.data));
+      await supabase.from("orders").update({ gh_reference: String(actualRef) }).eq("id", order_id);
+      return new Response(JSON.stringify({ success: true, data: result.data, reference: actualRef }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
