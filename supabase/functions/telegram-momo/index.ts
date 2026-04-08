@@ -377,8 +377,9 @@ async function handleOrderCommand(
   if (customBundle) {
     amount = customBundle[priceField];
   } else {
-    // Fallback to hardcoded prices (agent prices)
-    const fallback = FALLBACK_PRICES[order.networkId]?.[order.sizeGB];
+    // Fallback to hardcoded prices based on admin's tier
+    const fallbackMap = adminProfile.tier === "agent" ? FALLBACK_AGENT_PRICES : FALLBACK_GENERAL_PRICES;
+    const fallback = fallbackMap[order.networkId]?.[order.sizeGB];
     if (fallback === undefined) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}.`);
       return;
