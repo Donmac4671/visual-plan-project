@@ -455,8 +455,9 @@ async function handleOrderCommand(
     console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
 
     if (result.success) {
-      // Use the reference from GHDataConnect response, not our generated one
-      const actualGhRef = result.data?.reference ?? ghReference;
+      // Use the reference/id from GHDataConnect response
+      const actualGhRef = result.data?.reference ?? result.data?.id ?? result.reference ?? ghReference;
+      console.log(`GH Ref extracted: ${actualGhRef}, full data:`, JSON.stringify(result.data));
       await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
