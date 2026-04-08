@@ -349,19 +349,28 @@ async function handleOrderCommand(
 
   const adminUserId = adminRole.user_id;
 
-  // Look up bundle price from custom_bundles
+  // Get admin profile to check tier for correct pricing
+  const { data: adminProfile } = await supabase.from("profiles").select("wallet_balance, tier").eq("user_id", adminUserId).single();
+  if (!adminProfile) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Admin profile not found.`);
+    return;
+  }
+
+  const priceField = adminProfile.tier === "agent" ? "agent_price" : "general_price";
+
+  // Look up bundle price from custom_bundles using admin's tier
   const { data: customBundle } = await supabase
     .from("custom_bundles")
-    .select("agent_price")
+    .select(priceField)
     .eq("network_id", order.networkId)
     .eq("size_gb", order.sizeGB)
     .maybeSingle();
 
   let amount: number;
   if (customBundle) {
-    amount = customBundle.agent_price;
+    amount = customBundle[priceField];
   } else {
-    // Fallback to hardcoded prices
+    // Fallback to hardcoded prices (agent prices)
     const fallback = FALLBACK_PRICES[order.networkId]?.[order.sizeGB];
     if (fallback === undefined) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}.`);
