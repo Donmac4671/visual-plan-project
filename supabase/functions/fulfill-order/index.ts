@@ -10,11 +10,11 @@ const corsHeaders = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-const NETWORK_MAP: Record<string, { key: string; endpoint: string; capacityInMB?: boolean }> = {
+const NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
   mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
   telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
   "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
-  "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
+  "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
 };
 
 const RequestSchema = z.object({
@@ -79,14 +79,9 @@ serve(async (req) => {
     }
 
     const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    const capacity = networkConfig.capacityInMB ? bundle_size_gb * 1000 : bundle_size_gb;
+    const capacity = bundle_size_gb;
 
-    let requestBody: Record<string, unknown>;
-    if (networkConfig.endpoint === "/v1/createIshareBundleOrder") {
-      requestBody = { reference, msisdn: phone, capacity };
-    } else {
-      requestBody = { network: networkConfig.key, reference, msisdn: phone, capacity };
-    }
+    const requestBody: Record<string, unknown> = { network: networkConfig.key, reference, msisdn: phone, capacity };
 
     console.log(`Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB to ${phone}`);
 
@@ -104,9 +99,11 @@ serve(async (req) => {
     console.log(`GHDataConnect response for order ${order_id}:`, JSON.stringify(result));
 
     if (result.success) {
-      // Store the GH reference on the order for webhook matching
-      await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
-      return new Response(JSON.stringify({ success: true, data: result.data, reference }), {
+      // Store the actual GH reference from the response
+      const actualRef = result.data?.reference ?? result.data?.id ?? result.reference ?? reference;
+      console.log(`GH Ref extracted: ${actualRef}, full data:`, JSON.stringify(result.data));
+      await supabase.from("orders").update({ gh_reference: String(actualRef) }).eq("id", order_id);
+      return new Response(JSON.stringify({ success: true, data: result.data, reference: actualRef }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {

@@ -93,11 +93,11 @@ const NETWORK_ALIASES: Record<string, string> = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string; capacityInMB?: boolean }> = {
+const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
   mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
   telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
   "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
-  "at-premium": { key: "atishare", endpoint: "/v1/createIshareBundleOrder", capacityInMB: true },
+  "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
 };
 
 // Fallback prices when custom_bundles table is empty (agent prices from data.ts)
@@ -349,19 +349,28 @@ async function handleOrderCommand(
 
   const adminUserId = adminRole.user_id;
 
-  // Look up bundle price from custom_bundles
+  // Get admin profile to check tier for correct pricing
+  const { data: adminProfile } = await supabase.from("profiles").select("wallet_balance, tier").eq("user_id", adminUserId).single();
+  if (!adminProfile) {
+    await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Admin profile not found.`);
+    return;
+  }
+
+  const priceField = adminProfile.tier === "agent" ? "agent_price" : "general_price";
+
+  // Look up bundle price from custom_bundles using admin's tier
   const { data: customBundle } = await supabase
     .from("custom_bundles")
-    .select("agent_price")
+    .select(priceField)
     .eq("network_id", order.networkId)
     .eq("size_gb", order.sizeGB)
     .maybeSingle();
 
   let amount: number;
   if (customBundle) {
-    amount = customBundle.agent_price;
+    amount = customBundle[priceField];
   } else {
-    // Fallback to hardcoded prices
+    // Fallback to hardcoded prices (agent prices)
     const fallback = FALLBACK_PRICES[order.networkId]?.[order.sizeGB];
     if (fallback === undefined) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No bundle found for ${order.networkDisplay} ${order.sizeLabel}.`);
@@ -377,12 +386,11 @@ async function handleOrderCommand(
 
   // Debit admin wallet BEFORE placing the order
   if (amount > 0) {
-    const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("user_id", adminUserId).single();
-    if (!profile || profile.wallet_balance < amount) {
-      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Insufficient admin wallet balance. Balance: GHS ${profile?.wallet_balance ?? 0}, Required: GHS ${amount}`);
+    if (adminProfile.wallet_balance < amount) {
+      await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Insufficient admin wallet balance. Balance: GHS ${adminProfile.wallet_balance}, Required: GHS ${amount}`);
       return;
     }
-    const { error: debitErr } = await supabase.from("profiles").update({ wallet_balance: profile.wallet_balance - amount }).eq("user_id", adminUserId);
+    const { error: debitErr } = await supabase.from("profiles").update({ wallet_balance: adminProfile.wallet_balance - amount }).eq("user_id", adminUserId);
     if (debitErr) {
       await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to debit wallet: ${debitErr.message}`);
       return;
@@ -427,13 +435,8 @@ async function handleOrderCommand(
     return;
   }
 
-  const capacity = networkConfig.capacityInMB ? order.sizeGB * 1000 : order.sizeGB;
-  let requestBody: Record<string, unknown>;
-  if (networkConfig.endpoint === "/v1/createIshareBundleOrder") {
-    requestBody = { reference: ghReference, msisdn: order.phone, capacity };
-  } else {
-    requestBody = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
-  }
+  const capacity = order.sizeGB;
+  const requestBody: Record<string, unknown> = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
 
   console.log(`Telegram order: ${order.networkDisplay} ${order.sizeLabel} to ${order.phone}`);
 
@@ -452,8 +455,9 @@ async function handleOrderCommand(
     console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
 
     if (result.success) {
-      // Use the reference from GHDataConnect response, not our generated one
-      const actualGhRef = result.data?.reference ?? ghReference;
+      // Use the reference/id from GHDataConnect response
+      const actualGhRef = result.data?.reference ?? result.data?.id ?? result.reference ?? ghReference;
+      console.log(`GH Ref extracted: ${actualGhRef}, full data:`, JSON.stringify(result.data));
       await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
 
       await sendTelegramMessage(lovableKey, telegramKey, chatId,
