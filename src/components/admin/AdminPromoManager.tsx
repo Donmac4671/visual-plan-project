@@ -24,6 +24,7 @@ export default function AdminPromoManager() {
   const [showForm, setShowForm] = useState(false);
   const [discount, setDiscount] = useState("");
   const [description, setDescription] = useState("");
+  const [startsAt, setStartsAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [targetAudience, setTargetAudience] = useState("general");
   const [creating, setCreating] = useState(false);
@@ -53,16 +54,21 @@ export default function AdminPromoManager() {
       return;
     }
 
-    const startsAt = new Date();
+    const startsDate = startsAt ? new Date(startsAt) : new Date();
     const expiresDate = new Date(expiresAt);
+
+    if (Number.isNaN(startsDate.getTime())) {
+      toast({ title: "Invalid start date", description: "Please choose a valid start date", variant: "destructive" });
+      return;
+    }
 
     if (Number.isNaN(expiresDate.getTime())) {
       toast({ title: "Invalid expiry", description: "Please choose a valid expiry date", variant: "destructive" });
       return;
     }
 
-    if (expiresDate <= startsAt) {
-      toast({ title: "Invalid expiry", description: "Expiry date must be in the future", variant: "destructive" });
+    if (expiresDate <= startsDate) {
+      toast({ title: "Invalid expiry", description: "Expiry date must be after start date", variant: "destructive" });
       return;
     }
 
@@ -72,7 +78,7 @@ export default function AdminPromoManager() {
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
       description: description || `${pct}% off for ${audienceLabel}`,
-      starts_at: startsAt.toISOString(),
+      starts_at: startsDate.toISOString(),
       expires_at: expiresDate.toISOString(),
       is_active: true,
       target_audience: targetAudience,
@@ -84,6 +90,7 @@ export default function AdminPromoManager() {
       setShowForm(false);
       setDiscount("");
       setDescription("");
+      setStartsAt("");
       setExpiresAt("");
       setTargetAudience("general");
       fetchPromos();
@@ -127,7 +134,7 @@ export default function AdminPromoManager() {
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Percent className="w-4 h-4" /> Create Promotion
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Discount %</label>
               <Input
@@ -137,6 +144,14 @@ export default function AdminPromoManager() {
                 onChange={(e) => setDiscount(e.target.value)}
                 min="1"
                 max="100"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Starts at (optional)</label>
+              <Input
+                type="datetime-local"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
               />
             </div>
             <div>
@@ -190,6 +205,7 @@ export default function AdminPromoManager() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-foreground text-lg">{p.discount_percent}% off</span>
                     {active && <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>}
+                    {!active && !expired && new Date(p.starts_at) > new Date() && p.is_active && <Badge variant="outline" className="bg-accent text-accent-foreground">Scheduled</Badge>}
                     {expired && <Badge variant="outline" className="bg-destructive/10 text-destructive">Expired</Badge>}
                     {!p.is_active && !expired && <Badge variant="outline" className="bg-muted text-muted-foreground">Paused</Badge>}
                     <Badge variant="outline" className="text-xs">
@@ -198,7 +214,7 @@ export default function AdminPromoManager() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{p.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Expires: {format(new Date(p.expires_at), "MMM dd, yyyy 'at' h:mm a")}
+                    Starts: {format(new Date(p.starts_at), "MMM dd, yyyy 'at' h:mm a")} · Expires: {format(new Date(p.expires_at), "MMM dd, yyyy 'at' h:mm a")}
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
