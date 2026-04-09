@@ -134,7 +134,7 @@ export default function AdminPromoManager() {
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Percent className="w-4 h-4" /> Create Promotion
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Discount %</label>
               <Input
