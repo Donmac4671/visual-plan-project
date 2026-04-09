@@ -90,6 +90,7 @@ export default function AdminPromoManager() {
       setShowForm(false);
       setDiscount("");
       setDescription("");
+      setStartsAt("");
       setExpiresAt("");
       setTargetAudience("general");
       fetchPromos();
