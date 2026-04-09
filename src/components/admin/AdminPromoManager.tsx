@@ -205,6 +205,7 @@ export default function AdminPromoManager() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-foreground text-lg">{p.discount_percent}% off</span>
                     {active && <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>}
+                    {!active && !expired && new Date(p.starts_at) > new Date() && p.is_active && <Badge variant="outline" className="bg-accent text-accent-foreground">Scheduled</Badge>}
                     {expired && <Badge variant="outline" className="bg-destructive/10 text-destructive">Expired</Badge>}
                     {!p.is_active && !expired && <Badge variant="outline" className="bg-muted text-muted-foreground">Paused</Badge>}
                     <Badge variant="outline" className="text-xs">
@@ -213,7 +214,7 @@ export default function AdminPromoManager() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{p.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Expires: {format(new Date(p.expires_at), "MMM dd, yyyy 'at' h:mm a")}
+                    Starts: {format(new Date(p.starts_at), "MMM dd, yyyy 'at' h:mm a")} · Expires: {format(new Date(p.expires_at), "MMM dd, yyyy 'at' h:mm a")}
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
