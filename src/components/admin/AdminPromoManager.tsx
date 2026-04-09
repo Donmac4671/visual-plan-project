@@ -24,6 +24,7 @@ export default function AdminPromoManager() {
   const [showForm, setShowForm] = useState(false);
   const [discount, setDiscount] = useState("");
   const [description, setDescription] = useState("");
+  const [startsAt, setStartsAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [targetAudience, setTargetAudience] = useState("general");
   const [creating, setCreating] = useState(false);
