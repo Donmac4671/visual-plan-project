@@ -67,8 +67,8 @@ export default function AdminPromoManager() {
       return;
     }
 
-    if (expiresDate <= startsAt) {
-      toast({ title: "Invalid expiry", description: "Expiry date must be in the future", variant: "destructive" });
+    if (expiresDate <= startsDate) {
+      toast({ title: "Invalid expiry", description: "Expiry date must be after start date", variant: "destructive" });
       return;
     }
 
