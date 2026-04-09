@@ -78,7 +78,7 @@ export default function AdminPromoManager() {
     const { error } = await supabase.from("promotions").insert({
       discount_percent: pct,
       description: description || `${pct}% off for ${audienceLabel}`,
-      starts_at: startsAt.toISOString(),
+      starts_at: startsDate.toISOString(),
       expires_at: expiresDate.toISOString(),
       is_active: true,
       target_audience: targetAudience,
