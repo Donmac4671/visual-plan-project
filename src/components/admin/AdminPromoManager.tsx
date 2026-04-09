@@ -153,6 +153,7 @@ export default function AdminPromoManager() {
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
               />
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Expires at</label>
               <Input
