@@ -245,9 +245,22 @@ export default function Admin() {
     fetchData();
   };
 
+  const getInitialTab = () => {
+    const hash = window.location.hash.replace("#", "");
+    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "live-chat"];
+    return validTabs.includes(hash) ? hash : "analytics";
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+    window.location.hash = value;
+  }, []);
+
   return (
     <DashboardLayout title="Admin Panel">
-      <Tabs defaultValue="analytics">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
