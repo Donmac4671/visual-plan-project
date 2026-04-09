@@ -54,8 +54,13 @@ export default function AdminPromoManager() {
       return;
     }
 
-    const startsAt = new Date();
+    const startsDate = startsAt ? new Date(startsAt) : new Date();
     const expiresDate = new Date(expiresAt);
+
+    if (Number.isNaN(startsDate.getTime())) {
+      toast({ title: "Invalid start date", description: "Please choose a valid start date", variant: "destructive" });
+      return;
+    }
 
     if (Number.isNaN(expiresDate.getTime())) {
       toast({ title: "Invalid expiry", description: "Please choose a valid expiry date", variant: "destructive" });
