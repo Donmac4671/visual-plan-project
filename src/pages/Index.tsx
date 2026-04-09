@@ -4,6 +4,7 @@ import WalletTopUp from "@/components/dashboard/WalletTopUp";
 import ClaimPayment from "@/components/dashboard/ClaimPayment";
 import DataBundles from "@/components/dashboard/DataBundles";
 import PromoCountdown from "@/components/dashboard/PromoCountdown";
+import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
 import { useCanonical } from "@/hooks/useCanonical";
 
 export default function Index() {
@@ -11,6 +12,7 @@ export default function Index() {
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
+        <WelcomeBanner />
         <PromoCountdown />
         <StatsCards />
         <WalletTopUp />
