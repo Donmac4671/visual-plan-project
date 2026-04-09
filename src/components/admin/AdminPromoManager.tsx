@@ -147,6 +147,13 @@ export default function AdminPromoManager() {
               />
             </div>
             <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Starts at (optional)</label>
+              <Input
+                type="datetime-local"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+              />
+            <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Expires at</label>
               <Input
                 type="datetime-local"
