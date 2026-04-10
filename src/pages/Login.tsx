@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +18,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const { signIn } = useAuth();
@@ -26,6 +28,15 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // If "Remember Me" is unchecked, clear any persisted session on sign-out
+    if (!rememberMe) {
+      // Store preference so AuthContext can use sessionStorage
+      sessionStorage.setItem("donmac_no_persist", "1");
+    } else {
+      sessionStorage.removeItem("donmac_no_persist");
+    }
+    
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
@@ -116,6 +127,10 @@ export default function Login() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="rememberMe" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)} />
+                  <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer select-none">Remember me</label>
                 </div>
                 <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
                   {loading ? "Signing In..." : "Sign In"}
