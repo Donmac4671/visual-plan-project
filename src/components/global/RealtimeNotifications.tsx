@@ -37,19 +37,23 @@ function playNotificationSound() {
   const ctx = getAudioContext();
   if (!ctx) return;
 
-  // Try resuming just in case
+  // Resume for mobile browsers that suspend context
   if (ctx.state === "suspended") {
-    ctx.resume();
+    ctx.resume().catch(() => {});
   }
 
   try {
+    // Use a higher gain for mobile devices
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const baseGain = isMobile ? 0.6 : 0.3;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.frequency.value = 880;
     osc.type = "sine";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.setValueAtTime(baseGain, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.5);
@@ -61,7 +65,7 @@ function playNotificationSound() {
     osc2.frequency.value = 1174;
     osc2.type = "sine";
     gain2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
-    gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.2);
+    gain2.gain.linearRampToValueAtTime(baseGain, ctx.currentTime + 0.2);
     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
     osc2.start(ctx.currentTime + 0.15);
     osc2.stop(ctx.currentTime + 0.7);

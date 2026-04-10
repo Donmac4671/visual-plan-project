@@ -50,6 +50,20 @@ export default function AdminVerifiedTopups({ users }: Props) {
 
   useEffect(() => { fetchTopups(); }, []);
 
+  // Auto-refresh via realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-verified-topups-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "verified_topups" },
+        () => { fetchTopups(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const filteredTopups = useMemo(() => {
     return topups.filter((t) => {
       const created = parseISO(t.created_at);
