@@ -3,7 +3,7 @@ import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Orders", icon: ShoppingBag, path: "/orders" },
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
