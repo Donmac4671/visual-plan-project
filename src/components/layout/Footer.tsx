@@ -20,7 +20,7 @@ function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }
   );
 }
 
-export default function Footer() {
+export default function Footer({ showGuides = false }: { showGuides?: boolean }) {
   return (
     <footer className="border-t border-border bg-card mt-8">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
@@ -55,7 +55,10 @@ export default function Footer() {
               <li>Enter the amount you want to deposit (a small 2% processing fee applies).</li>
               <li>Click <strong>"Pay with Paystack"</strong> — you'll be redirected to a secure payment page.</li>
               <li>Complete payment using your <strong>card, mobile money, or bank transfer</strong>.</li>
-              <li>Your wallet is credited <strong>instantly</strong> after successful payment.</li>
+              <li>⚠️ <strong>IMPORTANT:</strong> After paying, wait <strong>5 seconds</strong> for the Paystack window to detect the transaction and show <strong>"Payment Successful"</strong>.</li>
+              <li>If you don't see "Payment Successful" after 5 seconds, click the <strong>"I've already paid"</strong> button and wait for it to confirm.</li>
+              <li>Do <strong>NOT</strong> close the window until you see the success confirmation — otherwise your payment may not be recorded even though the money was deducted.</li>
+              <li>Once confirmed, your wallet is credited <strong>instantly</strong>.</li>
             </ol>
           </CollapsibleSection>
 
@@ -71,7 +74,7 @@ export default function Footer() {
               💡 Make sure to include the affected phone number and bundle details for faster resolution.
             </p>
           </CollapsibleSection>
-        </div>
+        </div>}
 
         <div className="flex flex-col items-center gap-3 pt-2">
           <a
