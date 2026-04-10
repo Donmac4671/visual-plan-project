@@ -9,7 +9,7 @@ import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
 import { useCanonical } from "@/hooks/useCanonical";
 
 export default function Index() {
-  useCanonical("/");
+  useCanonical("/dashboard");
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">

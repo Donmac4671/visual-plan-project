@@ -6,7 +6,7 @@ import { useLocation } from "react-router-dom";
 
 export default function DashboardLayout({ children, title }: { children: ReactNode; title: string }) {
   const location = useLocation();
-  const isDashboard = location.pathname === "/";
+  const isDashboard = location.pathname === "/dashboard";
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />

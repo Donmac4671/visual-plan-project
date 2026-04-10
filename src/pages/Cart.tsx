@@ -127,7 +127,7 @@ export default function Cart() {
             {items.length > 0 && (
               <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} title="Close cart">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} title="Close cart">
               <X className="w-5 h-5" />
             </Button>
           </div>
