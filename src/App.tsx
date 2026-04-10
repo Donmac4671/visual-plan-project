@@ -11,6 +11,7 @@ import FloatingCartButton from "@/components/global/FloatingCartButton";
 import LiveChatWidget from "@/components/global/LiveChatWidget";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import Transactions from "./pages/Transactions";
@@ -40,7 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -86,10 +87,11 @@ const App = () => (
             <FloatingCartButton />
             <LiveChatWidget />
             <Routes>
+              <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
               <Route path="/topups" element={<ProtectedRoute><TopUps /></ProtectedRoute>} />
