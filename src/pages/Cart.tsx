@@ -9,12 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { initPaystack } from "@/lib/paystack";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const fulfillOrder = async (orderId: string, networkId: string, phone: string, bundleSizeGB: number) => {
   try {
@@ -85,7 +79,6 @@ export default function Cart() {
       await refreshProfile();
       toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered for ${formatCurrency(total)}` });
       clearCart();
-      setShowPayment(false);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
     } finally {
@@ -135,7 +128,7 @@ export default function Cart() {
           await refreshProfile();
           toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
           clearCart();
-          setShowPayment(false);
+          
         } catch (err: any) {
           toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
         } finally {
