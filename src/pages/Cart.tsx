@@ -31,7 +31,7 @@ export default function Cart() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
-  const [showPayment, setShowPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
   const [processing, setProcessing] = useState(false);
 
   const paystackFee = calculatePaystackFee(total);
@@ -196,60 +196,63 @@ export default function Cart() {
               ))}
             </div>
 
-            <div className="p-4 border-t border-border">
-              <div className="flex items-center justify-between mb-4">
+            <div className="p-4 border-t border-border space-y-4">
+              <div className="flex items-center justify-between">
                 <span className="font-semibold text-foreground">Total</span>
                 <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
               </div>
-              <Button className="w-full gradient-primary border-0" size="lg" onClick={() => setShowPayment(true)}>
-                Proceed to Pay — {formatCurrency(total)}
+
+              <div>
+                <p className="font-semibold text-foreground mb-2">Payment method</p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("wallet")}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "wallet" ? "border-primary" : "border-muted-foreground"}`}>
+                      {paymentMethod === "wallet" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                    </span>
+                    <Wallet className="w-5 h-5 text-primary" />
+                    <div className="text-left">
+                      <p className="font-semibold text-foreground">Pay with Wallet</p>
+                      <p className="text-xs text-muted-foreground">Balance: {formatCurrency(profile?.wallet_balance ?? 0)}</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("paystack")}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "paystack" ? "border-primary" : "border-muted-foreground"}`}>
+                      {paymentMethod === "paystack" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                    </span>
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                    <div className="text-left">
+                      <p className="font-semibold text-foreground">Pay with Paystack</p>
+                      {paymentMethod === "paystack" && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrency(total)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                className="w-full gradient-primary border-0"
+                size="lg"
+                disabled={processing}
+                onClick={paymentMethod === "wallet" ? handlePayWithWallet : handlePayWithPaystack}
+              >
+                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : total)}`}
               </Button>
             </div>
           </>
         )}
       </div>
 
-      <Dialog open={showPayment} onOpenChange={setShowPayment}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Choose Payment Method</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="bg-accent rounded-xl p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total Amount</p>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(total)}</p>
-            </div>
-
-            <Button
-              className="w-full h-14 text-left justify-start gap-3"
-              variant="outline"
-              onClick={handlePayWithWallet}
-              disabled={processing}
-            >
-              <Wallet className="w-5 h-5 text-primary" />
-              <div>
-                <p className="font-semibold">Pay with Wallet</p>
-                <p className="text-xs text-muted-foreground">Balance: {formatCurrency(profile?.wallet_balance ?? 0)}</p>
-              </div>
-            </Button>
-
-            <Button
-              className="w-full h-14 text-left justify-start gap-3"
-              variant="outline"
-              onClick={handlePayWithPaystack}
-              disabled={processing}
-            >
-              <CreditCard className="w-5 h-5 text-primary" />
-              <div>
-                <p className="font-semibold">Pay with Paystack</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatCurrency(total)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
-                </p>
-              </div>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 }
