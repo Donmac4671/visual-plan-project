@@ -124,6 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile((profileData as Profile) ?? null);
 
+      // Process any pending referral from registration
+      void processPendingReferral(authUser);
+
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
