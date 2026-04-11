@@ -37,6 +37,16 @@ export default function Cart() {
   const paystackFee = calculatePaystackFee(total);
   const paystackTotal = total + paystackFee;
 
+  const checkPendingOrders = async (phoneNumbers: string[]): Promise<string[]> => {
+    const uniquePhones = [...new Set(phoneNumbers)];
+    const { data } = await supabase
+      .from("orders")
+      .select("phone_number")
+      .in("phone_number", uniquePhones)
+      .in("status", ["pending", "processing"]);
+    return data?.map((o) => o.phone_number) || [];
+  };
+
   const handlePayWithWallet = async () => {
     if (!profile) return;
     if (profile.wallet_balance < total) {
@@ -46,6 +56,16 @@ export default function Cart() {
 
     setProcessing(true);
     try {
+      const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+      if (pendingPhones.length > 0) {
+        toast({
+          title: "Pending Order Exists",
+          description: `Phone number(s) ${pendingPhones.join(", ")} already have a pending/processing order. Wait for delivery first.`,
+          variant: "destructive",
+        });
+        setProcessing(false);
+        return;
+      }
       for (const item of items) {
         const { data: orderId, error } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
@@ -77,6 +97,19 @@ export default function Cart() {
     if (!profile) return;
 
     setProcessing(true);
+
+    // Check for pending orders before initiating payment
+    const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+    if (pendingPhones.length > 0) {
+      toast({
+        title: "Pending Order Exists",
+        description: `Phone number(s) ${pendingPhones.join(", ")} already have a pending/processing order. Wait for delivery first.`,
+        variant: "destructive",
+      });
+      setProcessing(false);
+      return;
+    }
+
     await initPaystack({
       email: profile.email,
       amount: paystackTotal,
