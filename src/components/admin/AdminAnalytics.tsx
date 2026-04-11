@@ -115,6 +115,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [dateTo, setDateTo] = useState<Date | undefined>(today);
   const [ghBalance, setGhBalance] = useState<number | null>(null);
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
+  const [showProfit, setShowProfit] = useState(false);
 
   const fetchGhBalance = async () => {
     setGhBalanceLoading(true);
