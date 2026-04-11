@@ -36,25 +36,9 @@ export default function Register() {
     if (error) {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     } else {
-      // Process referral if ref code was provided
-      if (referralCode && data?.user) {
-        try {
-          const { data: referrerProfile } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .eq("referral_code", referralCode.trim().toUpperCase())
-            .maybeSingle();
-
-          if (referrerProfile) {
-            await supabase.from("referrals").insert({
-              referrer_id: referrerProfile.user_id,
-              referred_id: data.user.id,
-              referral_code: referralCode.trim().toUpperCase(),
-            });
-          }
-        } catch (err) {
-          console.error("Referral tracking error:", err);
-        }
+      // Store referral code for processing after first login (user isn't authenticated yet)
+      if (referralCode) {
+        localStorage.setItem("pending_referral_code", referralCode.trim().toUpperCase());
       }
       toast({ title: "Account Created!", description: "You can now sign in." });
       navigate("/login");
