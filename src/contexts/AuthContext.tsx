@@ -56,6 +56,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return provider === "anonymous" || (authUser as User & { is_anonymous?: boolean }).is_anonymous === true;
   };
 
+  const processPendingReferral = async (authUser: User) => {
+    try {
+      const code = localStorage.getItem("pending_referral_code");
+      if (!code) return;
+
+      // Check if referral already exists for this user
+      const { data: existing } = await supabase
+        .from("referrals")
+        .select("id")
+        .eq("referred_id", authUser.id)
+        .maybeSingle();
+      if (existing) {
+        localStorage.removeItem("pending_referral_code");
+        return;
+      }
+
+      const { data: referrerProfile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("referral_code", code)
+        .maybeSingle();
+
+      if (referrerProfile && referrerProfile.user_id !== authUser.id) {
+        await supabase.from("referrals").insert({
+          referrer_id: referrerProfile.user_id,
+          referred_id: authUser.id,
+          referral_code: code,
+        });
+      }
+      localStorage.removeItem("pending_referral_code");
+    } catch (err) {
+      console.error("Referral processing error:", err);
+    }
+  };
+
   const fetchProfile = async (authUser: User) => {
     try {
       let { data: profileData, error: profileError } = await supabase
@@ -88,6 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setProfile((profileData as Profile) ?? null);
+
+      // Process any pending referral from registration
+      void processPendingReferral(authUser);
 
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")

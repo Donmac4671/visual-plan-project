@@ -3,74 +3,60 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Persist a single AudioContext so it survives browser autoplay restrictions.
-// We unlock it on the very first user interaction (click / touch / keydown).
-let sharedCtx: AudioContext | null = null;
+// Use an Audio element with a data URI for maximum compatibility
+const NOTIFICATION_SOUND_B64 = (() => {
+  // Generate a short WAV notification sound programmatically
+  const sampleRate = 22050;
+  const duration = 0.4;
+  const numSamples = Math.floor(sampleRate * duration);
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
 
-function getAudioContext(): AudioContext | null {
-  try {
-    if (!sharedCtx) {
-      sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return sharedCtx;
-  } catch {
-    return null;
-  }
-}
+  // WAV header
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, numSamples * 2, true);
 
-// Unlock the AudioContext on the first user gesture
-function unlockAudio() {
-  const ctx = getAudioContext();
-  if (ctx && ctx.state === "suspended") {
-    ctx.resume();
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    const envelope = Math.max(0, 1 - t / duration);
+    const freq1 = 880;
+    const freq2 = 1320;
+    const sample = envelope * (
+      0.5 * Math.sin(2 * Math.PI * freq1 * t) +
+      0.3 * Math.sin(2 * Math.PI * freq2 * t)
+    );
+    view.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, sample * 32767)), true);
   }
-  // Only need to unlock once
-  window.removeEventListener("click", unlockAudio);
-  window.removeEventListener("touchstart", unlockAudio);
-  window.removeEventListener("keydown", unlockAudio);
-}
-window.addEventListener("click", unlockAudio);
-window.addEventListener("touchstart", unlockAudio);
-window.addEventListener("keydown", unlockAudio);
+
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return "data:audio/wav;base64," + btoa(binary);
+})();
 
 function playNotificationSound() {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  // Resume for mobile browsers that suspend context
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
-  }
-
   try {
-    // Use a higher gain for mobile devices
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const baseGain = isMobile ? 0.6 : 0.3;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = "sine";
-    gain.gain.setValueAtTime(baseGain, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
-
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.frequency.value = 1174;
-    osc2.type = "sine";
-    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
-    gain2.gain.linearRampToValueAtTime(baseGain, ctx.currentTime + 0.2);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
-    osc2.start(ctx.currentTime + 0.15);
-    osc2.stop(ctx.currentTime + 0.7);
+    const audio = new Audio(NOTIFICATION_SOUND_B64);
+    audio.volume = 1.0;
+    audio.play().catch(() => {
+      // Autoplay blocked – nothing we can do without user gesture
+    });
   } catch {
-    // Web Audio not supported
+    // Audio not supported
   }
 }
 
@@ -113,6 +99,7 @@ export default function RealtimeNotifications() {
 
           if (newStatus && oldStatus !== newStatus) {
             const displayStatus = newStatus === "completed" ? "delivered" : newStatus;
+            playNotificationSound();
             toast({
               title: "Order status updated",
               description: `${orderRef} is now ${displayStatus}`,
@@ -138,6 +125,7 @@ export default function RealtimeNotifications() {
           const amount = (payload.new as { amount?: number } | null)?.amount;
 
           if (newStatus && oldStatus !== newStatus) {
+            playNotificationSound();
             toast({
               title: "Top-up update",
               description:
@@ -206,7 +194,7 @@ export default function RealtimeNotifications() {
     };
   }, [user, isAdmin, toast, adminAlert]);
 
-  // Chat message notifications – notify when an admin/user reply arrives
+  // Chat message notifications
   useEffect(() => {
     if (!user) return;
 
@@ -218,9 +206,7 @@ export default function RealtimeNotifications() {
           event: "INSERT",
           schema: "public",
           table: "chat_messages",
-          ...(isAdmin
-            ? {} // admins listen to all messages
-            : { filter: `user_id=eq.${user.id}` }),
+          ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }),
         },
         (payload) => {
           const msg = payload.new as {
@@ -229,13 +215,8 @@ export default function RealtimeNotifications() {
             message?: string;
           };
 
-          // Users only care about admin replies; admins only care about user messages
           if (isAdmin && msg.sender_role === "admin") return;
           if (!isAdmin && msg.sender_role === "user") return;
-          // Admin shouldn't be notified of their own replies
-          if (isAdmin && msg.user_id === user.id && msg.sender_role === "user") {
-            // This is a user message to admin – notify
-          }
 
           playNotificationSound();
           vibrate();
@@ -252,6 +233,51 @@ export default function RealtimeNotifications() {
 
     return () => {
       supabase.removeChannel(chatChannel);
+    };
+  }, [user, isAdmin, toast]);
+
+  // Complaint notifications – users get notified when admin replies, admins get notified on new complaints
+  useEffect(() => {
+    if (!user) return;
+
+    const complaintsChannel = supabase
+      .channel(`complaints-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: isAdmin ? "INSERT" : "UPDATE",
+          schema: "public",
+          table: "complaints",
+          ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }),
+        },
+        (payload) => {
+          if (isAdmin) {
+            const complaint = payload.new as { subject?: string; user_id?: string };
+            if (complaint.user_id === user.id) return;
+            playNotificationSound();
+            vibrate();
+            toast({
+              title: "📋 New Complaint",
+              description: `Subject: ${(complaint.subject ?? "").slice(0, 80)}`,
+            });
+          } else {
+            const oldReply = (payload.old as { admin_reply?: string | null })?.admin_reply;
+            const newReply = (payload.new as { admin_reply?: string | null; subject?: string })?.admin_reply;
+            if (newReply && newReply !== oldReply) {
+              playNotificationSound();
+              vibrate();
+              toast({
+                title: "📋 Complaint Reply",
+                description: `Admin replied to your complaint: "${newReply.slice(0, 60)}${newReply.length > 60 ? "…" : ""}"`,
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(complaintsChannel);
     };
   }, [user, isAdmin, toast]);
 
