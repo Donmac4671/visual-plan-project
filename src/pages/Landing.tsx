@@ -111,7 +111,7 @@ export default function Landing() {
                 Get Started – Buy Cheap Data <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-base border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+            <Button asChild size="lg" className="text-base bg-white text-primary font-semibold hover:bg-white/90 border-0">
               <Link to="/login">Sign In</Link>
             </Button>
           </div>
