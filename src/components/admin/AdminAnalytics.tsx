@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet } from "lucide-react";
+import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ChartContainer,
@@ -115,6 +115,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [dateTo, setDateTo] = useState<Date | undefined>(today);
   const [ghBalance, setGhBalance] = useState<number | null>(null);
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
+  const [showProfit, setShowProfit] = useState(false);
 
   const fetchGhBalance = async () => {
     setGhBalanceLoading(true);
@@ -322,15 +323,24 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
         <Card className="border-success/30">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <DollarSign className="w-5 h-5 text-success" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-success/10">
+                  <DollarSign className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Profit</p>
+                  <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {showProfit ? formatCurrency(stats.totalProfit) : "••••••"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Cost: {showProfit ? formatCurrency(stats.totalCost) : "••••••"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Profit</p>
-                <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(stats.totalProfit)}</p>
-                <p className="text-xs text-muted-foreground">Cost: {formatCurrency(stats.totalCost)}</p>
-              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowProfit(!showProfit)} className="shrink-0">
+                {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
             </div>
           </CardContent>
         </Card>
