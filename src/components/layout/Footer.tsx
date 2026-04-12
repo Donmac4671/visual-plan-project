@@ -1,24 +1,5 @@
-import { useState } from "react";
-import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink, AlertTriangle } from "lucide-react";
-
-function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: React.ElementType; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <span className="font-semibold text-foreground text-sm">{title}</span>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-      </button>
-      {open && <div className="px-4 pb-4 text-sm text-muted-foreground space-y-2">{children}</div>}
-    </div>
-  );
-}
+import { ExternalLink } from "lucide-react";
+import GuideVideos from "@/components/dashboard/GuideVideos";
 
 export default function Footer({ showGuides = false }: { showGuides?: boolean }) {
   return (
