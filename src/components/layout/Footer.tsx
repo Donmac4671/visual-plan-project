@@ -1,82 +1,11 @@
-import { useState } from "react";
-import { MessageCircle, ShoppingCart, Wallet, ChevronDown, ChevronUp, ExternalLink, AlertTriangle } from "lucide-react";
-
-function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: React.ElementType; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <span className="font-semibold text-foreground text-sm">{title}</span>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-      </button>
-      {open && <div className="px-4 pb-4 text-sm text-muted-foreground space-y-2">{children}</div>}
-    </div>
-  );
-}
+import { ExternalLink } from "lucide-react";
+import GuideVideos from "@/components/dashboard/GuideVideos";
 
 export default function Footer({ showGuides = false }: { showGuides?: boolean }) {
   return (
     <footer className="border-t border-border bg-card mt-8">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-        {showGuides && (
-          <div className="space-y-3">
-            <CollapsibleSection title="How to Buy Data" icon={ShoppingCart}>
-              <ol className="list-decimal list-inside space-y-1.5">
-                <li>Select your <strong>network</strong> (MTN, Telecel, or AirtelTigo) from the dashboard.</li>
-                <li>Choose a <strong>data bundle</strong> that suits you.</li>
-                <li>Enter the <strong>recipient phone number</strong> (10 digits).</li>
-                <li>Add to cart — you can add multiple bundles for different numbers.</li>
-                <li>Go to <strong>Cart</strong> and choose to pay with your <strong>Wallet balance</strong> or <strong>Paystack</strong>.</li>
-                <li>Confirm your order and the data will be delivered within <strong>3 minutes to 4 hours</strong> or more, depending on the network.</li>
-              </ol>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="How to Deposit (Mobile Money)" icon={Wallet}>
-              <ol className="list-decimal list-inside space-y-1.5">
-                <li>Go to <strong>Top Up Wallet</strong> and select <strong>Mobile Money</strong>.</li>
-                <li>Send the desired amount to the <strong>MoMo number</strong> shown on screen.</li>
-                <li>After sending, you'll receive an <strong>11-digit Transaction ID</strong> from your network provider via SMS.</li>
-                <li>Enter the Transaction ID on the app and click <strong>"Claim Payment"</strong>.</li>
-                <li>Your wallet will be credited instantly once verified.</li>
-              </ol>
-              <p className="text-xs mt-2 text-muted-foreground/80">
-                💡 The admin pre-verifies Transaction IDs, so make sure you enter the correct one.
-              </p>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="How to Deposit (Paystack)" icon={Wallet}>
-              <ol className="list-decimal list-inside space-y-1.5">
-                <li>Go to <strong>Top Up Wallet</strong> and select <strong>Paystack</strong>.</li>
-                <li>Enter the amount you want to deposit (a small 2% processing fee applies).</li>
-                <li>Click <strong>"Pay with Paystack"</strong> — you'll be redirected to a secure payment page.</li>
-                <li>Complete payment using your <strong>card, mobile money, or bank transfer</strong>.</li>
-                <li>⚠️ <strong>IMPORTANT:</strong> After paying, wait <strong>5 seconds</strong> for the Paystack window to detect the transaction and show <strong>"Payment Successful"</strong>.</li>
-                <li>If you don't see "Payment Successful" after 5 seconds, click the <strong>"I've already paid"</strong> button and wait for it to confirm.</li>
-                <li>Do <strong>NOT</strong> close the window until you see the success confirmation — otherwise your payment may not be recorded even though the money was deducted.</li>
-                <li>Once confirmed, your wallet is credited <strong>instantly</strong>.</li>
-              </ol>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="How to File a Complaint" icon={AlertTriangle}>
-              <ol className="list-decimal list-inside space-y-1.5">
-                <li>Go to <strong>Complaints</strong> from the sidebar menu.</li>
-                <li>Select the <strong>order</strong> you have an issue with (only orders from the last 48 hours are shown).</li>
-                <li>Enter a <strong>subject</strong> and describe the problem in detail.</li>
-                <li>Click <strong>"Submit Complaint"</strong> to send it for admin review.</li>
-                <li>You'll be notified once the admin responds or resolves your complaint.</li>
-              </ol>
-              <p className="text-xs mt-2 text-muted-foreground/80">
-                💡 Make sure to include the affected phone number and bundle details for faster resolution.
-              </p>
-            </CollapsibleSection>
-          </div>
-        )}
+        {showGuides && <GuideVideos />}
 
         <div className="flex flex-col items-center gap-3 pt-2">
           <a
