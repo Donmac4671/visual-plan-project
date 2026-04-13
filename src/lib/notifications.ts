@@ -31,8 +31,7 @@ export function showNativeNotification(title: string, body: string, icon?: strin
         icon: icon || "/favicon.ico",
         badge: "/favicon.ico",
         tag: `dmh-${Date.now()}`,
-        renotify: true,
-      });
+      } as NotificationOptions);
       // Auto-close after 5s
       setTimeout(() => n.close(), 5000);
     } catch {
