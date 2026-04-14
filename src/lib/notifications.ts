@@ -28,8 +28,8 @@ export function showNativeNotification(title: string, body: string, icon?: strin
     try {
       const n = new Notification(title, {
         body,
-        icon: icon || "/favicon.ico",
-        badge: "/favicon.ico",
+        icon: icon || "/favicon.png",
+        badge: "/favicon.png",
         tag: `dmh-${Date.now()}`,
       } as NotificationOptions);
       // Auto-close after 5s

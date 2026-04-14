@@ -134,6 +134,11 @@ function parseOrderCommand(text: string): { phone: string; networkId: string; ne
   return { phone, networkId, networkDisplay: displayNames[networkId] || networkId, sizeGB, sizeLabel: `${sizeGB}GB` };
 }
 
+function generateOrderRef(): string {
+  const uniqueSuffix = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100).toString().padStart(2, "0")}`;
+  return `DMH${uniqueSuffix}`;
+}
+
 Deno.serve(async () => {
   console.log("telegram-momo invoked");
   const startTime = Date.now();
@@ -341,20 +346,30 @@ async function handleOrderCommand(
     return;
   }
 
-  // Find admin user to debit wallet
-  const { data: adminRole } = await supabase
-    .from("user_roles")
+  // Use the primary admin wallet so bot orders always appear on the same website account
+  const { data: primaryAdminProfile } = await supabase
+    .from("profiles")
     .select("user_id")
-    .eq("role", "admin")
-    .limit(1)
-    .single();
+    .eq("email", "donmacdatahub@gmail.com")
+    .maybeSingle();
 
-  if (!adminRole) {
+  let adminUserId = primaryAdminProfile?.user_id;
+
+  if (!adminUserId) {
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin")
+      .limit(1)
+      .single();
+
+    adminUserId = adminRole?.user_id;
+  }
+
+  if (!adminUserId) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ No admin account found.`);
     return;
   }
-
-  const adminUserId = adminRole.user_id;
 
   // Get admin profile to check tier for correct pricing
   const { data: adminProfile } = await supabase.from("profiles").select("wallet_balance, tier").eq("user_id", adminUserId).single();
@@ -387,9 +402,7 @@ async function handleOrderCommand(
     amount = fallback;
   }
 
-  // Get actual order count for reference numbering
-  const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true });
-  const orderRef = `DMH${String((orderCount ?? 0) + 1).padStart(3, "0")}`;
+  const orderRef = generateOrderRef();
   const ghReference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
   // Debit admin wallet BEFORE placing the order
@@ -422,6 +435,7 @@ async function handleOrderCommand(
     amount,
     status: "processing",
     payment_method: "wallet",
+    gh_reference: ghReference,
   }).select("id").single();
 
   if (orderErr) {

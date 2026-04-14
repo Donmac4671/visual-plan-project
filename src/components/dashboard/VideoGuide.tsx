@@ -3,7 +3,7 @@ import { Play, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RotateCcw } fr
 import { cn } from "@/lib/utils";
 
 interface SlideStep {
-  image: string;
+  image?: string;
   caption: string;
 }
 
@@ -77,12 +77,30 @@ export default function VideoGuide({ title, emoji, steps, accentColor }: VideoGu
       {/* Image slideshow */}
       <div className="relative bg-muted">
         <div className="relative overflow-hidden" style={{ minHeight: 280 }}>
-          <img
-            src={step.image}
-            alt={step.caption}
-            className="w-full h-auto max-h-[400px] object-contain transition-opacity duration-500"
-            loading="lazy"
-          />
+          {step.image ? (
+            <img
+              src={step.image}
+              alt={step.caption}
+              className="w-full h-auto max-h-[400px] object-contain transition-opacity duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-center">
+              <div className="max-w-sm space-y-4">
+                <div
+                  className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {currentStep + 1}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Quick steps</p>
+                  <p className="text-lg font-semibold text-foreground">{title}</p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{step.caption}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation arrows */}

@@ -81,6 +81,8 @@ serve(async (req) => {
     const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
     const capacity = bundle_size_gb;
 
+    await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
+
     const requestBody: Record<string, unknown> = { network: networkConfig.key, reference, msisdn: phone, capacity };
 
     console.log(`Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB to ${phone}`);

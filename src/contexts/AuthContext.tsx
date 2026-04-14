@@ -21,7 +21,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: any; data?: any }>;
+  signUp: (email: string, password: string, fullName: string, phone: string, referralCode?: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -58,7 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const processPendingReferral = async (authUser: User) => {
     try {
-      const code = localStorage.getItem("pending_referral_code");
+      const storedCode = localStorage.getItem("pending_referral_code")?.trim().toUpperCase();
+      const metadataCode = typeof authUser.user_metadata?.referral_code === "string"
+        ? authUser.user_metadata.referral_code.trim().toUpperCase()
+        : "";
+      const code = storedCode || metadataCode;
       if (!code) return;
 
       // Check if referral already exists for this user
@@ -78,14 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("referral_code", code)
         .maybeSingle();
 
-      if (referrerProfile && referrerProfile.user_id !== authUser.id) {
-        await supabase.from("referrals").insert({
-          referrer_id: referrerProfile.user_id,
-          referred_id: authUser.id,
-          referral_code: code,
-        });
+      if (!referrerProfile) return;
+
+      if (referrerProfile.user_id === authUser.id) {
+        localStorage.removeItem("pending_referral_code");
+        return;
       }
-      localStorage.removeItem("pending_referral_code");
+
+      const { error: referralError } = await supabase.from("referrals").insert({
+        referrer_id: referrerProfile.user_id,
+        referred_id: authUser.id,
+        referral_code: code,
+      });
+
+      if (!referralError) {
+        localStorage.removeItem("pending_referral_code");
+      } else {
+        console.error("Referral insert error:", referralError.message);
+      }
     } catch (err) {
       console.error("Referral processing error:", err);
     }
@@ -236,12 +250,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, phone: string) => {
+  const signUp = async (email: string, password: string, fullName: string, phone: string, referralCode?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, phone },
+        data: { full_name: fullName, phone, ...(referralCode ? { referral_code: referralCode } : {}) },
         emailRedirectTo: window.location.origin,
       },
     });
