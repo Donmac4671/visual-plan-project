@@ -26,19 +26,20 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedReferralCode = referralCode.trim().toUpperCase();
     if (password !== confirmPassword) {
       toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
       return;
     }
     setLoading(true);
-    const { error, data } = await signUp(email, password, name, phone);
+    const { error, data } = await signUp(email, password, name, phone, normalizedReferralCode || undefined);
     setLoading(false);
     if (error) {
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     } else {
       // Store referral code for processing after first login (user isn't authenticated yet)
-      if (referralCode) {
-        localStorage.setItem("pending_referral_code", referralCode.trim().toUpperCase());
+      if (normalizedReferralCode) {
+        localStorage.setItem("pending_referral_code", normalizedReferralCode);
       }
       toast({ title: "Account Created!", description: "You can now sign in." });
       navigate("/login");
