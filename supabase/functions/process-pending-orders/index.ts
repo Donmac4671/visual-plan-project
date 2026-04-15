@@ -43,13 +43,22 @@ Deno.serve(async (req) => {
 
     for (const order of pendingOrders) {
       try {
+        // Extract sizeGB from bundle_size string like "5GB"
+        const sizeMatch = order.bundle_size.match(/(\d+(?:\.\d+)?)/);
+        const bundleSizeGb = sizeMatch ? parseFloat(sizeMatch[1]) : 1;
+
         const resp = await fetch(`${supabaseUrl}/functions/v1/fulfill-order`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${anonKey}`,
+            Authorization: `Bearer ${serviceKey}`,
           },
-          body: JSON.stringify({ orderId: order.id }),
+          body: JSON.stringify({
+            order_id: order.id,
+            network_id: order.network,
+            phone: order.phone_number,
+            bundle_size_gb: bundleSizeGb,
+          }),
         });
         const result = await resp.json();
         results.push({ order_ref: order.order_ref, result });
