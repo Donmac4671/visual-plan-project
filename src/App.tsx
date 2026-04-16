@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { initNotifications } from "@/lib/notifications";
 
 import FloatingCartButton from "@/components/global/FloatingCartButton";
 import LiveChatWidget from "@/components/global/LiveChatWidget";
@@ -31,31 +30,6 @@ import Flyer from "./pages/Flyer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-// Component to initialize notifications when user is authenticated
-function NotificationInitializer({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    // Initialize notifications when user is logged in and not loading
-    if (!loading && user) {
-      console.log("User logged in, initializing notifications for:", user.email);
-      initNotifications()
-        .then((success) => {
-          if (success) {
-            console.log("✅ Notifications initialized successfully");
-          } else {
-            console.log("⚠️ Notifications not available or permission denied");
-          }
-        })
-        .catch((error) => {
-          console.error("❌ Failed to initialize notifications:", error);
-        });
-    }
-  }, [user, loading]);
-
-  return <>{children}</>;
-}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -107,129 +81,128 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <RecoveryRedirect />
-            <NotificationInitializer>
-              <RealtimeNotifications />
-              <SiteMessagePopup />
-              <FloatingCartButton />
-              <LiveChatWidget />
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <PublicRoute>
-                      <Landing />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/login"
-                  element={
-                    <PublicRoute>
-                      <Login />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    <PublicRoute>
-                      <Register />
-                    </PublicRoute>
-                  }
-                />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/orders"
-                  element={
-                    <ProtectedRoute>
-                      <Orders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/transactions"
-                  element={
-                    <ProtectedRoute>
-                      <Transactions />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/topups"
-                  element={
-                    <ProtectedRoute>
-                      <TopUps />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/cart"
-                  element={
-                    <ProtectedRoute>
-                      <Cart />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/top-up-wallet"
-                  element={
-                    <ProtectedRoute>
-                      <TopUpWallet />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute>
-                      <Admin />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/complaints"
-                  element={
-                    <ProtectedRoute>
-                      <Complaints />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/referrals"
-                  element={
-                    <ProtectedRoute>
-                      <Referrals />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/become-agent"
-                  element={
-                    <ProtectedRoute>
-                      <BecomeAgent />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/flyer" element={<Flyer />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </NotificationInitializer>
+            <RealtimeNotifications />
+            <SiteMessagePopup />
+
+            <FloatingCartButton />
+            <LiveChatWidget />
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <PublicRoute>
+                    <Landing />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transactions"
+                element={
+                  <ProtectedRoute>
+                    <Transactions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/topups"
+                element={
+                  <ProtectedRoute>
+                    <TopUps />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute>
+                    <Cart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/top-up-wallet"
+                element={
+                  <ProtectedRoute>
+                    <TopUpWallet />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/complaints"
+                element={
+                  <ProtectedRoute>
+                    <Complaints />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/referrals"
+                element={
+                  <ProtectedRoute>
+                    <Referrals />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/become-agent"
+                element={
+                  <ProtectedRoute>
+                    <BecomeAgent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/flyer" element={<Flyer />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
