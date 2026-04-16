@@ -1,16 +1,22 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "noImplicitAny": false,
+
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
+
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "strictNullChecks": false
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    "strict": true
   },
   "files": [],
   "references": [
