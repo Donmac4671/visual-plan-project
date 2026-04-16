@@ -565,6 +565,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_order_ref: { Args: never; Returns: string }
       pay_order_with_paystack: {
         Args: {
           p_amount: number
