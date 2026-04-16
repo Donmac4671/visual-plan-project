@@ -134,9 +134,12 @@ function parseOrderCommand(text: string): { phone: string; networkId: string; ne
   return { phone, networkId, networkDisplay: displayNames[networkId] || networkId, sizeGB, sizeLabel: `${sizeGB}GB` };
 }
 
-function generateOrderRef(): string {
-  const uniqueSuffix = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100).toString().padStart(2, "0")}`;
-  return `DMH${uniqueSuffix}`;
+async function getNextOrderRef(supabase: any): Promise<string> {
+  const { data, error } = await supabase.rpc("next_order_ref");
+  if (error || !data) {
+    throw new Error(error?.message || "Unable to generate the next order reference");
+  }
+  return String(data);
 }
 
 Deno.serve(async () => {
@@ -402,7 +405,18 @@ async function handleOrderCommand(
     amount = fallback;
   }
 
-  const orderRef = generateOrderRef();
+  let orderRef: string;
+  try {
+    orderRef = await getNextOrderRef(supabase);
+  } catch (error) {
+    await sendTelegramMessage(
+      lovableKey,
+      telegramKey,
+      chatId,
+      `❌ Failed to generate order reference: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+    return;
+  }
   const ghReference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
   // Debit admin wallet BEFORE placing the order

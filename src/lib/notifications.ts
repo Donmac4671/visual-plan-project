@@ -5,7 +5,10 @@ let swRegistration: ServiceWorkerRegistration | null = null;
 export async function registerServiceWorker(): Promise<void> {
   if ("serviceWorker" in navigator) {
     try {
-      swRegistration = await navigator.serviceWorker.register("/sw.js");
+      swRegistration = await navigator.serviceWorker.getRegistration("/")
+        ?? await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+      swRegistration = await navigator.serviceWorker.getRegistration("/") ?? swRegistration;
     } catch {
       // SW registration failed – fall back to basic Notification API
     }
@@ -31,10 +34,11 @@ export function showNativeNotification(title: string, body: string, icon?: strin
 
   const opts: NotificationOptions = {
     body,
-    icon: icon || "/favicon.png",
-    badge: "/favicon.png",
+    icon: icon || "/placeholder.svg",
+    badge: "/placeholder.svg",
     tag: `dmh-${Date.now()}`,
     requireInteraction: false,
+    vibrate: [100, 50, 100],
   };
 
   // Prefer SW-based notification (works when tab is background / phone locked)
