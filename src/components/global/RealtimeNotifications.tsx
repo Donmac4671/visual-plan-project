@@ -6,30 +6,71 @@ import {
   requestNotificationPermission,
   registerServiceWorker,
 } from "@/lib/notifications";
+import { toast } from "@/hooks/use-toast";
 
 export default function RealtimeNotifications() {
   const { user, isAdmin, profile } = useAuth();
   const isAgent = profile?.tier === "agent";
   const isAgentRef = useRef(isAgent);
+  const profilePhoneRef = useRef((profile?.phone ?? "").replace(/\D/g, ""));
+  const lastNotificationRef = useRef<Record<string, number>>({});
   isAgentRef.current = isAgent;
+  profilePhoneRef.current = (profile?.phone ?? "").replace(/\D/g, "");
 
-  // Register service worker + request permission once
+  const normalizePhone = useCallback((value?: string | null) => (value ?? "").replace(/\D/g, ""), []);
+
+  const shouldIncludeRecipient = useCallback((recipientPhone?: string | null) => {
+    if (isAgentRef.current) return true;
+
+    const recipient = normalizePhone(recipientPhone);
+    const accountPhone = profilePhoneRef.current;
+
+    return Boolean(recipient && accountPhone && recipient !== accountPhone);
+  }, [normalizePhone]);
+
+  const buildOrderOfMessage = useCallback((network: string, pkg: string, phone?: string | null) => {
+    const includeRecipient = shouldIncludeRecipient(phone);
+    return `Your ${network} order of ${pkg}${includeRecipient && phone ? ` for ${phone}` : ""}`;
+  }, [shouldIncludeRecipient]);
+
+  const buildDeliveredMessage = useCallback((network: string, pkg: string, phone?: string | null) => {
+    const includeRecipient = shouldIncludeRecipient(phone);
+    if (includeRecipient && phone) {
+      return `Your ${network} ${pkg} for ${phone} has been delivered.`;
+    }
+    return `Your ${network} ${pkg} has been successfully delivered.`;
+  }, [shouldIncludeRecipient]);
+
   useEffect(() => {
     if (!user) return;
     registerServiceWorker();
     requestNotificationPermission();
   }, [user]);
 
-  // Only native push — no duplicate website toast
   const notify = useCallback((title: string, body: string) => {
+    const key = `${title}:${body}`;
+    const now = Date.now();
+    const lastShown = lastNotificationRef.current[key] ?? 0;
+
+    if (now - lastShown < 4000) return;
+
+    lastNotificationRef.current[key] = now;
+
+    Object.entries(lastNotificationRef.current).forEach(([entryKey, timestamp]) => {
+      if (now - timestamp > 15000) delete lastNotificationRef.current[entryKey];
+    });
+
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      toast({ title, description: body });
+      return;
+    }
+
     showNativeNotification(title, body);
   }, []);
 
-  // ── User: order status changes (INSERT for "placed" + UPDATE for status changes) ──
   useEffect(() => {
     if (!user || isAdmin) return;
 
-    // Listen for new orders the user just placed
     const chInsert = supabase
       .channel(`orders-insert-${user.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, (payload) => {
@@ -39,22 +80,13 @@ export default function RealtimeNotifications() {
         const phone = o.phone_number ?? "";
         const status = o.status;
         if (status === "processing") {
-          if (isAgentRef.current) {
-            notify("Order Placed", `Your ${net} order of ${pkg} for ${phone} has been successfully placed and is being processed.`);
-          } else {
-            notify("Order Placed", `Your ${net} order of ${pkg} has been successfully placed and is being processed.`);
-          }
+          notify("Order Placed", `${buildOrderOfMessage(net, pkg, phone)} has been successfully placed and is being processed.`);
         } else if (status === "pending") {
-          if (isAgentRef.current) {
-            notify("Order Pending", `Your ${net} order of ${pkg} for ${phone} is pending. It will be processed soon.`);
-          } else {
-            notify("Order Pending", `Your ${net} order of ${pkg} is pending. It will be processed soon.`);
-          }
+          notify("Order Pending", `${buildOrderOfMessage(net, pkg, phone)} is pending. It will be processed soon.`);
         }
       })
       .subscribe();
 
-    // Listen for status updates (delivered / failed)
     const chUpdate = supabase
       .channel(`orders-update-${user.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, (payload) => {
@@ -66,29 +98,13 @@ export default function RealtimeNotifications() {
         const phone = (payload.new as any)?.phone_number ?? "";
 
         if (newStatus === "completed") {
-          if (isAgentRef.current) {
-            notify("Order Delivered", `Your ${net} ${pkg} for ${phone} has been successfully delivered.`);
-          } else {
-            notify("Order Delivered", `Your ${net} ${pkg} has been successfully delivered.`);
-          }
+          notify("Order Delivered", buildDeliveredMessage(net, pkg, phone));
         } else if (newStatus === "failed") {
-          if (isAgentRef.current) {
-            notify("Order Failed", `Your ${net} order of ${pkg} for ${phone} has failed. Please contact support.`);
-          } else {
-            notify("Order Failed", `Your ${net} order of ${pkg} has failed. Please contact support.`);
-          }
+          notify("Order Failed", `${buildOrderOfMessage(net, pkg, phone)} has failed. Please contact support.`);
         } else if (newStatus === "pending") {
-          if (isAgentRef.current) {
-            notify("Order Pending", `Your ${net} order of ${pkg} for ${phone} is pending.`);
-          } else {
-            notify("Order Pending", `Your ${net} order of ${pkg} is pending.`);
-          }
+          notify("Order Pending", `${buildOrderOfMessage(net, pkg, phone)} is pending. It will be processed soon.`);
         } else if (newStatus === "processing") {
-          if (isAgentRef.current) {
-            notify("Order Processing", `Your ${net} order of ${pkg} for ${phone} is now being processed.`);
-          } else {
-            notify("Order Processing", `Your ${net} order of ${pkg} is now being processed.`);
-          }
+          notify("Order Processing", `${buildOrderOfMessage(net, pkg, phone)} is now being processed.`);
         }
       })
       .subscribe();
@@ -97,7 +113,7 @@ export default function RealtimeNotifications() {
       supabase.removeChannel(chInsert);
       supabase.removeChannel(chUpdate);
     };
-  }, [user, isAdmin, notify]);
+  }, [user, isAdmin, notify, buildOrderOfMessage, buildDeliveredMessage]);
 
   // ── User: top-up updates ──
   useEffect(() => {
