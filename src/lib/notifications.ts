@@ -55,9 +55,11 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       const keyBytes = urlBase64ToUint8Array(keyData.publicKey);
+      const ab = new ArrayBuffer(keyBytes.byteLength);
+      new Uint8Array(ab).set(keyBytes);
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: keyBytes.buffer.slice(keyBytes.byteOffset, keyBytes.byteOffset + keyBytes.byteLength),
+        applicationServerKey: ab,
       });
     }
 
