@@ -10,12 +10,15 @@ const corsHeaders = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-const NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
-  mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
-  telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
-  "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
-  "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
+// Multiple key candidates per network, tried in order until provider accepts.
+const NETWORK_KEYS: Record<string, string[]> = {
+  mtn: ["mtn"],
+  telecel: ["telecel"],
+  "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
+  "at-premium": ["atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
 };
+
+const ENDPOINT = "/v1/purchaseBundle";
 
 const RequestSchema = z.object({
   order_id: z.string().uuid(),
@@ -25,26 +28,21 @@ const RequestSchema = z.object({
 });
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
-    if (!GH_API_KEY) {
-      throw new Error("GHDATACONNECT_API_KEY is not configured");
-    }
+    if (!GH_API_KEY) throw new Error("GHDATACONNECT_API_KEY is not configured");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    // Validate JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ success: false, message: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -52,8 +50,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -61,68 +58,70 @@ serve(async (req) => {
     const parsed = RequestSchema.safeParse(body);
     if (!parsed.success) {
       return new Response(JSON.stringify({ success: false, message: "Invalid request", errors: parsed.error.flatten().fieldErrors }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
 
-    // Normalize network name: "AT BIG TIME" → "at-bigtime", "AT PREMIUM" → "at-premium"
     const networkKey = network_id.toLowerCase().replace(/\s+/g, "-");
-    const networkConfig = NETWORK_MAP[networkKey];
-    if (!networkConfig) {
+    const candidateKeys = NETWORK_KEYS[networkKey];
+    if (!candidateKeys) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    const capacity = bundle_size_gb;
-
     await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
-
-    const requestBody: Record<string, unknown> = { network: networkConfig.key, reference, msisdn: phone, capacity };
 
     console.log(`Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB to ${phone}`);
 
-    const response = await fetch(`${GH_API_BASE}${networkConfig.endpoint}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GH_API_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    let lastResult: any = null;
+    let lastStatus = 0;
 
-    const result = await response.json();
-    console.log(`GHDataConnect response for order ${order_id}:`, JSON.stringify(result));
+    for (const key of candidateKeys) {
+      const requestBody = { network: key, reference, msisdn: phone, capacity: bundle_size_gb };
+      const response = await fetch(`${GH_API_BASE}${ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GH_API_KEY}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      lastStatus = response.status;
+      lastResult = await response.json().catch(() => ({}));
+      console.log(`GH response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult));
 
-    if (result.success) {
-      // Store the actual GH reference from the response
-      const actualRef = result.data?.reference ?? result.data?.id ?? result.reference ?? reference;
-      console.log(`GH Ref extracted: ${actualRef}, full data:`, JSON.stringify(result.data));
-      await supabase.from("orders").update({ gh_reference: String(actualRef) }).eq("id", order_id);
-      return new Response(JSON.stringify({ success: true, data: result.data, reference: actualRef }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } else {
-      console.error(`GHDataConnect order failed [${response.status}]:`, JSON.stringify(result));
-      // Mark the order as failed so user sees it
-      await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
-      return new Response(JSON.stringify({ success: false, message: result.message || "Order failed on provider" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (lastResult?.success) {
+        const actualRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? reference;
+        await supabase.from("orders").update({ gh_reference: String(actualRef) }).eq("id", order_id);
+        return new Response(JSON.stringify({ success: true, data: lastResult.data, reference: actualRef }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Only try alternates if the failure looks like an unknown-network rejection
+      const msg = String(lastResult?.message ?? "").toLowerCase();
+      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || response.status === 404 || response.status === 422;
+      if (!looksLikeNetworkError) break;
     }
+
+    // All attempts failed → mark failed and refund wallet
+    console.error(`All GHDataConnect attempts failed for order ${order_id} [${lastStatus}]:`, JSON.stringify(lastResult));
+    await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
+    await supabase.rpc("refund_failed_order", { p_order_id: order_id });
+
+    return new Response(JSON.stringify({ success: false, message: lastResult?.message || "Order failed on provider", provider_status: lastStatus }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Fulfill order error:", errorMessage);
     return new Response(JSON.stringify({ success: false, message: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

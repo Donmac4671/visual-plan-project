@@ -93,11 +93,12 @@ const NETWORK_ALIASES: Record<string, string> = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-const FULFILL_NETWORK_MAP: Record<string, { key: string; endpoint: string }> = {
-  mtn: { key: "mtn", endpoint: "/v1/purchaseBundle" },
-  telecel: { key: "telecel", endpoint: "/v1/purchaseBundle" },
-  "at-bigtime": { key: "atbigtime", endpoint: "/v1/purchaseBundle" },
-  "at-premium": { key: "atpremium", endpoint: "/v1/purchaseBundle" },
+const FULFILL_ENDPOINT = "/v1/purchaseBundle";
+const FULFILL_NETWORK_KEYS: Record<string, string[]> = {
+  mtn: ["mtn"],
+  telecel: ["telecel"],
+  "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
+  "at-premium": ["atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
 };
 
 // Fallback prices when custom_bundles table is empty
@@ -464,51 +465,62 @@ async function handleOrderCommand(
     return;
   }
 
-  // Call GHDataConnect directly
-  const networkConfig = FULFILL_NETWORK_MAP[order.networkId];
-  if (!networkConfig) {
+  // Call GHDataConnect with retries across alternate network keys
+  const candidateKeys = FULFILL_NETWORK_KEYS[order.networkId];
+  if (!candidateKeys) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Unknown network config for ${order.networkId}`);
     return;
   }
 
   const capacity = order.sizeGB;
-  const requestBody: Record<string, unknown> = { network: networkConfig.key, reference: ghReference, msisdn: order.phone, capacity };
-
   console.log(`Telegram order: ${order.networkDisplay} ${order.sizeLabel} to ${order.phone}`);
 
-  try {
-    const response = await fetch(`${GH_API_BASE}${networkConfig.endpoint}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GH_API_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+  let lastResult: any = null;
+  let lastStatus = 0;
+  let success = false;
+  let actualGhRef: string = ghReference;
 
-    const result = await response.json();
-    console.log(`GHDataConnect Telegram order response:`, JSON.stringify(result));
+  for (const key of candidateKeys) {
+    try {
+      const requestBody = { network: key, reference: ghReference, msisdn: order.phone, capacity };
+      const response = await fetch(`${GH_API_BASE}${FULFILL_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GH_API_KEY}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      lastStatus = response.status;
+      lastResult = await response.json().catch(() => ({}));
+      console.log(`GH Telegram response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult));
 
-    if (result.success) {
-      // Use the reference/id from GHDataConnect response
-      const actualGhRef = result.data?.reference ?? result.data?.id ?? result.reference ?? ghReference;
-      console.log(`GH Ref extracted: ${actualGhRef}, full data:`, JSON.stringify(result.data));
-      await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
+      if (lastResult?.success) {
+        actualGhRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? ghReference;
+        await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
+        success = true;
+        break;
+      }
 
-      await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${actualGhRef}`
-      );
-    } else {
-      await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
-      await sendTelegramMessage(lovableKey, telegramKey, chatId,
-        `❌ Order Failed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n⚠️ ${result.message || "Provider error"}`
-      );
+      const msg = String(lastResult?.message ?? "").toLowerCase();
+      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || response.status === 404 || response.status === 422;
+      if (!looksLikeNetworkError) break;
+    } catch (err) {
+      console.error(`GH Telegram fetch error (key=${key}):`, err);
     }
-  } catch (err) {
-    await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
+  }
+
+  if (success) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId,
-      `❌ Order Error: ${err instanceof Error ? err.message : "Unknown error"}`
+      `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${actualGhRef}`
+    );
+  } else {
+    await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
+    // Refund admin wallet on failure
+    await supabase.rpc("refund_failed_order", { p_order_id: newOrder.id });
+    await sendTelegramMessage(lovableKey, telegramKey, chatId,
+      `❌ Order Failed (refunded)!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n⚠️ ${lastResult?.message || "Provider error"} [${lastStatus}]`
     );
   }
 }
