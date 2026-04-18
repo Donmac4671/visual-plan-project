@@ -1,7 +1,6 @@
 import VideoGuide from "./VideoGuide";
 
 import buyData1 from "@/assets/guides/buy-data-1.jpg";
-import buyData2 from "@/assets/guides/buy-data-2.jpg";
 import buyData3 from "@/assets/guides/buy-data-3.jpg";
 import buyData4 from "@/assets/guides/buy-data-4.jpg";
 import buyData5 from "@/assets/guides/buy-data-5.jpg";
