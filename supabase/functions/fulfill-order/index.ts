@@ -12,10 +12,10 @@ const GH_API_BASE = "https://ghdataconnect.com/api";
 
 // Multiple key candidates per network, tried in order until provider accepts.
 const NETWORK_KEYS: Record<string, string[]> = {
-  mtn: ["mtn"],
-  telecel: ["telecel"],
-  "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
-  "at-premium": ["atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
+  mtn: ["MTN", "mtn"],
+  telecel: ["TELECEL", "telecel"],
+  "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
+  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium"],
 };
 
 const ENDPOINT = "/v1/purchaseBundle";

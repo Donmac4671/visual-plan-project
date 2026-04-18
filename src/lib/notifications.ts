@@ -93,8 +93,8 @@ export function showNativeNotification(title: string, body: string, icon?: strin
 
   const opts: NotificationOptions = {
     body,
-    icon: icon || "/placeholder.svg",
-    badge: "/placeholder.svg",
+    icon: icon || "/favicon.png",
+    badge: "/favicon.png",
     tag: `dmh-${Date.now()}`,
     requireInteraction: false,
   };

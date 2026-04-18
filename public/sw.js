@@ -13,8 +13,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Donmac Data Hub";
   const options = {
     body: data.body || "",
-    icon: data.icon || "/placeholder.svg",
-    badge: data.badge || "/placeholder.svg",
+    icon: data.icon || "/favicon.png",
+    badge: data.badge || "/favicon.png",
     tag: data.tag || `dmh-${Date.now()}`,
     renotify: true,
     requireInteraction: false,
