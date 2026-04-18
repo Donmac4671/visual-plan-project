@@ -22,11 +22,10 @@ export default function GuideVideos() {
         emoji="🛒"
         accentColor="#3b82f6"
         steps={[
-          { image: buyData1, caption: "Choose the network you want to buy from." },
-          { image: buyData2, caption: "Select the package you want to buy." },
-          { image: buyData3, caption: "Enter the number to receive the data, then tap Add to Cart." },
-          { image: buyData4, caption: "Open the cart to review your selected bundle." },
-          { image: buyData5, caption: "Choose Wallet or Paystack, then tap Proceed to Pay to place the order." },
+          { image: buyData3, caption: "Choose the network and the package you want to buy." },
+          { image: buyData1, caption: "Enter the recipient phone number, then tap Add to Cart." },
+          { image: buyData5, caption: "Tap the cart icon at the top to open your cart." },
+          { image: buyData4, caption: "Choose Wallet or Paystack, then tap Proceed to Pay to place the order." },
         ]}
       />
 
