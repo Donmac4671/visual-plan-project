@@ -20,7 +20,9 @@ serve(async (req) => {
     const body = await req.json();
     console.log("GHDataConnect webhook received:", JSON.stringify(body));
 
-    const { reference, status, message } = body;
+    // Accept reference from multiple shapes (top-level, nested data, or "trxref")
+    const reference = body.reference ?? body.trxref ?? body.data?.reference ?? body.data?.trxref;
+    const rawStatus = String(body.status ?? body.data?.status ?? "").toLowerCase().trim();
 
     if (!reference) {
       return new Response(JSON.stringify({ success: false, message: "Missing reference" }), {
@@ -28,12 +30,18 @@ serve(async (req) => {
       });
     }
 
-    // Map GHDataConnect status to our status
+    // Map GHDataConnect status → our status (mirrors provider 1:1)
     let newStatus = "processing";
-    if (status === "completed" || status === "success" || status === "delivered") {
+    if (["completed", "success", "delivered", "successful"].includes(rawStatus)) {
       newStatus = "completed";
-    } else if (status === "failed" || status === "rejected") {
+    } else if (["failed", "rejected", "error", "declined"].includes(rawStatus)) {
       newStatus = "failed";
+    } else if (["waiting", "queued", "queue"].includes(rawStatus)) {
+      newStatus = "waiting";
+    } else if (["pending"].includes(rawStatus)) {
+      newStatus = "pending";
+    } else if (["processing", "in_progress", "sending"].includes(rawStatus)) {
+      newStatus = "processing";
     }
 
     // Match by gh_reference stored on the order

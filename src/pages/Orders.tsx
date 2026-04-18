@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckCircle, Clock, XCircle, List, Loader, Search } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, XCircle, List, Loader, Search, Hourglass } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, isSameDay, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-type OrderStatus = "all" | "completed" | "pending" | "processing" | "failed";
+type OrderStatus = "all" | "completed" | "pending" | "processing" | "waiting" | "failed";
 
 const displayStatus = (status: string) => status === "completed" ? "delivered" : status;
 
@@ -51,7 +51,7 @@ export default function Orders() {
   }, [user]);
 
   const statusCounts = useMemo(() => {
-    const counts = { all: orders.length, completed: 0, pending: 0, processing: 0, failed: 0 };
+    const counts = { all: orders.length, completed: 0, pending: 0, processing: 0, waiting: 0, failed: 0 };
     orders.forEach((o) => {
       if (o.status in counts) counts[o.status as keyof typeof counts]++;
     });
@@ -77,6 +77,7 @@ export default function Orders() {
     switch (status) {
       case "completed": return "bg-success/10 text-success border-success/20";
       case "pending": return "bg-warning/10 text-warning border-warning/20";
+      case "waiting": return "bg-amber-500/10 text-amber-600 border-amber-500/20";
       case "processing": return "bg-primary/10 text-primary border-primary/20";
       case "failed": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "";
@@ -86,6 +87,7 @@ export default function Orders() {
   const statusTabs: { key: OrderStatus; label: string; icon: any; color: string }[] = [
     { key: "all", label: "All", icon: List, color: "text-foreground" },
     { key: "pending", label: "Pending", icon: Clock, color: "text-warning" },
+    { key: "waiting", label: "Waiting", icon: Hourglass, color: "text-amber-600" },
     { key: "processing", label: "Processing", icon: Loader, color: "text-primary" },
     { key: "completed", label: "Delivered", icon: CheckCircle, color: "text-success" },
     { key: "failed", label: "Failed", icon: XCircle, color: "text-destructive" },
@@ -93,7 +95,7 @@ export default function Orders() {
 
   return (
     <DashboardLayout title="Orders">
-      <div className="grid grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
         {statusTabs.map((tab) => (
           <button
             key={tab.key}
