@@ -103,10 +103,11 @@ serve(async (req) => {
         });
       }
 
-      // Only try alternates if the failure looks like an unknown-network rejection
+      // For AT Premium especially, always try every alternate key before giving up
+      const isAtPremium = networkKey === "at-premium";
       const msg = String(lastResult?.message ?? "").toLowerCase();
-      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || response.status === 404 || response.status === 422;
-      if (!looksLikeNetworkError) break;
+      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || msg.includes("not found") || msg.includes("unsupported") || response.status === 404 || response.status === 422 || response.status === 400;
+      if (!isAtPremium && !looksLikeNetworkError) break;
     }
 
     // All attempts failed → mark failed and refund wallet
