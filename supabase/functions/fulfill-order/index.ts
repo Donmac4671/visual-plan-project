@@ -12,10 +12,10 @@ const GH_API_BASE = "https://ghdataconnect.com/api";
 
 // Multiple key candidates per network, tried in order until provider accepts.
 const NETWORK_KEYS: Record<string, string[]> = {
-  mtn: ["mtn"],
-  telecel: ["telecel"],
-  "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
-  "at-premium": ["atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
+  mtn: ["MTN", "mtn"],
+  telecel: ["TELECEL", "telecel"],
+  "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
+  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium"],
 };
 
 const ENDPOINT = "/v1/purchaseBundle";
@@ -103,10 +103,11 @@ serve(async (req) => {
         });
       }
 
-      // Only try alternates if the failure looks like an unknown-network rejection
+      // For AT Premium especially, always try every alternate key before giving up
+      const isAtPremium = networkKey === "at-premium";
       const msg = String(lastResult?.message ?? "").toLowerCase();
-      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || response.status === 404 || response.status === 422;
-      if (!looksLikeNetworkError) break;
+      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || msg.includes("not found") || msg.includes("unsupported") || response.status === 404 || response.status === 422 || response.status === 400;
+      if (!isAtPremium && !looksLikeNetworkError) break;
     }
 
     // All attempts failed → mark failed and refund wallet

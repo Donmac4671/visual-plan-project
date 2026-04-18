@@ -77,7 +77,8 @@ serve(async (req) => {
       title,
       body: message,
       url: url || "/dashboard",
-      icon: "/placeholder.svg",
+      icon: "/favicon.png",
+      badge: "/favicon.png",
     });
 
     let sent = 0;
