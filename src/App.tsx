@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import FloatingCartButton from "@/components/global/FloatingCartButton";
 import LiveChatWidget from "@/components/global/LiveChatWidget";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
+import EnableNotificationsBanner from "@/components/global/EnableNotificationsBanner";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
@@ -82,6 +83,7 @@ const App = () => (
           <BrowserRouter>
             <RecoveryRedirect />
             <RealtimeNotifications />
+            <EnableNotificationsBanner />
             <SiteMessagePopup />
 
             <FloatingCartButton />
