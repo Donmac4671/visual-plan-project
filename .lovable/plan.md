@@ -1,53 +1,44 @@
 
-## Goal
-Fix AirtelTigo Premium failures + deliver true phone-style push notifications with the wording structure you specified, for both users and admin (admin sees ALL user activity).
 
-## 1. AirtelTigo Premium failures
+## Issues
 
-The current `fulfill-order` sends `network: "atpremium"` to GHDataConnect's `/v1/purchaseBundle` endpoint. Per provider rules, AT Premium uses a different network key/endpoint. We will:
+**1. Referrals not showing**
+The `referrals` row is created when someone registers using a code. Need to check `Register.tsx` to confirm it inserts into `referrals` with the right `referrer_id`.
 
-- Update `fulfill-order` and the Telegram bot's network map so AT Premium uses GHDataConnect's correct value (`at_premium` / dedicated endpoint per provider docs — verified by hitting `/networks` once at deploy and falling back).
-- When the provider returns failure for AT Premium, retry once with the alternate key (`at-premium`, `atpremium`, `at_premium`) before marking failed.
-- Refund the wallet automatically when an AT Premium (or any) order fails, instead of only marking it failed (currently funds are kept).
-- Log the exact provider error against the order so admin can see why it failed.
+**2. Order status not syncing**
+The `ghconnect-webhook` matches on `gh_reference`, but I need to verify that `fulfill-order` actually saves the provider's reference back into `orders.gh_reference`. If it doesn't, no webhook will ever match.
 
-## 2. Real phone-style push notifications
+## Investigation needed (will do in default mode)
 
-Current setup only fires `Notification` while the tab is open. To get WhatsApp/Chrome-style banners that arrive even when the site is closed, we need true Web Push (VAPID + push subscriptions + server send).
+1. Read `src/pages/Register.tsx` — confirm referral insert logic and that it runs against the right user.
+2. Read `supabase/functions/fulfill-order/index.ts` — confirm `gh_reference` is captured from the provider response and written to `orders`.
+3. Query DB:
+   - `SELECT count(*), referrer_id FROM referrals GROUP BY referrer_id` — see if rows actually exist.
+   - `SELECT id, order_ref, gh_reference, status, created_at FROM orders ORDER BY created_at DESC LIMIT 20` — see if `gh_reference` is populated on recent orders.
+4. Check `ghconnect-webhook` edge logs to see if GHData is even calling it and with what payload.
 
-Plan:
-- Add `push_subscriptions` table (user_id, endpoint, keys, role, created_at) with RLS.
-- Generate VAPID keys, store as secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`.
-- Upgrade `public/sw.js` to handle `push` events and show notifications with our brand icon + sound + vibration.
-- On login, register the SW, request permission, subscribe with the VAPID public key, and upsert the subscription to the DB.
-- New edge function `send-push` that takes `(user_ids[] | role, title, body, url)` and sends Web Push to each saved subscription using `web-push` (Deno port).
-- New edge function `notifications-dispatcher` triggered by DB webhooks on `orders`, `wallet_topups`, `complaints`, `chat_messages`, `referrals`, `agent_applications`. It builds the message and calls `send-push` for the user and (always) for admin.
-- Frontend `RealtimeNotifications.tsx` is simplified to only show in-app toasts when the tab is open; background push is handled by the SW so notifications work even when the site is closed.
+## Fix plan
 
-## 3. Notification wording (exact structure you asked for)
+**Referrals**
+- If `Register.tsx` is missing the insert (or inserting with the wrong id / before the user row exists), patch it to:
+  - Read `?ref=CODE` from URL.
+  - After successful signup, look up the referrer by `referral_code`, then insert `{referrer_id, referred_id: newUser.id, referral_code}` into `referrals`.
+- Backfill: for any existing users whose `profiles.referral_code` matches a stored cookie/localStorage ref, insert missing rows (only if data is recoverable — otherwise just fix going forward).
 
-User (own number):
-- Placed: `Your <Network> order of <Package> has been successfully placed and is being processed.`
-- Pending: `Your <Network> order of <Package> is pending and will be processed soon.`
-- Failed: `Your <Network> order of <Package> failed. Please contact support.`
-- Delivered: `Your <Network> <Package> has been successfully delivered.`
+**Order status sync**
+- If `gh_reference` is not being saved: patch `fulfill-order` to extract the provider's reference (`reference`, `data.reference`, `transaction_id`, etc.) from the GHData response and `UPDATE orders SET gh_reference = ... WHERE id = ...` right after a successful purchase.
+- If GHData webhook isn't firing at all: log payload shape from edge logs and adjust the matcher (already accepts `reference`, `trxref`, `data.reference`, `data.trxref`).
+- Add a fallback: an admin "Re-sync" button that calls a new `ghconnect-status` edge function to query GHData for a single order's status on demand.
 
-Agent OR user buying for someone else (recipient ≠ profile phone):
-- Placed: `Your <Network> order of <Package> for <Recipient> has been successfully placed and is being processed.`
-- Pending: `Your <Network> order of <Package> for <Recipient> is pending and will be processed soon.`
-- Failed: `Your <Network> order of <Package> for <Recipient> failed. Please contact support.`
-- Delivered: `Your <Network> <Package> for <Recipient> has been delivered.`
+**Verification**
+- Place a test order, confirm `gh_reference` is saved, manually flip status on GHData, watch the row update.
+- Register a new test account with `?ref=YOURCODE`, confirm it shows up in your referral list immediately.
 
-Admin (everything):
-- New order, status change, new top-up (MoMo + Paystack), complaint created/replied, new chat message, new referral, new agent application — each as a concise push.
+## Files likely to change
 
-## 4. Files / changes
+- `src/pages/Register.tsx` (referral insert)
+- `supabase/functions/fulfill-order/index.ts` (save `gh_reference`)
+- `supabase/functions/ghconnect-webhook/index.ts` (logging + matcher hardening if needed)
+- Possibly new `supabase/functions/ghconnect-status/index.ts` (manual re-sync)
+- Possibly `src/components/admin/AdminLiveChat.tsx` or admin orders view (re-sync button)
 
-- DB migration: `push_subscriptions` table + RLS; small index.
-- Edge functions: `send-push` (new), `notifications-dispatcher` (new), patch `fulfill-order` (AT Premium retry + refund), patch `telegram-momo` (AT Premium fix).
-- Frontend: `public/sw.js` (push handler), `src/lib/notifications.ts` (subscribe helper), `src/components/global/RealtimeNotifications.tsx` (toast-only when visible, no duplicate native call), small hook to register subscription on login.
-- Secrets: add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (will request once approved).
-
-## Notes
-- iPhone Web Push requires the site to be added to Home Screen (PWA). I'll add a small "Install app" hint for iOS users so notifications work there too.
-- Existing duplicate-suppression and 4-second throttle remain.
