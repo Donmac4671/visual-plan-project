@@ -1,44 +1,39 @@
 
 
-## Issues
+## Root cause
 
-**1. Referrals not showing**
-The `referrals` row is created when someone registers using a code. Need to check `Register.tsx` to confirm it inserts into `referrals` with the right `referrer_id`.
+The `notify_dispatcher` DB trigger reads `current_setting('app.settings.service_role_key', true)` to authenticate to the edge function — but that setting was never configured, so it sends `Authorization: Bearer ` (empty). The edge gateway silently drops these (118 of 121 pg_net calls in the last 2 hours have NULL status). Result: **the dispatcher never runs**, so:
 
-**2. Order status not syncing**
-The `ghconnect-webhook` matches on `gh_reference`, but I need to verify that `fulfill-order` actually saves the provider's reference back into `orders.gh_reference`. If it doesn't, no webhook will ever match.
+- Non-admin users get no push notifications at all.
+- The admin appears to "receive" them only because `RealtimeNotifications.tsx` shows in-app toasts to admins via Supabase Realtime — but those aren't real OS push, they're just toasts visible while the tab is open.
 
-## Investigation needed (will do in default mode)
+This is why every platform (Android, iPhone, Windows) seems broken for everyone except the admin.
 
-1. Read `src/pages/Register.tsx` — confirm referral insert logic and that it runs against the right user.
-2. Read `supabase/functions/fulfill-order/index.ts` — confirm `gh_reference` is captured from the provider response and written to `orders`.
-3. Query DB:
-   - `SELECT count(*), referrer_id FROM referrals GROUP BY referrer_id` — see if rows actually exist.
-   - `SELECT id, order_ref, gh_reference, status, created_at FROM orders ORDER BY created_at DESC LIMIT 20` — see if `gh_reference` is populated on recent orders.
-4. Check `ghconnect-webhook` edge logs to see if GHData is even calling it and with what payload.
+## Fix
 
-## Fix plan
+**1. Make the trigger authenticate properly.** Two options, will use Vault (the safe one):
+   - Store the service role key in `vault.secrets` as `service_role_key`.
+   - Rewrite `notify_dispatcher` to read from `vault.decrypted_secrets` instead of `current_setting`.
 
-**Referrals**
-- If `Register.tsx` is missing the insert (or inserting with the wrong id / before the user row exists), patch it to:
-  - Read `?ref=CODE` from URL.
-  - After successful signup, look up the referrer by `referral_code`, then insert `{referrer_id, referred_id: newUser.id, referral_code}` into `referrals`.
-- Backfill: for any existing users whose `profiles.referral_code` matches a stored cookie/localStorage ref, insert missing rows (only if data is recoverable — otherwise just fix going forward).
+**2. Backfill subscriptions for existing users** — only 3 users have ever subscribed. Most users probably dismissed the permission prompt or the push subscription failed silently. Will:
+   - Surface a small "Enable notifications" button in the dashboard header for any logged-in user without an active subscription, so they can re-trigger the prompt anytime (instead of only the silent attempt at login).
+   - Add iOS-specific guidance: Web Push on iPhone only works after the user does **Share → Add to Home Screen** and opens the app from the home-screen icon. We'll detect iOS Safari (not standalone) and show a one-time inline hint with the steps.
 
-**Order status sync**
-- If `gh_reference` is not being saved: patch `fulfill-order` to extract the provider's reference (`reference`, `data.reference`, `transaction_id`, etc.) from the GHData response and `UPDATE orders SET gh_reference = ... WHERE id = ...` right after a successful purchase.
-- If GHData webhook isn't firing at all: log payload shape from edge logs and adjust the matcher (already accepts `reference`, `trxref`, `data.reference`, `data.trxref`).
-- Add a fallback: an admin "Re-sync" button that calls a new `ghconnect-status` edge function to query GHData for a single order's status on demand.
+**3. Verify end-to-end** by:
+   - Re-running the trigger manually (insert a test order) and checking pg_net response is 200.
+   - Checking `send-push` logs show real send attempts to the right user_ids.
 
-**Verification**
-- Place a test order, confirm `gh_reference` is saved, manually flip status on GHData, watch the row update.
-- Register a new test account with `?ref=YOURCODE`, confirm it shows up in your referral list immediately.
+## Files to change
 
-## Files likely to change
+- New SQL migration: store `service_role_key` in Vault, rewrite `public.notify_dispatcher` to use it.
+- `src/components/global/RealtimeNotifications.tsx` (or new small component): add "Enable notifications" button + iOS install hint when permission isn't granted / no subscription exists.
+- No edge function changes needed — `send-push` and `notifications-dispatcher` are already correct.
 
-- `src/pages/Register.tsx` (referral insert)
-- `supabase/functions/fulfill-order/index.ts` (save `gh_reference`)
-- `supabase/functions/ghconnect-webhook/index.ts` (logging + matcher hardening if needed)
-- Possibly new `supabase/functions/ghconnect-status/index.ts` (manual re-sync)
-- Possibly `src/components/admin/AdminLiveChat.tsx` or admin orders view (re-sync button)
+## Notes on iPhone
+
+iOS Web Push **requires** the site be added to the Home Screen (PWA mode). The manifest and apple meta tags are already in place. The only missing piece is telling iPhone users to do "Share → Add to Home Screen" — they're almost certainly opening the site in Safari, where iOS blocks all Web Push. The new inline hint will fix this.
+
+## Notes on Windows / Android
+
+Once the trigger auth is fixed, both will work as soon as the user grants permission. Existing 2 non-admin subscribers will start receiving pushes immediately after the migration runs.
 
