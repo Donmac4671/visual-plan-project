@@ -65,41 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const code = storedCode || metadataCode;
       if (!code) return;
 
-      // Check if referral already exists for this user
-      const { data: existing } = await supabase
-        .from("referrals")
-        .select("id")
-        .eq("referred_id", authUser.id)
-        .maybeSingle();
-      if (existing) {
-        localStorage.removeItem("pending_referral_code");
+      // SECURITY DEFINER RPC: bypasses RLS to look up referrer by code and create the link
+      const { error } = await supabase.rpc("register_referral", { p_code: code });
+      if (error) {
+        console.error("register_referral error:", error.message);
         return;
       }
-
-      const { data: referrerProfile } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("referral_code", code)
-        .maybeSingle();
-
-      if (!referrerProfile) return;
-
-      if (referrerProfile.user_id === authUser.id) {
-        localStorage.removeItem("pending_referral_code");
-        return;
-      }
-
-      const { error: referralError } = await supabase.from("referrals").insert({
-        referrer_id: referrerProfile.user_id,
-        referred_id: authUser.id,
-        referral_code: code,
-      });
-
-      if (!referralError) {
-        localStorage.removeItem("pending_referral_code");
-      } else {
-        console.error("Referral insert error:", referralError.message);
-      }
+      localStorage.removeItem("pending_referral_code");
     } catch (err) {
       console.error("Referral processing error:", err);
     }
