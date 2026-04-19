@@ -83,6 +83,7 @@ const App = () => (
           <BrowserRouter>
             <RecoveryRedirect />
             <RealtimeNotifications />
+            <EnableNotificationsBanner />
             <SiteMessagePopup />
 
             <FloatingCartButton />
