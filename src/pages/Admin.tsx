@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw, RefreshCw } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
@@ -186,6 +186,17 @@ export default function Admin() {
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     const displayLabel = status === "completed" ? "delivered" : status;
     toast({ title: "Order Updated", description: `Status changed to ${displayLabel}` });
+    fetchData();
+  };
+
+  const handleResyncOrder = async (orderId: string) => {
+    toast({ title: "Re-syncing…", description: "Checking GHData for latest status" });
+    const { data, error } = await supabase.functions.invoke("ghconnect-status", { body: { order_id: orderId } });
+    if (error || !data?.success) {
+      toast({ title: "Re-sync failed", description: error?.message || data?.message || "Provider did not return a status", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Re-synced", description: `Provider status: ${data.provider_status} → ${data.new_status}` });
     fetchData();
   };
 
@@ -485,6 +496,7 @@ export default function Admin() {
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="waiting">Waiting</SelectItem>
                           <SelectItem value="completed">Delivered</SelectItem>
                           <SelectItem value="failed">Failed</SelectItem>
                         </SelectContent>
@@ -493,6 +505,11 @@ export default function Admin() {
                     <TableCell className="text-sm">{format(parseISO(o.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {o.gh_reference && (
+                          <Button size="sm" variant="outline" title="Re-sync status from GHData" onClick={() => handleResyncOrder(o.id)}>
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                        )}
                         {o.status === "failed" && (
                           <Button size="sm" variant="outline" className="text-primary" onClick={() => handleRetryOrder(o)}>
                             <RotateCcw className="w-4 h-4" />
