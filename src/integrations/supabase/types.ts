@@ -620,6 +620,7 @@ export type Database = {
       }
       process_pending_orders: { Args: never; Returns: undefined }
       refund_failed_order: { Args: { p_order_id: string }; Returns: undefined }
+      register_referral: { Args: { p_code: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
