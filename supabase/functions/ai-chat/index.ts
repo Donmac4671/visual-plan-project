@@ -82,9 +82,14 @@ const NETWORKS = [
   },
 ];
 
-function buildPricingText(): string {
+function buildPricingText(tier: "agent" | "general" | "guest"): string {
   return NETWORKS.map((n) => {
-    const lines = n.bundles.map((b) => `  ${b.size}: General ₵${b.general.toFixed(2)} | Agent ₵${b.agent.toFixed(2)}`).join("\n");
+    const lines = n.bundles.map((b) => {
+      if (tier === "agent") return `  ${b.size}: ₵${b.agent.toFixed(2)}`;
+      if (tier === "general") return `  ${b.size}: ₵${b.general.toFixed(2)}`;
+      // guest: show general price only (default public price)
+      return `  ${b.size}: ₵${b.general.toFixed(2)}`;
+    }).join("\n");
     return `${n.name}:\n${lines}`;
   }).join("\n\n");
 }
@@ -110,6 +115,7 @@ serve(async (req) => {
 
     // Try to load user context (wallet, tier, recent orders) using their auth token
     let userContext = "User is not signed in.";
+    let userTier: "agent" | "general" | "guest" = "guest";
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
       try {
@@ -133,6 +139,7 @@ serve(async (req) => {
             .limit(5);
 
           const tier = profile?.tier || "general";
+          userTier = tier === "agent" ? "agent" : "general";
           const ordersText = (orders || []).length
             ? orders!.map((o: any) => {
                 const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
@@ -155,7 +162,8 @@ ${ordersText}`;
       }
     }
 
-    const pricing = buildPricingText();
+    const pricing = buildPricingText(userTier);
+    const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
     const nowGMT = new Date().toUTCString();
 
     const systemPrompt = `You are the Donmac Data Hub support assistant — friendly, warm, and concise. Speak like a real Ghanaian customer service rep. Keep answers short and natural.
@@ -164,7 +172,7 @@ CRITICAL RULES:
 1. Never use markdown formatting (no asterisks *, no bold **, no headings #, no underscores _). Write plain conversational text only.
 2. Always use the EXACT prices from the PRICING section below. Do NOT invent or guess prices.
 3. Use ₵ for cedis. Always show two decimals (e.g. ₵15.00).
-4. When the user asks about a bundle price, give BOTH the General price and the Agent price clearly, e.g. "MTN 3GB is ₵15.00 for general users and ₵13.90 for agents."
+4. When the user asks about a bundle price, give ONLY the price for THEIR tier (${tierLabel}). The PRICING section below already contains only their tier's prices — never mention "general" or "agent" pricing tiers in the answer. Just say e.g. "MTN 3GB is ₵13.90." For guest users (not signed in), quote the listed price and gently mention they can sign in to see if agent rates apply.
 5. If the user asks about THEIR own order, wallet, or account — use the "Signed-in user info" section below. Do not make things up.
 6. If you cannot solve the issue (refunds, stuck orders older than 4 hours, account changes, complaints, agent approval), politely tell the user to contact admin via WhatsApp 0549358359 or use the Live Chat tab in this widget. Keep the handoff message warm.
 7. Never mention internal systems (Supabase, edge functions, etc).
@@ -183,7 +191,7 @@ ABOUT DONMAC DATA HUB:
 
 CURRENT TIME (GMT): ${nowGMT}
 
-PRICING (always use these exact figures):
+PRICING for this user (tier: ${tierLabel}) — always use these exact figures and never quote a different tier's price:
 ${pricing}
 
 ${userContext}
