@@ -50,7 +50,7 @@ export default function AdminVerifiedTopups({ users }: Props) {
 
   useEffect(() => { fetchTopups(); }, []);
 
-  // Auto-refresh via realtime subscription
+  // Auto-refresh via realtime subscription + window focus
   useEffect(() => {
     const channel = supabase
       .channel("admin-verified-topups-realtime")
@@ -61,7 +61,16 @@ export default function AdminVerifiedTopups({ users }: Props) {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    const onFocus = () => fetchTopups();
+    const onVisible = () => { if (document.visibilityState === "visible") fetchTopups(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const filteredTopups = useMemo(() => {
