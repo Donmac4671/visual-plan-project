@@ -59,6 +59,27 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_code_assignments: {
+        Row: {
+          agent_code: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          agent_code: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          agent_code?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
