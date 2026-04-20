@@ -5,6 +5,7 @@ import {
   registerServiceWorker,
   requestNotificationPermission,
   subscribeToPush,
+  playNotificationSound,
 } from "@/lib/notifications";
 import { toast } from "@/hooks/use-toast";
 
@@ -41,9 +42,20 @@ export default function RealtimeNotifications() {
 
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
       toast({ title, description: body });
+      playNotificationSound();
     }
     // When hidden, the SW push event from the server takes care of native notification.
   };
+
+  // Listen for play-sound messages from the SW (sent on every push)
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === "play-sound") playNotificationSound();
+    };
+    navigator.serviceWorker.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker.removeEventListener("message", onMsg);
+  }, []);
 
   // Build wording matching the agreed structure
   const phoneOwner = (profile?.phone ?? "").replace(/\D/g, "");

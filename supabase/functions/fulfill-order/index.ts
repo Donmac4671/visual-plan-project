@@ -72,7 +72,9 @@ serve(async (req) => {
       });
     }
 
-    const reference = `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    // Use the order_ref itself as the reference so webhooks can match either gh_reference or order_ref.
+    const { data: orderRow } = await supabase.from("orders").select("order_ref").eq("id", order_id).maybeSingle();
+    const reference = orderRow?.order_ref || `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
     await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
 
     console.log(`Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB to ${phone}`);
