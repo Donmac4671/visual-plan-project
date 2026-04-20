@@ -148,7 +148,7 @@ const NOTIFICATION_SOUND_B64 = (() => {
   return "data:audio/wav;base64," + base64;
 })();
 
-function playNotificationSound() {
+export function playNotificationSound() {
   try {
     const audio = new Audio(NOTIFICATION_SOUND_B64);
     audio.volume = 1.0;

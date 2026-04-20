@@ -18,11 +18,25 @@ self.addEventListener("push", (event) => {
     tag: data.tag || `dmh-${Date.now()}`,
     renotify: true,
     requireInteraction: false,
+    silent: false,
     vibrate: [200, 100, 200],
     data: { url: data.url || "/dashboard" },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const hasFocusedClient = clientsList.some((c) => c.focused === true && c.visibilityState === "visible");
+
+    // Always tell open clients to play the sound (in-app chime)
+    clientsList.forEach((c) => {
+      try { c.postMessage({ type: "play-sound", title, body: options.body }); } catch {}
+    });
+
+    // If a tab is focused & visible, the in-app toast (via Realtime) handles the UI — skip OS notification to avoid duplicates.
+    if (hasFocusedClient) return;
+
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
