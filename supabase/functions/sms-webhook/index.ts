@@ -171,6 +171,24 @@ Deno.serve(async (req) => {
 
   console.log(`sms-webhook invoked: method=${req.method}, contentType=${req.headers.get("content-type") ?? "none"}`);
 
+  // Shared-secret verification
+  const expectedSecret = Deno.env.get("SMS_WEBHOOK_SECRET");
+  if (expectedSecret) {
+    const url = new URL(req.url);
+    const providedSecret =
+      url.searchParams.get("key") ||
+      url.searchParams.get("secret") ||
+      req.headers.get("x-webhook-secret") ||
+      req.headers.get("X-Webhook-Secret");
+    if (providedSecret !== expectedSecret) {
+      console.warn("sms-webhook: invalid or missing secret");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: jsonHeaders,
+      });
+    }
+  }
+
   try {
     const { smsBody, source, payloadKeys } = await extractSmsBody(req);
     console.log(`sms-webhook extracted source=${source}, keys=${payloadKeys.join(",") || "none"}, preview=${smsBody.slice(0, 160)}`);
