@@ -108,27 +108,34 @@ export default function Cart() {
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          for (const item of items) {
-            const { data: orderId, error } = await supabase.rpc("pay_order_with_paystack", {
-              p_network: item.network,
-              p_phone: item.phoneNumber,
-              p_bundle: item.bundle.size,
-              p_amount: item.effectivePrice,
-              p_reference: reference,
-            });
+          const payload = {
+            reference,
+            items: items.map((item) => ({
+              network: item.network,
+              phone: item.phoneNumber,
+              bundle: item.bundle.size,
+              amount: item.effectivePrice,
+            })),
+          };
 
-            if (error) throw error;
+          const { data, error } = await supabase.functions.invoke("paystack-verify-order", { body: payload });
+          if (error || (data && (data as any).error)) {
+            const msg = (data as any)?.error || error?.message || "Payment verification failed";
+            throw new Error(msg);
+          }
 
-            // Auto-fulfill via GHDataConnect (fire and forget)
-            if (orderId) {
+          const orderIds: string[] = (data as any)?.orderIds || [];
+          orderIds.forEach((orderId, idx) => {
+            const item = items[idx];
+            if (orderId && item) {
               fulfillOrder(orderId, item.networkId, item.phoneNumber, item.bundle.sizeGB);
             }
-          }
+          });
 
           await refreshProfile();
           toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
           clearCart();
-          
+
         } catch (err: any) {
           toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
         } finally {

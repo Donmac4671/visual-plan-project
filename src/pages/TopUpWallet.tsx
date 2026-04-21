@@ -77,13 +77,13 @@ export default function TopUpWallet() {
       email: payerEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
-        const { error } = await supabase.rpc("complete_paystack_topup", {
-          p_amount: amt,
-          p_reference: reference,
+        const { data, error } = await supabase.functions.invoke("paystack-verify-topup", {
+          body: { reference, amount: amt },
         });
 
-        if (error) {
-          toast({ title: "Top-up Failed", description: error.message, variant: "destructive" });
+        if (error || (data && (data as any).error)) {
+          const msg = (data as any)?.error || error?.message || "Top-up verification failed";
+          toast({ title: "Top-up Failed", description: msg, variant: "destructive" });
           return;
         }
 
