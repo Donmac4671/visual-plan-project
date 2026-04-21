@@ -17,6 +17,7 @@ const NETWORKS = [
       { size: "4GB", agent: 18.50, general: 20 },
       { size: "5GB", agent: 23.20, general: 25 },
       { size: "6GB", agent: 27.80, general: 30 },
+      { size: "7GB", agent: 32.40, general: 35 },
       { size: "8GB", agent: 37, general: 40 },
       { size: "10GB", agent: 43.50, general: 46 },
       { size: "15GB", agent: 64, general: 67 },
@@ -182,8 +183,8 @@ ABOUT DONMAC DATA HUB:
 - Payment options: Wallet (top up first) or Paystack (direct, 2% fee).
 - Wallet top-up: Paystack online, OR send MoMo to 0549358359 (Osei Michael) and claim with the transaction ID on the Top Up page.
 - Minimum top-up: ₵5 for general users, ₵20 for agents.
-- Order delivery: MTN takes 3 minutes to 4 hours. Telecel and AT are usually instant.
-- Off-hours rule: orders placed between 10pm and 5am GMT are queued and delivered from 5am.
+- Order delivery: MTN takes 3 to 10 minutes. Telecel and AT are instant.
+- We run a 24/7 service — orders are processed immediately at any time of day or night.
 - Becoming an agent: pay a one-time ₵40 MoMo fee to 0549358359 and apply on the Become an Agent page. Agents get wholesale prices and a unique agent code.
 - Bundle validity: AT Big Time has no expiry. AT Premium = 60 days. MTN = 90 days. Telecel = 90 days.
 - Referrals: General users earn ₵0.50 when their referral makes their first purchase. Agents earn ₵10 when their referral becomes an agent.
