@@ -17,6 +17,7 @@ const NETWORKS = [
       { size: "4GB", agent: 18.50, general: 20 },
       { size: "5GB", agent: 23.20, general: 25 },
       { size: "6GB", agent: 27.80, general: 30 },
+      { size: "7GB", agent: 32.40, general: 35 },
       { size: "8GB", agent: 37, general: 40 },
       { size: "10GB", agent: 43.50, general: 46 },
       { size: "15GB", agent: 64, general: 67 },
