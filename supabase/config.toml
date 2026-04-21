@@ -5,3 +5,7 @@ verify_jwt = false
 
 [functions.send-push]
 verify_jwt = false
+
+[functions.sync-order-statuses]
+verify_jwt = false
+
