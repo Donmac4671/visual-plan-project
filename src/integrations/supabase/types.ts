@@ -576,7 +576,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      custom_bundles_public: {
+        Row: {
+          agent_price: number | null
+          bundle_size: string | null
+          created_at: string | null
+          general_price: number | null
+          id: string | null
+          network_id: string | null
+          size_gb: number | null
+        }
+        Insert: {
+          agent_price?: never
+          bundle_size?: string | null
+          created_at?: string | null
+          general_price?: number | null
+          id?: string | null
+          network_id?: string | null
+          size_gb?: number | null
+        }
+        Update: {
+          agent_price?: never
+          bundle_size?: string | null
+          created_at?: string | null
+          general_price?: number | null
+          id?: string | null
+          network_id?: string | null
+          size_gb?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_set_user_tier: {
@@ -612,6 +641,10 @@ export type Database = {
         Args: { p_amount: number; p_reference: string }
         Returns: undefined
       }
+      complete_paystack_topup_for_user: {
+        Args: { p_amount: number; p_reference: string; p_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -627,6 +660,17 @@ export type Database = {
           p_network: string
           p_phone: string
           p_reference: string
+        }
+        Returns: string
+      }
+      pay_order_with_paystack_for_user: {
+        Args: {
+          p_amount: number
+          p_bundle: string
+          p_network: string
+          p_phone: string
+          p_reference: string
+          p_user_id: string
         }
         Returns: string
       }

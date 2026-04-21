@@ -13,6 +13,23 @@ serve(async (req) => {
   }
 
   try {
+    // Shared-secret verification
+    const expectedSecret = Deno.env.get("GHCONNECT_WEBHOOK_SECRET");
+    if (expectedSecret) {
+      const url = new URL(req.url);
+      const providedSecret =
+        req.headers.get("x-webhook-secret") ||
+        req.headers.get("X-Webhook-Secret") ||
+        url.searchParams.get("key") ||
+        url.searchParams.get("secret");
+      if (providedSecret !== expectedSecret) {
+        console.warn("ghconnect-webhook: invalid or missing secret");
+        return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
