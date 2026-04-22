@@ -11,7 +11,8 @@ const jsonHeaders = {
   "Content-Type": "application/json",
 };
 
-const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload", "key"];
+const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload"];
+const SECRET_QUERY_KEYS = ["key", "secret"];
 
 type ParsedMomoSms = {
   transactionId: string;
@@ -87,9 +88,13 @@ function getQuerySmsText(url: URL): string {
   return "";
 }
 
+function getPayloadKeysExcludingSecrets(url: URL): string[] {
+  return Array.from(url.searchParams.keys()).filter((key) => !SECRET_QUERY_KEYS.includes(key));
+}
+
 async function extractSmsBody(req: Request): Promise<ExtractionResult> {
   const url = new URL(req.url);
-  const queryKeys = Array.from(url.searchParams.keys());
+  const queryKeys = getPayloadKeysExcludingSecrets(url);
   const queryText = getQuerySmsText(url);
 
   if (queryText) {
