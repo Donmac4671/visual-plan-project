@@ -11,7 +11,7 @@ const jsonHeaders = {
   "Content-Type": "application/json",
 };
 
-const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload"];
+const SMS_TEXT_KEYS = ["message", "sms", "body", "text", "msg", "messageText", "content", "payload", "key"];
 const SECRET_QUERY_KEYS = ["key", "secret"];
 
 type ParsedMomoSms = {
@@ -80,6 +80,7 @@ function firstStringValue(record: Record<string, unknown>, keys: string[]): stri
 
 function getQuerySmsText(url: URL): string {
   for (const key of SMS_TEXT_KEYS) {
+    if (SECRET_QUERY_KEYS.includes(key)) continue;
     const value = url.searchParams.get(key);
     if (value?.trim()) {
       return value.trim();
