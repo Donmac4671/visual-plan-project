@@ -37,11 +37,29 @@ serve(async (req) => {
     const body = await req.json();
     console.log("GHDataConnect webhook received:", JSON.stringify(body));
 
-    // Accept reference from multiple shapes (top-level, nested data, or "trxref")
-    const reference = body.reference ?? body.trxref ?? body.data?.reference ?? body.data?.trxref;
-    const rawStatus = String(body.status ?? body.data?.status ?? "").toLowerCase().trim();
+    const references = Array.from(new Set([
+      body.reference,
+      body.trxref,
+      body.order_ref,
+      body.orderRef,
+      body.client_reference,
+      body.data?.reference,
+      body.data?.trxref,
+      body.data?.order_ref,
+      body.data?.orderRef,
+      body.data?.client_reference,
+    ].filter(Boolean).map((value) => String(value).trim())));
+    const rawStatus = String(
+      body.status ??
+      body.data?.status ??
+      body.transaction?.status ??
+      body.result?.status ??
+      body.data?.transaction_status ??
+      body.data?.order_status ??
+      ""
+    ).toLowerCase().trim();
 
-    if (!reference) {
+    if (references.length === 0) {
       return new Response(JSON.stringify({ success: false, message: "Missing reference" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -61,15 +79,33 @@ serve(async (req) => {
       newStatus = "processing";
     }
 
-    // Match by gh_reference stored on the order
-    const { data: order, error: fetchError } = await supabase
-      .from("orders")
-      .select("id")
-      .eq("gh_reference", reference)
-      .single();
+    let order: { id: string } | null = null;
+    for (const reference of references) {
+      const { data: ghOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("gh_reference", reference)
+        .maybeSingle();
 
-    if (fetchError || !order) {
-      console.log(`No matching order for reference: ${reference}`);
+      if (ghOrder) {
+        order = ghOrder;
+        break;
+      }
+
+      const { data: localOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("order_ref", reference)
+        .maybeSingle();
+
+      if (localOrder) {
+        order = localOrder;
+        break;
+      }
+    }
+
+    if (!order) {
+      console.log(`No matching order for references: ${references.join(", ")}`);
       return new Response(JSON.stringify({ success: true, message: "No matching order found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
