@@ -385,36 +385,36 @@ export default function Admin() {
               return sum + (m[2].toUpperCase() === "MB" ? val / 1000 : val);
             }, 0);
             return (
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+              <div className="mb-4 grid grid-cols-2 gap-3 auto-rows-fr sm:grid-cols-4 xl:grid-cols-8">
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <p className="text-lg font-bold text-foreground">{orders.length}</p>
                   <p className="text-xs text-muted-foreground">Total Orders</p>
                 </div>
-                <div className="bg-card rounded-xl border border-primary/40 p-3 text-center">
+                <div className="rounded-xl border border-primary/40 bg-card p-3 text-center">
                   <p className="text-lg font-bold text-primary">{todayOrders.length}</p>
                   <p className="text-xs text-muted-foreground">Today's Orders</p>
                 </div>
-                <div className="bg-card rounded-xl border border-primary/40 p-3 text-center">
+                <div className="rounded-xl border border-primary/40 bg-card p-3 text-center">
                   <p className="text-lg font-bold text-primary">{todayCapacityGB.toFixed(todayCapacityGB % 1 === 0 ? 0 : 2)}GB</p>
                   <p className="text-xs text-muted-foreground">Today's Capacity</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <p className="text-lg font-bold text-warning">{orders.filter(o => o.status === "pending").length}</p>
                   <p className="text-xs text-muted-foreground">Pending</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <p className="text-lg font-bold text-primary">{orders.filter(o => o.status === "processing").length}</p>
                   <p className="text-xs text-muted-foreground">Processing</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
-                  <p className="text-lg font-bold" style={{ color: "hsl(var(--warning))" }}>{orders.filter(o => o.status === "waiting").length}</p>
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
+                  <p className="text-lg font-bold text-warning">{orders.filter(o => o.status === "waiting").length}</p>
                   <p className="text-xs text-muted-foreground">Waiting</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <p className="text-lg font-bold text-success">{orders.filter(o => o.status === "completed").length}</p>
                   <p className="text-xs text-muted-foreground">Delivered</p>
                 </div>
-                <div className="bg-card rounded-xl border border-border p-3 text-center col-span-2 sm:col-span-1">
+                <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <p className="text-lg font-bold text-destructive">{orders.filter(o => o.status === "failed").length}</p>
                   <p className="text-xs text-muted-foreground">Failed</p>
                 </div>
