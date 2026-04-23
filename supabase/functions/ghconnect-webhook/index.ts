@@ -71,11 +71,11 @@ serve(async (req) => {
       newStatus = "completed";
     } else if (["failed", "rejected", "error", "declined"].includes(rawStatus)) {
       newStatus = "failed";
-    } else if (["waiting", "queued", "queue"].includes(rawStatus)) {
+    } else if (["waiting", "queued", "queue", "onhold", "on_hold", "on-hold"].includes(rawStatus)) {
       newStatus = "waiting";
     } else if (["pending"].includes(rawStatus)) {
       newStatus = "pending";
-    } else if (["processing", "in_progress", "sending"].includes(rawStatus)) {
+    } else if (["processing", "in_progress", "inprogress", "sending"].includes(rawStatus)) {
       newStatus = "processing";
     }
 
@@ -120,6 +120,12 @@ serve(async (req) => {
       console.error("Error updating order:", updateError);
     } else {
       console.log(`Order ${order.id} updated to ${newStatus}`);
+      if (newStatus === "failed") {
+        const { error: refundError } = await supabase.rpc("refund_failed_order", { p_order_id: order.id });
+        if (refundError) {
+          console.error("Error refunding failed webhook order:", refundError);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ success: true, message: "Webhook processed" }), {

@@ -15,7 +15,7 @@ const NETWORK_KEYS: Record<string, string[]> = {
   mtn: ["MTN", "mtn"],
   telecel: ["TELECEL", "telecel"],
   "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
-  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium"],
+  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
 };
 
 const ENDPOINT = "/v1/purchaseBundle";
@@ -99,8 +99,12 @@ serve(async (req) => {
 
       if (lastResult?.success) {
         const actualRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? reference;
-        await supabase.from("orders").update({ gh_reference: String(actualRef) }).eq("id", order_id);
-        return new Response(JSON.stringify({ success: true, data: lastResult.data, reference: actualRef }), {
+        const nextStatus = networkKey === "at-premium" ? "completed" : "processing";
+        await supabase
+          .from("orders")
+          .update({ gh_reference: String(actualRef), status: nextStatus })
+          .eq("id", order_id);
+        return new Response(JSON.stringify({ success: true, data: lastResult.data, reference: actualRef, status: nextStatus }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
