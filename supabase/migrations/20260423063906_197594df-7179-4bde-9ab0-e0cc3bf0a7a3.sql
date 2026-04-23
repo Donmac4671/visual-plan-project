@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "General users can view custom bundles (no agent price exposure)" ON public.custom_bundles;
