@@ -32,10 +32,31 @@ export default function Register() {
       return;
     }
     setLoading(true);
+
+    // Pre-check: phone number must be unique
+    const trimmedPhone = phone.trim();
+    const { data: existingPhone } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("phone", trimmedPhone)
+      .maybeSingle();
+    if (existingPhone) {
+      setLoading(false);
+      toast({
+        title: "Phone Already Registered",
+        description: "This phone number is already linked to another account. Please use a different number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error, data } = await signUp(email, password, name, phone, normalizedReferralCode || undefined);
     setLoading(false);
     if (error) {
-      toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+      const msg = /phone/i.test(error.message) || /unique/i.test(error.message)
+        ? "This phone number is already registered to another account."
+        : error.message;
+      toast({ title: "Registration Failed", description: msg, variant: "destructive" });
     } else {
       // Store referral code for processing after first login (user isn't authenticated yet)
       if (normalizedReferralCode) {
