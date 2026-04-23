@@ -374,28 +374,53 @@ export default function Admin() {
 
         {/* ORDERS TAB */}
         <TabsContent value="orders">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-lg font-bold text-foreground">{orders.length}</p>
-              <p className="text-xs text-muted-foreground">Total Orders</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-lg font-bold text-warning">{orders.filter(o => o.status === "pending").length}</p>
-              <p className="text-xs text-muted-foreground">Pending</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-lg font-bold text-primary">{orders.filter(o => o.status === "processing").length}</p>
-              <p className="text-xs text-muted-foreground">Processing</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-lg font-bold text-success">{orders.filter(o => o.status === "completed").length}</p>
-              <p className="text-xs text-muted-foreground">Delivered</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-lg font-bold text-destructive">{orders.filter(o => o.status === "failed").length}</p>
-              <p className="text-xs text-muted-foreground">Failed</p>
-            </div>
-          </div>
+          {(() => {
+            const startToday = startOfDay(new Date());
+            const todayOrders = orders.filter(o => new Date(o.created_at) >= startToday);
+            const todayCapacityGB = todayOrders.reduce((sum, o) => {
+              const s = String(o.bundle_size || "");
+              const m = s.match(/([\d.]+)\s*(GB|MB)/i);
+              if (!m) return sum;
+              const val = parseFloat(m[1]);
+              return sum + (m[2].toUpperCase() === "MB" ? val / 1000 : val);
+            }, 0);
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                  <p className="text-lg font-bold text-foreground">{orders.length}</p>
+                  <p className="text-xs text-muted-foreground">Total Orders</p>
+                </div>
+                <div className="bg-card rounded-xl border border-primary/40 p-3 text-center">
+                  <p className="text-lg font-bold text-primary">{todayOrders.length}</p>
+                  <p className="text-xs text-muted-foreground">Today's Orders</p>
+                </div>
+                <div className="bg-card rounded-xl border border-primary/40 p-3 text-center">
+                  <p className="text-lg font-bold text-primary">{todayCapacityGB.toFixed(todayCapacityGB % 1 === 0 ? 0 : 2)}GB</p>
+                  <p className="text-xs text-muted-foreground">Today's Capacity</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                  <p className="text-lg font-bold text-warning">{orders.filter(o => o.status === "pending").length}</p>
+                  <p className="text-xs text-muted-foreground">Pending</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                  <p className="text-lg font-bold text-primary">{orders.filter(o => o.status === "processing").length}</p>
+                  <p className="text-xs text-muted-foreground">Processing</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                  <p className="text-lg font-bold" style={{ color: "hsl(var(--warning))" }}>{orders.filter(o => o.status === "waiting").length}</p>
+                  <p className="text-xs text-muted-foreground">Waiting</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center">
+                  <p className="text-lg font-bold text-success">{orders.filter(o => o.status === "completed").length}</p>
+                  <p className="text-xs text-muted-foreground">Delivered</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-3 text-center col-span-2 sm:col-span-1">
+                  <p className="text-lg font-bold text-destructive">{orders.filter(o => o.status === "failed").length}</p>
+                  <p className="text-xs text-muted-foreground">Failed</p>
+                </div>
+              </div>
+            );
+          })()}
           <div className="mb-4 flex flex-wrap gap-3 items-end">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -407,6 +432,7 @@ export default function Admin() {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="waiting">Waiting</SelectItem>
                 <SelectItem value="completed">Delivered</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
@@ -487,6 +513,7 @@ export default function Admin() {
                         o.status === "completed" ? "bg-success/10 text-success" :
                         o.status === "pending" ? "bg-warning/10 text-warning" :
                         o.status === "processing" ? "bg-primary/10 text-primary" :
+                        o.status === "waiting" ? "bg-warning/10 text-warning" :
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
                     </TableCell>
