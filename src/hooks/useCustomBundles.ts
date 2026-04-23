@@ -59,9 +59,13 @@ export function useCustomBundles() {
     });
   }, [customBundles, isHidden]);
 
-  return { networks: mergedNetworks, customBundles, refetch: () => {
-    supabase.from("custom_bundles").select("*").then(({ data }) => {
-      if (data) setCustomBundles(data as any);
-    });
+  return { networks: mergedNetworks, customBundles, refetch: async () => {
+    const { data, error } = await supabase.from("custom_bundles").select("*");
+    if (!error && data && data.length > 0) {
+      setCustomBundles(data as any);
+      return;
+    }
+    const { data: pub } = await supabase.from("custom_bundles_public").select("*");
+    if (pub) setCustomBundles(pub as any);
   }};
 }
