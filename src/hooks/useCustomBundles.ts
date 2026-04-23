@@ -16,11 +16,18 @@ export function useCustomBundles() {
   const { isHidden } = useHiddenBundles();
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("custom_bundles").select("*");
-      if (data) setCustomBundles(data as any);
+    const fetchBundles = async () => {
+      // Try the privileged table first (admins/agents). Falls back to the
+      // public view (which hides agent_price) for general users.
+      const { data, error } = await supabase.from("custom_bundles").select("*");
+      if (!error && data && data.length > 0) {
+        setCustomBundles(data as any);
+        return;
+      }
+      const { data: pub } = await supabase.from("custom_bundles_public").select("*");
+      if (pub) setCustomBundles(pub as any);
     };
-    fetch();
+    fetchBundles();
   }, []);
 
   const mergedNetworks = useMemo(() => {
@@ -52,9 +59,13 @@ export function useCustomBundles() {
     });
   }, [customBundles, isHidden]);
 
-  return { networks: mergedNetworks, customBundles, refetch: () => {
-    supabase.from("custom_bundles").select("*").then(({ data }) => {
-      if (data) setCustomBundles(data as any);
-    });
+  return { networks: mergedNetworks, customBundles, refetch: async () => {
+    const { data, error } = await supabase.from("custom_bundles").select("*");
+    if (!error && data && data.length > 0) {
+      setCustomBundles(data as any);
+      return;
+    }
+    const { data: pub } = await supabase.from("custom_bundles_public").select("*");
+    if (pub) setCustomBundles(pub as any);
   }};
 }
