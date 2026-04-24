@@ -82,6 +82,23 @@ export default function Landing() {
             acceptedAnswer: { "@type": "Answer", text: f.a },
           })),
         },
+        {
+          "@type": "Product",
+          name: "MTN 1GB Data Bundle",
+          description: "Buy MTN 1GB data bundle in Ghana at the cheapest price. Fast delivery within 3–30 minutes.",
+          brand: { "@type": "Brand", name: "MTN Ghana" },
+          category: "Mobile Data Bundle",
+          image: "https://donmacdatahub.com/favicon.png",
+          offers: {
+            "@type": "Offer",
+            url: "https://donmacdatahub.com/",
+            priceCurrency: "GHS",
+            price: "5.00",
+            priceValidUntil: "2026-12-31",
+            availability: "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: "Donmac Data Hub" },
+          },
+        },
       ],
     });
     document.head.appendChild(script);
