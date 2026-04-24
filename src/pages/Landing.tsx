@@ -163,7 +163,7 @@ export default function Landing() {
           {[
             { step: "1", title: "Create Free Account", desc: "Register on Donmac Data Hub in 30 seconds. No fees, no hidden charges." },
             { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo) or Paystack. Quick and secure." },
-            { step: "3", title: "Buy & Receive Data Instantly", desc: "Choose your network & bundle size. Data delivered to your phone in seconds!" },
+            { step: "3", title: "Buy & Receive Your Data", desc: "Choose your network & bundle size. Data delivered to your phone within 3–30 minutes!" },
           ].map((s) => (
             <div key={s.step} className="bg-card border border-border rounded-xl p-6 text-center">
               <div className="w-10 h-10 gradient-primary rounded-full mx-auto mb-3 flex items-center justify-center text-primary-foreground font-bold">
