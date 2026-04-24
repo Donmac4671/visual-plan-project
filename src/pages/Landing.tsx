@@ -11,7 +11,7 @@ const networks = [
 ];
 
 const features = [
-  { icon: Zap, title: "Instant Delivery", desc: "Data bundles delivered to your phone within seconds of purchase" },
+  { icon: Zap, title: "Fast Delivery", desc: "Data bundles delivered to your phone within 3–30 minutes of purchase" },
   { icon: Shield, title: "Secure Payments", desc: "Pay safely via Mobile Money (MoMo) or Paystack. 100% secure" },
   { icon: Clock, title: "24/7 Availability", desc: "Buy cheap data bundles anytime, day or night, from anywhere in Ghana" },
   { icon: Star, title: "Lowest Prices", desc: "We guarantee the cheapest data bundle prices in Ghana. Save more!" },
