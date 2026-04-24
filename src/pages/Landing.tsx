@@ -82,6 +82,23 @@ export default function Landing() {
             acceptedAnswer: { "@type": "Answer", text: f.a },
           })),
         },
+        {
+          "@type": "Product",
+          name: "MTN 1GB Data Bundle",
+          description: "Buy MTN 1GB data bundle in Ghana at the cheapest price. Fast delivery within 3–30 minutes.",
+          brand: { "@type": "Brand", name: "MTN Ghana" },
+          category: "Mobile Data Bundle",
+          image: "https://donmacdatahub.com/favicon.png",
+          offers: {
+            "@type": "Offer",
+            url: "https://donmacdatahub.com/",
+            priceCurrency: "GHS",
+            price: "5.00",
+            priceValidUntil: "2026-12-31",
+            availability: "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: "Donmac Data Hub" },
+          },
+        },
       ],
     });
     document.head.appendChild(script);
@@ -103,7 +120,7 @@ export default function Landing() {
             Cheap Data Bundles Ghana – Buy MTN, Telecel &amp; AirtelTigo Data Online
           </h1>
           <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>fast delivery in 3–30 minutes</strong>. Save up to 40% on every purchase!
+            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Get <strong>MTN 1GB for just ₵5</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>fast delivery in 3–30 minutes</strong>. Save up to 40% on every purchase!
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg" variant="secondary" className="text-base font-semibold px-8">
