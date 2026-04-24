@@ -11,7 +11,7 @@ const networks = [
 ];
 
 const features = [
-  { icon: Zap, title: "Instant Delivery", desc: "Data bundles delivered to your phone within seconds of purchase" },
+  { icon: Zap, title: "Fast Delivery", desc: "Data bundles delivered to your phone within 3–30 minutes of purchase" },
   { icon: Shield, title: "Secure Payments", desc: "Pay safely via Mobile Money (MoMo) or Paystack. 100% secure" },
   { icon: Clock, title: "24/7 Availability", desc: "Buy cheap data bundles anytime, day or night, from anywhere in Ghana" },
   { icon: Star, title: "Lowest Prices", desc: "We guarantee the cheapest data bundle prices in Ghana. Save more!" },
@@ -20,7 +20,7 @@ const features = [
 const faqs = [
   {
     q: "How do I buy cheap MTN data bundles?",
-    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo or Paystack, choose your MTN data bundle size, enter your phone number, and get instant delivery. It's the easiest way to buy cheap MTN data in Ghana.",
+    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo or Paystack, choose your MTN data bundle size, enter your phone number, and receive your data within 3–30 minutes. It's the easiest way to buy cheap MTN data in Ghana.",
   },
   {
     q: "What networks do you support?",
@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "How fast is the data delivery?",
-    a: "Data bundles are delivered instantly – usually within 5-30 seconds after payment confirmation. No waiting, no delays.",
+    a: "Data bundles are typically delivered within 3–30 minutes after payment confirmation. Delivery times may vary slightly depending on the network.",
   },
   {
     q: "Can I become a data reseller/agent?",
@@ -54,7 +54,7 @@ export default function Landing() {
           "@type": "WebSite",
           name: "Donmac Data Hub",
           url: "https://donmacdatahub.com",
-          description: "Buy the cheapest data bundles in Ghana. MTN, Telecel & AirtelTigo data at the lowest prices with instant delivery.",
+          description: "Buy the cheapest data bundles in Ghana. MTN, Telecel & AirtelTigo data at the lowest prices with fast delivery within 3–30 minutes.",
           potentialAction: {
             "@type": "SearchAction",
             target: "https://donmacdatahub.com/?q={search_term_string}",
@@ -103,7 +103,7 @@ export default function Landing() {
             Cheap Data Bundles Ghana – Buy MTN, Telecel &amp; AirtelTigo Data Online
           </h1>
           <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>instant delivery</strong>. Save up to 40% on every purchase!
+            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>fast delivery in 3–30 minutes</strong>. Save up to 40% on every purchase!
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg" variant="secondary" className="text-base font-semibold px-8">
@@ -163,7 +163,7 @@ export default function Landing() {
           {[
             { step: "1", title: "Create Free Account", desc: "Register on Donmac Data Hub in 30 seconds. No fees, no hidden charges." },
             { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo) or Paystack. Quick and secure." },
-            { step: "3", title: "Buy & Receive Data Instantly", desc: "Choose your network & bundle size. Data delivered to your phone in seconds!" },
+            { step: "3", title: "Buy & Receive Your Data", desc: "Choose your network & bundle size. Data delivered to your phone within 3–30 minutes!" },
           ].map((s) => (
             <div key={s.step} className="bg-card border border-border rounded-xl p-6 text-center">
               <div className="w-10 h-10 gradient-primary rounded-full mx-auto mb-3 flex items-center justify-center text-primary-foreground font-bold">
