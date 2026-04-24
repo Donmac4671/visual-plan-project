@@ -54,7 +54,7 @@ export default function Landing() {
           "@type": "WebSite",
           name: "Donmac Data Hub",
           url: "https://donmacdatahub.com",
-          description: "Buy the cheapest data bundles in Ghana. MTN, Telecel & AirtelTigo data at the lowest prices with instant delivery.",
+          description: "Buy the cheapest data bundles in Ghana. MTN, Telecel & AirtelTigo data at the lowest prices with fast delivery within 3–30 minutes.",
           potentialAction: {
             "@type": "SearchAction",
             target: "https://donmacdatahub.com/?q={search_term_string}",
