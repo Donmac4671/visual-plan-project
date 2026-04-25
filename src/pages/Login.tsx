@@ -21,6 +21,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
