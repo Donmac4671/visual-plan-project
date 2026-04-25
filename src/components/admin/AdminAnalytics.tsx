@@ -386,7 +386,24 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-primary/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Database className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Data Capacity</p>
+                <p className="text-xl font-bold text-primary">
+                  {stats.totalCapacityGB.toFixed(stats.totalCapacityGB % 1 === 0 ? 0 : 2)} GB
+                </p>
+                <p className="text-xs text-muted-foreground">in selected range</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
