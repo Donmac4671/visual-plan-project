@@ -199,6 +199,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       pendingTopups,
       totalCost,
       totalProfit,
+      totalCapacityGB,
     };
   }, [users, filteredOrders, filteredTopups, filteredComplaints]);
 
