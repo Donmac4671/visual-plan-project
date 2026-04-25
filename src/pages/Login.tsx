@@ -163,6 +163,14 @@ export default function Login() {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full text-center text-sm text-primary hover:underline mt-3 disabled:opacity-60"
+              >
+                {resendLoading ? "Sending..." : "Resend verification email"}
+              </button>
               <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">Sign Up</Link>
