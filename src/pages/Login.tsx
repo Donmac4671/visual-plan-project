@@ -41,9 +41,35 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+      const isUnconfirmed = /confirm/i.test(error.message) || /not confirmed/i.test(error.message);
+      toast({
+        title: "Login Failed",
+        description: isUnconfirmed
+          ? "Your email is not verified yet. Click 'Resend verification email' below."
+          : error.message,
+        variant: "destructive",
+      });
     } else {
       navigate("/dashboard");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast({ title: "Email required", description: "Enter your email above first.", variant: "destructive" });
+      return;
+    }
+    setResendLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+    });
+    setResendLoading(false);
+    if (error) {
+      toast({ title: "Could not resend", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Verification email sent", description: "Check your inbox (and spam folder)." });
     }
   };
 
