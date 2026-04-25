@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet, Eye, EyeOff } from "lucide-react";
+import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet, Eye, EyeOff, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ChartContainer,
@@ -176,6 +176,14 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
     const totalProfit = totalRevenue - totalCost;
 
+    const totalCapacityGB = filteredOrders.reduce((sum, o) => {
+      const s = String(o.bundle_size || "");
+      const m = s.match(/([\d.]+)\s*(GB|MB)/i);
+      if (!m) return sum;
+      const val = parseFloat(m[1]);
+      return sum + (m[2].toUpperCase() === "MB" ? val / 1000 : val);
+    }, 0);
+
     return {
       totalUsers: users.length,
       totalRevenue,
@@ -191,6 +199,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       pendingTopups,
       totalCost,
       totalProfit,
+      totalCapacityGB,
     };
   }, [users, filteredOrders, filteredTopups, filteredComplaints]);
 
@@ -377,7 +386,24 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-primary/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Database className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Data Capacity</p>
+                <p className="text-xl font-bold text-primary">
+                  {stats.totalCapacityGB.toFixed(stats.totalCapacityGB % 1 === 0 ? 0 : 2)} GB
+                </p>
+                <p className="text-xs text-muted-foreground">in selected range</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
