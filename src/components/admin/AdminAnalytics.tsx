@@ -176,6 +176,14 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
     const totalProfit = totalRevenue - totalCost;
 
+    const totalCapacityGB = filteredOrders.reduce((sum, o) => {
+      const s = String(o.bundle_size || "");
+      const m = s.match(/([\d.]+)\s*(GB|MB)/i);
+      if (!m) return sum;
+      const val = parseFloat(m[1]);
+      return sum + (m[2].toUpperCase() === "MB" ? val / 1000 : val);
+    }, 0);
+
     return {
       totalUsers: users.length,
       totalRevenue,
