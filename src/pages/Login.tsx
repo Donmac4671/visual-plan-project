@@ -21,6 +21,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,9 +41,35 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+      const isUnconfirmed = /confirm/i.test(error.message) || /not confirmed/i.test(error.message);
+      toast({
+        title: "Login Failed",
+        description: isUnconfirmed
+          ? "Your email is not verified yet. Click 'Resend verification email' below."
+          : error.message,
+        variant: "destructive",
+      });
     } else {
       navigate("/dashboard");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast({ title: "Email required", description: "Enter your email above first.", variant: "destructive" });
+      return;
+    }
+    setResendLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+    });
+    setResendLoading(false);
+    if (error) {
+      toast({ title: "Could not resend", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Verification email sent", description: "Check your inbox (and spam folder)." });
     }
   };
 
@@ -136,6 +163,14 @@ export default function Login() {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full text-center text-sm text-primary hover:underline mt-3 disabled:opacity-60"
+              >
+                {resendLoading ? "Sending..." : "Resend verification email"}
+              </button>
               <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">Sign Up</Link>
