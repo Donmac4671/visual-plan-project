@@ -80,6 +80,39 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcasts: {
+        Row: {
+          audience: string
+          created_at: string
+          id: string
+          message: string
+          recipients_count: number
+          sent_by: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          id?: string
+          message: string
+          recipients_count?: number
+          sent_by?: string | null
+          title: string
+          url?: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          id?: string
+          message?: string
+          recipients_count?: number
+          sent_by?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
