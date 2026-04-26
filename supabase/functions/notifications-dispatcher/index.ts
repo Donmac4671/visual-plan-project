@@ -60,17 +60,14 @@ async function buildOrderMessage(o: any, status: "placed" | "pending" | "failed"
   }
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  try {
-    const payload = await req.json();
-    const { type, table, record, old_record } = payload as {
-      type: "INSERT" | "UPDATE" | "DELETE";
-      table: string;
-      record: any;
-      old_record?: any;
-    };
+async function handle(payload: any) {
+  const { type, table, record, old_record } = payload as {
+    type: "INSERT" | "UPDATE" | "DELETE";
+    table: string;
+    record: any;
+    old_record?: any;
+  };
+  const tasks: Promise<void>[] = [];
 
     // ─── ORDERS ───
     if (table === "orders") {
