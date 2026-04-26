@@ -65,17 +65,24 @@ serve(async (req) => {
       userIds = (data ?? []).map((r) => r.user_id);
     }
 
-    if (userIds.length === 0) {
+    // Pull push subscriptions: tier-matched users + (when audience=all) anonymous subscriptions
+    let subsQuery = admin.from("push_subscriptions").select("id, endpoint, p256dh, auth, user_id");
+    if (audience === "all") {
+      // include rows with user_id IS NULL as well
+      const orFilter = userIds.length > 0
+        ? `user_id.is.null,user_id.in.(${userIds.join(",")})`
+        : `user_id.is.null`;
+      subsQuery = subsQuery.or(orFilter);
+    } else if (userIds.length > 0) {
+      subsQuery = subsQuery.in("user_id", userIds);
+    } else {
+      // No matching tier users — short circuit
       return new Response(JSON.stringify({ success: true, sent: 0, recipients: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Pull all push subscriptions for these users
-    const { data: subs } = await admin
-      .from("push_subscriptions")
-      .select("id, endpoint, p256dh, auth")
-      .in("user_id", userIds);
+    const { data: subs } = await subsQuery;
 
     const payload = JSON.stringify({
       title,
