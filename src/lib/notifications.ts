@@ -38,7 +38,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  * Subscribe this browser to Web Push and persist to DB.
  * Safe to call multiple times — it's idempotent.
  */
-export async function subscribeToPush(userId: string): Promise<boolean> {
+export async function subscribeToPush(userId: string | null): Promise<boolean> {
   try {
     const reg = await registerServiceWorker();
     if (!reg) return false;
@@ -68,7 +68,7 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
 
     await supabase.from("push_subscriptions").upsert(
       {
-        user_id: userId,
+        user_id: userId ?? null,
         endpoint: json.endpoint,
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,

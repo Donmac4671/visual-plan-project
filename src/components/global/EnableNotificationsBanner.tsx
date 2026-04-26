@@ -23,7 +23,6 @@ export default function EnableNotificationsBanner() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
     const dismissedUntil = Number(localStorage.getItem(DISMISS_KEY) ?? 0);
     if (Date.now() < dismissedUntil) return;
 
@@ -50,16 +49,16 @@ export default function EnableNotificationsBanner() {
       .catch(() => {});
   }, [user]);
 
-  if (!user || !needsEnable) return null;
+  if (!needsEnable) return null;
 
   const iosNeedsInstall = isIOS() && !isStandalone();
 
   const handleEnable = async () => {
     setBusy(true);
     try {
-      const ok = await subscribeToPush(user.id);
+      const ok = await subscribeToPush(user?.id ?? null);
       if (ok) {
-        toast({ title: "Notifications enabled", description: "You'll now get order and top-up alerts." });
+        toast({ title: "Notifications enabled", description: "You'll now get updates and announcements." });
         setNeedsEnable(false);
       } else {
         toast({
