@@ -133,7 +133,8 @@ serve(async (req) => {
       recipients_count: sent,
     });
 
-    return new Response(JSON.stringify({ success: true, sent, recipients: userIds.length, expired: expired.length }), {
+    const totalRecipients = (subs?.length ?? 0);
+    return new Response(JSON.stringify({ success: true, sent, recipients: totalRecipients, expired: expired.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
