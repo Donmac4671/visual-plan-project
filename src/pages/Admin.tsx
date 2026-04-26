@@ -660,6 +660,11 @@ export default function Admin() {
           <AdminSiteMessage />
         </TabsContent>
 
+        {/* BROADCAST PUSH TAB */}
+        <TabsContent value="broadcast">
+          <AdminBroadcast />
+        </TabsContent>
+
         {/* LIVE CHAT TAB */}
         <TabsContent value="live-chat">
           <AdminLiveChat />
