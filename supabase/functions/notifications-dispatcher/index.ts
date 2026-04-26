@@ -69,122 +69,132 @@ async function handle(payload: any) {
   };
   const tasks: Promise<void>[] = [];
 
-    // ─── ORDERS ───
-    if (table === "orders") {
-      if (type === "INSERT") {
-        const status = record.status === "pending" ? "pending" : "placed";
-        const { title, message } = await buildOrderMessage(record, status);
-        await sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" });
-        await sendPush({
-          admins: true,
-          title: "🔔 New Order",
-          message: `${record.order_ref}: ${record.network} ${record.bundle_size} → ${record.phone_number} (₵${Number(record.amount ?? 0).toFixed(2)})`,
-          url: "/admin#orders",
-        });
-      } else if (type === "UPDATE" && record.status !== old_record?.status) {
-        let userStatus: "delivered" | "failed" | "pending" | "processing" | null = null;
-        if (record.status === "completed") userStatus = "delivered";
-        else if (record.status === "failed") userStatus = "failed";
-        else if (record.status === "pending") userStatus = "pending";
-        else if (record.status === "processing") userStatus = "processing";
-
-        if (userStatus) {
-          const { title, message } = await buildOrderMessage(record, userStatus);
-          await sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" });
-        }
-        await sendPush({
-          admins: true,
-          title: `📦 Order ${record.status}`,
-          message: `${record.order_ref} ${record.network} ${record.bundle_size} → ${record.phone_number}`,
-          url: "/admin#orders",
-        });
-      }
-    }
-
-    // ─── WALLET TOPUPS ───
-    if (table === "wallet_topups") {
-      if (type === "INSERT") {
-        await sendPush({
-          admins: true,
-          title: "💰 New Top-up",
-          message: `${(record.method ?? "").toUpperCase()} deposit of ₵${Number(record.amount ?? 0).toFixed(2)} (${record.status})`,
-          url: "/admin#topups",
-        });
-      } else if (type === "UPDATE" && record.status !== old_record?.status) {
-        await sendPush({
-          user_ids: [record.user_id],
-          title: "Top-up Update",
-          message:
-            record.status === "completed"
-              ? `Your top-up of ₵${Number(record.amount ?? 0).toFixed(2)} is completed.`
-              : `Your top-up status is now ${record.status}.`,
-          url: "/dashboard",
-        });
-        await sendPush({
-          admins: true,
-          title: "💰 Top-up Status",
-          message: `${(record.method ?? "").toUpperCase()} ₵${Number(record.amount ?? 0).toFixed(2)} → ${record.status}`,
-          url: "/admin#topups",
-        });
-      }
-    }
-
-    // ─── COMPLAINTS ───
-    if (table === "complaints") {
-      if (type === "INSERT") {
-        await sendPush({
-          admins: true,
-          title: "📋 New Complaint",
-          message: `${record.subject ?? ""}`.slice(0, 100),
-          url: "/admin#complaints",
-        });
-      } else if (type === "UPDATE" && record.admin_reply && record.admin_reply !== old_record?.admin_reply) {
-        await sendPush({
-          user_ids: [record.user_id],
-          title: "📋 Complaint Reply",
-          message: `Admin replied: "${String(record.admin_reply).slice(0, 80)}"`,
-          url: "/dashboard/complaints",
-        });
-      }
-    }
-
-    // ─── CHAT ───
-    if (table === "chat_messages" && type === "INSERT") {
-      const preview = String(record.message ?? "").slice(0, 80);
-      if (record.sender_role === "user") {
-        await sendPush({ admins: true, title: "💬 New Chat Message", message: `User: "${preview}"`, url: "/admin#chat" });
-      } else if (record.sender_role === "admin") {
-        await sendPush({ user_ids: [record.user_id], title: "💬 New Reply", message: `Support: "${preview}"`, url: "/dashboard" });
-      }
-    }
-
-    // ─── REFERRALS ───
-    if (table === "referrals" && type === "INSERT") {
-      await sendPush({
-        user_ids: [record.referrer_id],
-        title: "🎉 New Referral",
-        message: "Someone signed up using your referral code!",
-        url: "/dashboard/referrals",
-      });
-      await sendPush({
+  // ─── ORDERS ───
+  if (table === "orders") {
+    if (type === "INSERT") {
+      const status = record.status === "pending" ? "pending" : "placed";
+      const { title, message } = await buildOrderMessage(record, status);
+      tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" }));
+      tasks.push(sendPush({
         admins: true,
-        title: "🎉 New Referral",
-        message: `Code ${record.referral_code} used.`,
-        url: "/admin",
-      });
-    }
+        title: "🔔 New Order",
+        message: `${record.order_ref}: ${record.network} ${record.bundle_size} → ${record.phone_number} (₵${Number(record.amount ?? 0).toFixed(2)})`,
+        url: "/admin#orders",
+      }));
+    } else if (type === "UPDATE" && record.status !== old_record?.status) {
+      let userStatus: "delivered" | "failed" | "pending" | "processing" | null = null;
+      if (record.status === "completed") userStatus = "delivered";
+      else if (record.status === "failed") userStatus = "failed";
+      else if (record.status === "pending") userStatus = "pending";
+      else if (record.status === "processing") userStatus = "processing";
 
-    // ─── AGENT APPLICATIONS ───
-    if (table === "agent_applications" && type === "INSERT") {
-      await sendPush({
+      if (userStatus) {
+        const { title, message } = await buildOrderMessage(record, userStatus);
+        tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" }));
+      }
+      tasks.push(sendPush({
         admins: true,
-        title: "🧑‍💼 New Agent Application",
-        message: `${record.full_name ?? ""} (${record.phone ?? ""})`,
-        url: "/admin#agents",
-      });
+        title: `📦 Order ${record.status}`,
+        message: `${record.order_ref} ${record.network} ${record.bundle_size} → ${record.phone_number}`,
+        url: "/admin#orders",
+      }));
     }
+  }
 
-    return new Response(JSON.stringify({ success: true }), {
+  // ─── WALLET TOPUPS ───
+  if (table === "wallet_topups") {
+    if (type === "INSERT") {
+      tasks.push(sendPush({
+        admins: true,
+        title: "💰 New Top-up",
+        message: `${(record.method ?? "").toUpperCase()} deposit of ₵${Number(record.amount ?? 0).toFixed(2)} (${record.status})`,
+        url: "/admin#topups",
+      }));
+    } else if (type === "UPDATE" && record.status !== old_record?.status) {
+      tasks.push(sendPush({
+        user_ids: [record.user_id],
+        title: "Top-up Update",
+        message:
+          record.status === "completed"
+            ? `Your top-up of ₵${Number(record.amount ?? 0).toFixed(2)} is completed.`
+            : `Your top-up status is now ${record.status}.`,
+        url: "/dashboard",
+      }));
+      tasks.push(sendPush({
+        admins: true,
+        title: "💰 Top-up Status",
+        message: `${(record.method ?? "").toUpperCase()} ₵${Number(record.amount ?? 0).toFixed(2)} → ${record.status}`,
+        url: "/admin#topups",
+      }));
+    }
+  }
+
+  // ─── COMPLAINTS ───
+  if (table === "complaints") {
+    if (type === "INSERT") {
+      tasks.push(sendPush({
+        admins: true,
+        title: "📋 New Complaint",
+        message: `${record.subject ?? ""}`.slice(0, 100),
+        url: "/admin#complaints",
+      }));
+    } else if (type === "UPDATE" && record.admin_reply && record.admin_reply !== old_record?.admin_reply) {
+      tasks.push(sendPush({
+        user_ids: [record.user_id],
+        title: "📋 Complaint Reply",
+        message: `Admin replied: "${String(record.admin_reply).slice(0, 80)}"`,
+        url: "/dashboard/complaints",
+      }));
+    }
+  }
+
+  // ─── CHAT ───
+  if (table === "chat_messages" && type === "INSERT") {
+    const preview = String(record.message ?? "").slice(0, 80);
+    if (record.sender_role === "user") {
+      tasks.push(sendPush({ admins: true, title: "💬 New Chat Message", message: `User: "${preview}"`, url: "/admin#chat" }));
+    } else if (record.sender_role === "admin") {
+      tasks.push(sendPush({ user_ids: [record.user_id], title: "💬 New Reply", message: `Support: "${preview}"`, url: "/dashboard" }));
+    }
+  }
+
+  // ─── REFERRALS ───
+  if (table === "referrals" && type === "INSERT") {
+    tasks.push(sendPush({
+      user_ids: [record.referrer_id],
+      title: "🎉 New Referral",
+      message: "Someone signed up using your referral code!",
+      url: "/dashboard/referrals",
+    }));
+    tasks.push(sendPush({
+      admins: true,
+      title: "🎉 New Referral",
+      message: `Code ${record.referral_code} used.`,
+      url: "/admin",
+    }));
+  }
+
+  // ─── AGENT APPLICATIONS ───
+  if (table === "agent_applications" && type === "INSERT") {
+    tasks.push(sendPush({
+      admins: true,
+      title: "🧑‍💼 New Agent Application",
+      message: `${record.full_name ?? ""} (${record.phone ?? ""})`,
+      url: "/admin#agents",
+    }));
+  }
+
+  await Promise.all(tasks);
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const payload = await req.json();
+    // Fire-and-forget so pg_net doesn't time out at 5s while we fan out pushes.
+    // @ts-ignore - EdgeRuntime is provided by Supabase Edge runtime
+    EdgeRuntime.waitUntil(handle(payload).catch((e) => console.error("dispatcher handle error:", e)));
+    return new Response(JSON.stringify({ success: true, queued: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
@@ -195,3 +205,4 @@ async function handle(payload: any) {
     });
   }
 });
+
