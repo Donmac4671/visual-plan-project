@@ -370,7 +370,7 @@ export type Database = {
           p256dh: string
           updated_at: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           auth: string
@@ -380,7 +380,7 @@ export type Database = {
           p256dh: string
           updated_at?: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           auth?: string
@@ -390,7 +390,7 @@ export type Database = {
           p256dh?: string
           updated_at?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
