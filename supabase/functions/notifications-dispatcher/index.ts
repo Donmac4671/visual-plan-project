@@ -12,20 +12,16 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-async function sendPush(opts: { user_ids?: string[]; admins?: boolean; title: string; message: string; url?: string }) {
-  try {
-    await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SERVICE_ROLE}`,
-        apikey: SERVICE_ROLE,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(opts),
-    });
-  } catch (e) {
-    console.error("dispatcher → send-push failed", e);
-  }
+function sendPush(opts: { user_ids?: string[]; admins?: boolean; title: string; message: string; url?: string }): Promise<void> {
+  return fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_ROLE}`,
+      apikey: SERVICE_ROLE,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(opts),
+  }).then(() => undefined).catch((e) => { console.error("dispatcher → send-push failed", e); });
 }
 
 async function isAgent(user_id: string): Promise<boolean> {
