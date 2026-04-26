@@ -20,6 +20,7 @@ import AdminBundleManager from "@/components/admin/AdminBundleManager";
 import AdminPromoManager from "@/components/admin/AdminPromoManager";
 import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
 import AdminSiteMessage from "@/components/admin/AdminSiteMessage";
+import AdminBroadcast from "@/components/admin/AdminBroadcast";
 import AdminLiveChat from "@/components/admin/AdminLiveChat";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,7 +32,7 @@ export default function Admin() {
 
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
-    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "live-chat"];
+    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "broadcast", "live-chat"];
     return validTabs.includes(hash) ? hash : "analytics";
   };
 
@@ -283,6 +284,7 @@ export default function Admin() {
           <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
           <TabsTrigger value="promos" className="gap-2"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
           <TabsTrigger value="site-message" className="gap-2"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-2"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
           <TabsTrigger value="live-chat" className="gap-2"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
         </TabsList>
 
