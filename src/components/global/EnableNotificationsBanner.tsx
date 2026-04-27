@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, X, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { subscribeToPush } from "@/lib/notifications";
+import { registerServiceWorker, subscribeToPush } from "@/lib/notifications";
 import { toast } from "@/hooks/use-toast";
 
 const DISMISS_KEY = "dmh_notif_banner_dismissed_until";
@@ -41,8 +41,8 @@ export default function EnableNotificationsBanner() {
     }
 
     // Permission granted but maybe no active push subscription
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
+    registerServiceWorker()
+      .then((reg) => reg?.pushManager.getSubscription())
       .then((sub) => {
         if (!sub) setNeedsEnable(true);
       })
