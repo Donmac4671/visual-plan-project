@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -8,6 +8,19 @@ import {
   playNotificationSound,
 } from "@/lib/notifications";
 import { toast } from "@/hooks/use-toast";
+
+type RealtimePayload<T> = { new: T; old?: Partial<T> };
+type OrderNotification = {
+  order_ref?: string;
+  user_id?: string;
+  network?: string;
+  bundle_size?: string;
+  phone_number?: string;
+  amount?: number | string;
+  status?: string;
+};
+type WalletTopupNotification = { user_id?: string; method?: string; amount?: number | string; status?: string };
+type ChatNotification = { sender_role?: string; message?: string };
 
 /**
  * Subscribes the browser to Web Push (background notifications come from the
@@ -51,7 +64,11 @@ export default function RealtimeNotifications() {
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     const onMsg = (e: MessageEvent) => {
-      if (e.data?.type === "play-sound") playNotificationSound();
+      if (e.data?.type !== "play-sound") return;
+      playNotificationSound();
+      if (e.data?.forceNotification && typeof document !== "undefined" && document.visibilityState === "visible") {
+        toast({ title: e.data.title ?? "Donmac Data Hub", description: e.data.body ?? "" });
+      }
     };
     navigator.serviceWorker.addEventListener("message", onMsg);
     return () => navigator.serviceWorker.removeEventListener("message", onMsg);
@@ -60,17 +77,17 @@ export default function RealtimeNotifications() {
   // Build wording matching the agreed structure
   const phoneOwner = (profile?.phone ?? "").replace(/\D/g, "");
   const isAgent = profile?.tier === "agent";
-  const includeRecipient = (recipient?: string | null) => {
+  const includeRecipient = useCallback((recipient?: string | null) => {
     const r = (recipient ?? "").replace(/\D/g, "");
     if (isAgent) return Boolean(r);
     return Boolean(r && phoneOwner && r !== phoneOwner);
-  };
+  }, [isAgent, phoneOwner]);
 
   // ── User: own orders (in-app toasts only) ──
   useEffect(() => {
     if (!user || isAdmin) return;
 
-    const onInsert = (payload: any) => {
+    const onInsert = (payload: RealtimePayload<OrderNotification>) => {
       const o = payload.new;
       const net = o.network ?? "";
       const pkg = o.bundle_size ?? "";
@@ -83,7 +100,7 @@ export default function RealtimeNotifications() {
       }
     };
 
-    const onUpdate = (payload: any) => {
+    const onUpdate = (payload: RealtimePayload<OrderNotification>) => {
       const oldS = payload.old?.status;
       const newS = payload.new?.status;
       if (!newS || oldS === newS) return;
@@ -110,14 +127,14 @@ export default function RealtimeNotifications() {
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };
-  }, [user, isAdmin, profile?.phone, profile?.tier]);
+  }, [user, isAdmin, includeRecipient]);
 
   // ── User: top-ups ──
   useEffect(() => {
     if (!user) return;
     const ch = supabase
       .channel(`topups-self-${user.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "wallet_topups", filter: `user_id=eq.${user.id}` }, (payload: any) => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "wallet_topups", filter: `user_id=eq.${user.id}` }, (payload: RealtimePayload<WalletTopupNotification>) => {
         const oldS = payload.old?.status;
         const newS = payload.new?.status;
         const amount = payload.new?.amount;
@@ -140,7 +157,7 @@ export default function RealtimeNotifications() {
 
     const ch1 = supabase
       .channel("admin-orders-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload: any) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload: RealtimePayload<OrderNotification>) => {
         const o = payload.new;
         if (o.user_id === user.id) return;
         showToast("🔔 New Order", `${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number} (₵${Number(o.amount ?? 0).toFixed(2)})`);
@@ -149,7 +166,7 @@ export default function RealtimeNotifications() {
 
     const ch2 = supabase
       .channel("admin-topups-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "wallet_topups" }, (payload: any) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "wallet_topups" }, (payload: RealtimePayload<WalletTopupNotification>) => {
         const t = payload.new;
         if (t.user_id === user.id) return;
         showToast("💰 New Top-up", `${t.method?.toUpperCase()} deposit of ₵${Number(t.amount ?? 0).toFixed(2)}`);
@@ -166,7 +183,7 @@ export default function RealtimeNotifications() {
       .channel(`chat-self-${user.id}`)
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }) },
-        (payload: any) => {
+        (payload: RealtimePayload<ChatNotification>) => {
           const msg = payload.new;
           if (isAdmin && msg.sender_role === "admin") return;
           if (!isAdmin && msg.sender_role === "user") return;

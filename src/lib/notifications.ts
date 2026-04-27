@@ -9,6 +9,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     swRegistration =
       (await navigator.serviceWorker.getRegistration("/")) ??
       (await navigator.serviceWorker.register("/sw.js", { scope: "/" }));
+    swRegistration.update().catch(() => {});
     await navigator.serviceWorker.ready;
     swRegistration = (await navigator.serviceWorker.getRegistration("/")) ?? swRegistration;
     return swRegistration;
@@ -86,7 +87,9 @@ export async function subscribeToPush(userId: string | null): Promise<boolean> {
 export function showNativeNotification(title: string, body: string, icon?: string) {
   try {
     if ("vibrate" in navigator) navigator.vibrate?.([100, 50, 100]);
-  } catch {}
+  } catch {
+    void 0;
+  }
   playNotificationSound();
 
   if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -110,7 +113,9 @@ function fallbackNotification(title: string, opts: NotificationOptions) {
   try {
     const n = new Notification(title, opts);
     setTimeout(() => n.close(), 6000);
-  } catch {}
+  } catch {
+    void 0;
+  }
 }
 
 const NOTIFICATION_SOUND_B64 = (() => {
@@ -152,6 +157,8 @@ export function playNotificationSound() {
   try {
     const audio = new Audio(NOTIFICATION_SOUND_B64);
     audio.volume = 1.0;
-    audio.play().catch(() => {});
-  } catch {}
+    audio.play().catch(() => undefined);
+  } catch {
+    void 0;
+  }
 }
