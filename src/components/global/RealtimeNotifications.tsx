@@ -87,7 +87,7 @@ export default function RealtimeNotifications() {
   useEffect(() => {
     if (!user || isAdmin) return;
 
-    const onInsert = (payload: any) => {
+    const onInsert = (payload: RealtimePayload<OrderNotification>) => {
       const o = payload.new;
       const net = o.network ?? "";
       const pkg = o.bundle_size ?? "";
@@ -100,7 +100,7 @@ export default function RealtimeNotifications() {
       }
     };
 
-    const onUpdate = (payload: any) => {
+    const onUpdate = (payload: RealtimePayload<OrderNotification>) => {
       const oldS = payload.old?.status;
       const newS = payload.new?.status;
       if (!newS || oldS === newS) return;
@@ -127,14 +127,14 @@ export default function RealtimeNotifications() {
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };
-  }, [user, isAdmin, profile?.phone, profile?.tier]);
+  }, [user, isAdmin, includeRecipient]);
 
   // ── User: top-ups ──
   useEffect(() => {
     if (!user) return;
     const ch = supabase
       .channel(`topups-self-${user.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "wallet_topups", filter: `user_id=eq.${user.id}` }, (payload: any) => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "wallet_topups", filter: `user_id=eq.${user.id}` }, (payload: RealtimePayload<WalletTopupNotification>) => {
         const oldS = payload.old?.status;
         const newS = payload.new?.status;
         const amount = payload.new?.amount;
@@ -157,7 +157,7 @@ export default function RealtimeNotifications() {
 
     const ch1 = supabase
       .channel("admin-orders-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload: any) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload: RealtimePayload<OrderNotification>) => {
         const o = payload.new;
         if (o.user_id === user.id) return;
         showToast("🔔 New Order", `${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number} (₵${Number(o.amount ?? 0).toFixed(2)})`);
@@ -166,7 +166,7 @@ export default function RealtimeNotifications() {
 
     const ch2 = supabase
       .channel("admin-topups-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "wallet_topups" }, (payload: any) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "wallet_topups" }, (payload: RealtimePayload<WalletTopupNotification>) => {
         const t = payload.new;
         if (t.user_id === user.id) return;
         showToast("💰 New Top-up", `${t.method?.toUpperCase()} deposit of ₵${Number(t.amount ?? 0).toFixed(2)}`);
@@ -183,7 +183,7 @@ export default function RealtimeNotifications() {
       .channel(`chat-self-${user.id}`)
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }) },
-        (payload: any) => {
+        (payload: RealtimePayload<ChatNotification>) => {
           const msg = payload.new;
           if (isAdmin && msg.sender_role === "admin") return;
           if (!isAdmin && msg.sender_role === "user") return;
