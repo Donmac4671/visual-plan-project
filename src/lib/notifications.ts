@@ -9,6 +9,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     swRegistration =
       (await navigator.serviceWorker.getRegistration("/")) ??
       (await navigator.serviceWorker.register("/sw.js", { scope: "/" }));
+    swRegistration.update().catch(() => {});
     await navigator.serviceWorker.ready;
     swRegistration = (await navigator.serviceWorker.getRegistration("/")) ?? swRegistration;
     return swRegistration;
