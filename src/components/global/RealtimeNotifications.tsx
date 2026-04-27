@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -8,6 +8,19 @@ import {
   playNotificationSound,
 } from "@/lib/notifications";
 import { toast } from "@/hooks/use-toast";
+
+type RealtimePayload<T> = { new: T; old?: Partial<T> };
+type OrderNotification = {
+  order_ref?: string;
+  user_id?: string;
+  network?: string;
+  bundle_size?: string;
+  phone_number?: string;
+  amount?: number | string;
+  status?: string;
+};
+type WalletTopupNotification = { user_id?: string; method?: string; amount?: number | string; status?: string };
+type ChatNotification = { sender_role?: string; message?: string };
 
 /**
  * Subscribes the browser to Web Push (background notifications come from the
@@ -64,11 +77,11 @@ export default function RealtimeNotifications() {
   // Build wording matching the agreed structure
   const phoneOwner = (profile?.phone ?? "").replace(/\D/g, "");
   const isAgent = profile?.tier === "agent";
-  const includeRecipient = (recipient?: string | null) => {
+  const includeRecipient = useCallback((recipient?: string | null) => {
     const r = (recipient ?? "").replace(/\D/g, "");
     if (isAgent) return Boolean(r);
     return Boolean(r && phoneOwner && r !== phoneOwner);
-  };
+  }, [isAgent, phoneOwner]);
 
   // ── User: own orders (in-app toasts only) ──
   useEffect(() => {
