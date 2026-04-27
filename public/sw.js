@@ -30,7 +30,7 @@ self.addEventListener("push", (event) => {
 
     // Always tell open clients to play the sound (in-app chime)
     clientsList.forEach((c) => {
-      try { c.postMessage({ type: "play-sound", title, body: options.body }); } catch {}
+      try { c.postMessage({ type: "play-sound", title, body: options.body, forceNotification }); } catch {}
     });
 
     // Regular account events use in-app toasts when focused; broadcasts must still show visibly.
