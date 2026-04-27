@@ -71,6 +71,26 @@ export default function AdminBroadcast() {
     loadHistory();
   };
 
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const handleResend = async (b: Broadcast) => {
+    setResendingId(b.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("broadcast-push", {
+        body: { title: b.title, message: b.message, url: b.url || "/dashboard", audience: b.audience },
+      });
+      if (error) throw error;
+      toast({
+        title: "Broadcast resent",
+        description: `Delivered to ${data?.sent ?? 0} device(s) across ${data?.recipients ?? 0} user(s).`,
+      });
+      loadHistory();
+    } catch (e: any) {
+      toast({ title: "Resend failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
