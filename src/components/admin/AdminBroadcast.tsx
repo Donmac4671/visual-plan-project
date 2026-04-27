@@ -156,9 +156,14 @@ export default function AdminBroadcast() {
                     {format(parseISO(b.created_at), "dd MMM yyyy, HH:mm")}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)} className="text-destructive shrink-0">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => handleResend(b)} disabled={resendingId === b.id} title="Resend">
+                    <RotateCw className={`w-4 h-4 ${resendingId === b.id ? "animate-spin" : ""}`} />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)} className="text-destructive" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
