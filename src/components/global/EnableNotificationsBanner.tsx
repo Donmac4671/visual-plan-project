@@ -8,12 +8,12 @@ import { toast } from "@/hooks/use-toast";
 const DISMISS_KEY = "dmh_notif_banner_dismissed_until";
 
 function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
 }
 function isStandalone() {
   return (
     window.matchMedia?.("(display-mode: standalone)").matches ||
-    (navigator as any).standalone === true
+    ("standalone" in navigator && navigator.standalone === true)
   );
 }
 
