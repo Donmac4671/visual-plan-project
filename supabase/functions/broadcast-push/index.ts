@@ -90,6 +90,8 @@ serve(async (req) => {
       url,
       icon: "/favicon.png",
       badge: "/favicon.png",
+      forceNotification: true,
+      tag: `broadcast-${Date.now()}`,
     });
 
     let sent = 0;
