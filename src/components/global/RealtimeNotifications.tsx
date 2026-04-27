@@ -51,7 +51,11 @@ export default function RealtimeNotifications() {
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     const onMsg = (e: MessageEvent) => {
-      if (e.data?.type === "play-sound") playNotificationSound();
+      if (e.data?.type !== "play-sound") return;
+      playNotificationSound();
+      if (e.data?.forceNotification && typeof document !== "undefined" && document.visibilityState === "visible") {
+        toast({ title: e.data.title ?? "Donmac Data Hub", description: e.data.body ?? "" });
+      }
     };
     navigator.serviceWorker.addEventListener("message", onMsg);
     return () => navigator.serviceWorker.removeEventListener("message", onMsg);
