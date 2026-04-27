@@ -88,7 +88,7 @@ export function showNativeNotification(title: string, body: string, icon?: strin
   try {
     if ("vibrate" in navigator) navigator.vibrate?.([100, 50, 100]);
   } catch {
-    return;
+    void 0;
   }
   playNotificationSound();
 
@@ -114,7 +114,7 @@ function fallbackNotification(title: string, opts: NotificationOptions) {
     const n = new Notification(title, opts);
     setTimeout(() => n.close(), 6000);
   } catch {
-    return;
+    void 0;
   }
 }
 
@@ -157,8 +157,8 @@ export function playNotificationSound() {
   try {
     const audio = new Audio(NOTIFICATION_SOUND_B64);
     audio.volume = 1.0;
-    audio.play().catch(() => {});
+    audio.play().catch(() => undefined);
   } catch {
-    return;
+    void 0;
   }
 }
