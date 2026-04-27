@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Bell, Trash2 } from "lucide-react";
+import { Send, Bell, Trash2, RotateCw } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 type Broadcast = {
@@ -69,6 +69,26 @@ export default function AdminBroadcast() {
     if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Deleted" });
     loadHistory();
+  };
+
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const handleResend = async (b: Broadcast) => {
+    setResendingId(b.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("broadcast-push", {
+        body: { title: b.title, message: b.message, url: b.url || "/dashboard", audience: b.audience },
+      });
+      if (error) throw error;
+      toast({
+        title: "Broadcast resent",
+        description: `Delivered to ${data?.sent ?? 0} device(s) across ${data?.recipients ?? 0} user(s).`,
+      });
+      loadHistory();
+    } catch (e: any) {
+      toast({ title: "Resend failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setResendingId(null);
+    }
   };
 
   return (
@@ -136,9 +156,14 @@ export default function AdminBroadcast() {
                     {format(parseISO(b.created_at), "dd MMM yyyy, HH:mm")}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)} className="text-destructive shrink-0">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => handleResend(b)} disabled={resendingId === b.id} title="Resend">
+                    <RotateCw className={`w-4 h-4 ${resendingId === b.id ? "animate-spin" : ""}`} />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)} className="text-destructive" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
