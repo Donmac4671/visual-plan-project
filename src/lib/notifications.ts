@@ -87,7 +87,9 @@ export async function subscribeToPush(userId: string | null): Promise<boolean> {
 export function showNativeNotification(title: string, body: string, icon?: string) {
   try {
     if ("vibrate" in navigator) navigator.vibrate?.([100, 50, 100]);
-  } catch {}
+  } catch {
+    return;
+  }
   playNotificationSound();
 
   if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -111,7 +113,9 @@ function fallbackNotification(title: string, opts: NotificationOptions) {
   try {
     const n = new Notification(title, opts);
     setTimeout(() => n.close(), 6000);
-  } catch {}
+  } catch {
+    return;
+  }
 }
 
 const NOTIFICATION_SOUND_B64 = (() => {
@@ -154,5 +158,7 @@ export function playNotificationSound() {
     const audio = new Audio(NOTIFICATION_SOUND_B64);
     audio.volume = 1.0;
     audio.play().catch(() => {});
-  } catch {}
+  } catch {
+    return;
+  }
 }
