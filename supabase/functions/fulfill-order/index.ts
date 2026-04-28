@@ -15,10 +15,27 @@ const NETWORK_KEYS: Record<string, string[]> = {
   mtn: ["MTN", "mtn"],
   telecel: ["TELECEL", "telecel"],
   "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
-  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
+  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE", "premium", "PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
 };
 
 const ENDPOINT = "/v1/purchaseBundle";
+
+function normalizeNetworkKey(networkId: string): string {
+  return networkId.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
+function isNetworkValidationError(result: any, status: number): boolean {
+  const message = String(result?.message ?? "").toLowerCase();
+  const networkErrors = Array.isArray(result?.errors?.network)
+    ? result.errors.network.join(" ").toLowerCase()
+    : String(result?.errors?.network ?? "").toLowerCase();
+  return status === 422 && (
+    message.includes("validation") ||
+    networkErrors.includes("network") ||
+    networkErrors.includes("invalid") ||
+    networkErrors.includes("selected")
+  );
+}
 
 const RequestSchema = z.object({
   order_id: z.string().uuid(),
@@ -47,8 +64,11 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
+    const isServiceRequest = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const { data: { user }, error: authError } = isServiceRequest
+      ? { data: { user: null }, error: null }
+      : await supabase.auth.getUser(token);
+    if (!isServiceRequest && (authError || !user)) {
       return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -64,7 +84,7 @@ serve(async (req) => {
 
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
 
-    const networkKey = network_id.toLowerCase().replace(/\s+/g, "-");
+    const networkKey = normalizeNetworkKey(network_id);
     const candidateKeys = NETWORK_KEYS[networkKey];
     if (!candidateKeys) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {
@@ -85,13 +105,13 @@ serve(async (req) => {
       });
     }
 
-    const { data: roles } = await supabase
+    const { data: roles } = user ? await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id);
-    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+      .eq("user_id", user.id) : { data: [] };
+    const isAdmin = isServiceRequest || (roles ?? []).some((r: { role: string }) => r.role === "admin");
 
-    if (!isAdmin && orderRow.user_id !== user.id) {
+    if (!isAdmin && orderRow.user_id !== user?.id) {
       return new Response(JSON.stringify({ success: false, message: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -104,9 +124,12 @@ serve(async (req) => {
 
     let lastResult: any = null;
     let lastStatus = 0;
+    const diagnostics: Array<{ key: string; status: number; message: string; errors?: any }> = [];
+    let sawNetworkValidationError = false;
 
     for (const key of candidateKeys) {
       const requestBody = { network: key, reference, msisdn: phone, capacity: bundle_size_gb };
+      console.log("GH request:", JSON.stringify({ order_id, networkKey, key, reference, msisdn: phone, capacity: bundle_size_gb }));
       const response = await fetch(`${GH_API_BASE}${ENDPOINT}`, {
         method: "POST",
         headers: {
@@ -119,6 +142,8 @@ serve(async (req) => {
       lastStatus = response.status;
       lastResult = await response.json().catch(() => ({}));
       console.log(`GH response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult));
+      diagnostics.push({ key, status: response.status, message: String(lastResult?.message ?? ""), errors: lastResult?.errors });
+      if (isNetworkValidationError(lastResult, response.status)) sawNetworkValidationError = true;
 
       if (lastResult?.success) {
         const actualRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? reference;
@@ -137,6 +162,20 @@ serve(async (req) => {
       const msg = String(lastResult?.message ?? "").toLowerCase();
       const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || msg.includes("not found") || msg.includes("unsupported") || response.status === 404 || response.status === 422 || response.status === 400;
       if (!isAtPremium && !looksLikeNetworkError) break;
+    }
+
+    if (networkKey === "at-premium" && sawNetworkValidationError) {
+      console.error(`AT Premium GHData network validation failed for order ${order_id}; keeping order waiting for manual/provider review:`, JSON.stringify({ lastStatus, lastResult, diagnostics }));
+      await supabase.from("orders").update({ status: "waiting", gh_reference: reference }).eq("id", order_id);
+      return new Response(JSON.stringify({
+        success: false,
+        status: "waiting",
+        message: "AT Premium was rejected by GHData network validation, so the order is waiting for manual/provider review instead of being failed/refunded.",
+        provider_status: lastStatus,
+        diagnostics,
+      }), {
+        status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // All attempts failed → mark failed and refund wallet

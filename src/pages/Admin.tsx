@@ -257,7 +257,9 @@ export default function Admin() {
       const result = await res.json();
       console.log("Retry fulfill-order response:", res.status, JSON.stringify(result));
 
-      if (!res.ok || !result.success) {
+      if (res.status === 202 && result.status === "waiting") {
+        toast({ title: "Order Waiting", description: result.message || "Provider rejected this network key; review manually." });
+      } else if (!res.ok || !result.success) {
         toast({ title: "Retry Failed", description: result.message || `Error ${res.status}`, variant: "destructive" });
       } else {
         toast({ title: "Order Retried", description: "Order sent to provider successfully" });
@@ -549,7 +551,7 @@ export default function Admin() {
                             <RefreshCw className="w-4 h-4" />
                           </Button>
                         )}
-                        {o.status === "failed" && (
+                        {(o.status === "failed" || o.status === "waiting") && (
                           <Button size="sm" variant="outline" className="text-primary" onClick={() => handleRetryOrder(o)}>
                             <RotateCcw className="w-4 h-4" />
                           </Button>

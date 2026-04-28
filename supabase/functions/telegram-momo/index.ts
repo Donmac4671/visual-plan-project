@@ -98,8 +98,21 @@ const FULFILL_NETWORK_KEYS: Record<string, string[]> = {
   mtn: ["mtn"],
   telecel: ["telecel"],
   "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
-  "at-premium": ["atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
+  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE", "premium", "PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
 };
+
+function isNetworkValidationError(result: any, status: number): boolean {
+  const message = String(result?.message ?? "").toLowerCase();
+  const networkErrors = Array.isArray(result?.errors?.network)
+    ? result.errors.network.join(" ").toLowerCase()
+    : String(result?.errors?.network ?? "").toLowerCase();
+  return status === 422 && (
+    message.includes("validation") ||
+    networkErrors.includes("network") ||
+    networkErrors.includes("invalid") ||
+    networkErrors.includes("selected")
+  );
+}
 
 // Fallback prices when custom_bundles table is empty
 const FALLBACK_AGENT_PRICES: Record<string, Record<number, number>> = {
@@ -479,6 +492,8 @@ async function handleOrderCommand(
   let lastStatus = 0;
   let success = false;
   let actualGhRef: string = ghReference;
+  let sawNetworkValidationError = false;
+  const diagnostics: Array<{ key: string; status: number; message: string; errors?: any }> = [];
 
   for (const key of candidateKeys) {
     try {
@@ -495,10 +510,12 @@ async function handleOrderCommand(
       lastStatus = response.status;
       lastResult = await response.json().catch(() => ({}));
       console.log(`GH Telegram response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult));
+      diagnostics.push({ key, status: response.status, message: String(lastResult?.message ?? ""), errors: lastResult?.errors });
+      if (isNetworkValidationError(lastResult, response.status)) sawNetworkValidationError = true;
 
       if (lastResult?.success) {
         actualGhRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? ghReference;
-        await supabase.from("orders").update({ gh_reference: String(actualGhRef) }).eq("id", newOrder.id);
+        await supabase.from("orders").update({ gh_reference: String(actualGhRef), status: order.networkId === "at-premium" ? "completed" : "processing" }).eq("id", newOrder.id);
         success = true;
         break;
       }
@@ -514,6 +531,12 @@ async function handleOrderCommand(
   if (success) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId,
       `✅ Order Placed!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\n📋 GH Ref: ${actualGhRef}`
+    );
+  } else if (order.networkId === "at-premium" && sawNetworkValidationError) {
+    console.error(`AT Premium Telegram GHData network validation failed; keeping order waiting:`, JSON.stringify({ order_id: newOrder.id, lastStatus, lastResult, diagnostics }));
+    await supabase.from("orders").update({ status: "waiting" }).eq("id", newOrder.id);
+    await sendTelegramMessage(lovableKey, telegramKey, chatId,
+      `⚠️ Order Waiting For Manual Review\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}\nGHData rejected the AT Premium network key, so this was not failed/refunded.`
     );
   } else {
     await supabase.from("orders").update({ status: "failed" }).eq("id", newOrder.id);
