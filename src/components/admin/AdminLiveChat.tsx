@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Send, Search, MessageCircle, Paperclip } from "lucide-react";
 import { format } from "date-fns";
+import ChatMedia from "@/components/chat/ChatMedia";
 
 interface ChatThread {
   user_id: string;
@@ -126,8 +127,8 @@ export default function AdminLiveChat() {
     const path = `admin/${selectedUser}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (!error) {
-      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
-      await sendReply(urlData.publicUrl);
+      // Store the storage path; signed URLs are generated on render.
+      await sendReply(path);
     }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -205,16 +206,7 @@ export default function AdminLiveChat() {
                         : "bg-muted text-foreground rounded-bl-sm"
                     }`}
                   >
-                    {m.media_url && isImage(m.media_url) && (
-                      <a href={m.media_url} target="_blank" rel="noopener noreferrer">
-                        <img src={m.media_url} alt="media" className="rounded-lg max-w-full max-h-40 mb-1 cursor-pointer" />
-                      </a>
-                    )}
-                    {m.media_url && !isImage(m.media_url) && (
-                      <a href={m.media_url} target="_blank" rel="noopener noreferrer" className="underline text-xs block mb-1">
-                        📎 View attachment
-                      </a>
-                    )}
+                    {m.media_url && <ChatMedia value={m.media_url} />}
                     {m.message && m.message !== "📎 Media" && (
                       <p className="whitespace-pre-wrap break-words">{m.message}</p>
                     )}
