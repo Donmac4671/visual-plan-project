@@ -43,6 +43,12 @@ export default function Admin() {
     window.location.hash = value;
   }, []);
 
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(getInitialTab());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [topups, setTopups] = useState<any[]>([]);

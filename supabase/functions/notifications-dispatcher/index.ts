@@ -74,7 +74,7 @@ async function handle(payload: any) {
     if (type === "INSERT") {
       const status = record.status === "pending" ? "pending" : "placed";
       const { title, message } = await buildOrderMessage(record, status);
-      tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" }));
+      tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/orders" }));
       tasks.push(sendPush({
         admins: true,
         title: "🔔 New Order",
@@ -90,7 +90,7 @@ async function handle(payload: any) {
 
       if (userStatus) {
         const { title, message } = await buildOrderMessage(record, userStatus);
-        tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/dashboard/orders" }));
+        tasks.push(sendPush({ user_ids: [record.user_id], title, message, url: "/orders" }));
       }
       tasks.push(sendPush({
         admins: true,
@@ -108,7 +108,7 @@ async function handle(payload: any) {
         admins: true,
         title: "💰 New Top-up",
         message: `${(record.method ?? "").toUpperCase()} deposit of ₵${Number(record.amount ?? 0).toFixed(2)} (${record.status})`,
-        url: "/admin#topups",
+        url: "/admin#verified-id",
       }));
     } else if (type === "UPDATE" && record.status !== old_record?.status) {
       tasks.push(sendPush({
@@ -118,13 +118,13 @@ async function handle(payload: any) {
           record.status === "completed"
             ? `Your top-up of ₵${Number(record.amount ?? 0).toFixed(2)} is completed.`
             : `Your top-up status is now ${record.status}.`,
-        url: "/dashboard",
+        url: "/topups",
       }));
       tasks.push(sendPush({
         admins: true,
         title: "💰 Top-up Status",
         message: `${(record.method ?? "").toUpperCase()} ₵${Number(record.amount ?? 0).toFixed(2)} → ${record.status}`,
-        url: "/admin#topups",
+        url: "/admin#verified-id",
       }));
     }
   }
@@ -143,7 +143,7 @@ async function handle(payload: any) {
         user_ids: [record.user_id],
         title: "📋 Complaint Reply",
         message: `Admin replied: "${String(record.admin_reply).slice(0, 80)}"`,
-        url: "/dashboard/complaints",
+        url: "/complaints",
       }));
     }
   }
@@ -152,7 +152,7 @@ async function handle(payload: any) {
   if (table === "chat_messages" && type === "INSERT") {
     const preview = String(record.message ?? "").slice(0, 80);
     if (record.sender_role === "user") {
-      tasks.push(sendPush({ admins: true, title: "💬 New Chat Message", message: `User: "${preview}"`, url: "/admin#chat" }));
+      tasks.push(sendPush({ admins: true, title: "💬 New Chat Message", message: `User: "${preview}"`, url: "/admin#live-chat" }));
     } else if (record.sender_role === "admin") {
       tasks.push(sendPush({ user_ids: [record.user_id], title: "💬 New Reply", message: `Support: "${preview}"`, url: "/dashboard" }));
     }
@@ -164,7 +164,7 @@ async function handle(payload: any) {
       user_ids: [record.referrer_id],
       title: "🎉 New Referral",
       message: "Someone signed up using your referral code!",
-      url: "/dashboard/referrals",
+      url: "/referrals",
     }));
     tasks.push(sendPush({
       admins: true,
@@ -180,7 +180,7 @@ async function handle(payload: any) {
       admins: true,
       title: "🧑‍💼 New Agent Application",
       message: `${record.full_name ?? ""} (${record.phone ?? ""})`,
-      url: "/admin#agents",
+      url: "/admin#agent-apps",
     }));
   }
 
