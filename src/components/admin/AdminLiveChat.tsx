@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Send, Search, MessageCircle, Paperclip } from "lucide-react";
 import { format } from "date-fns";
+import ChatMedia from "@/components/chat/ChatMedia";
 
 interface ChatThread {
   user_id: string;
