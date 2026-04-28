@@ -1,0 +1,1 @@
+CREATE POLICY "Public can view active promotions" ON public.promotions FOR SELECT TO anon USING (is_active = true);
