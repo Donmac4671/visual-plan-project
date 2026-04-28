@@ -330,7 +330,9 @@ ABOUT DONMAC DATA HUB:
 
 CURRENT TIME (GMT): ${nowGMT}
 
-PRICING for this user (tier: ${tierLabel}) — always use these exact figures and never quote a different tier's price:
+${promoSection}
+
+PRICING for this user (tier: ${tierLabel}) — always use these EXACT figures (they reflect the latest admin updates and any active promotion). Never quote a different tier's price. If a promo is active and applies to this user, the discounted price shown is the price to quote, and you may briefly mention the promo and when it ends.
 ${pricing}
 
 ${userContext}
