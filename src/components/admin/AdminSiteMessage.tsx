@@ -153,8 +153,8 @@ export default function AdminSiteMessage() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Create multiple messages and toggle each individually. "Active" shows it as a popup.
-        Enable "Show as top banner" to also show a dismissible banner at the top of every page.
+        Create multiple messages and toggle each independently. "Active" shows the message as a popup.
+        "Show as top banner" displays a dismissible banner at the top of every page.
       </p>
 
       {drafts.map((d) => (
