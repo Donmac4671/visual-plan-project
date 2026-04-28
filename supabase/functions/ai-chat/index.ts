@@ -358,7 +358,10 @@ serve(async (req) => {
 ${tier === "agent" ? `- Agent code: ${profile?.agent_code || "N/A"}` : ""}
 - Referrals: ${refStats}
 
-Last 10 orders:
+Orders in the last 24 hours (${orders24hList.length} order${orders24hList.length === 1 ? "" : "s"}, total ₵${orders24hTotal.toFixed(2)}):
+${orders24hText}
+
+Last 10 orders (overall):
 ${ordersText}
 
 Last 5 wallet top-ups:
