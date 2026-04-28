@@ -110,6 +110,9 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 pt-4">
+        <PromoCountdown />
+      </div>
       {/* Hero */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 gradient-primary opacity-90" />
