@@ -65,9 +65,22 @@ const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
   },
 };
 
-function getOrderCost(network: string, bundleSize: string): number {
+function getOrderCost(
+  network: string,
+  bundleSize: string,
+  customCostMap?: Record<string, Record<string, number>>
+): number {
+  const fromCustom = customCostMap?.[network]?.[bundleSize];
+  if (typeof fromCustom === "number") return fromCustom;
   return ORIGINAL_PRICES[network]?.[bundleSize] ?? 0;
 }
+
+const NETWORK_ID_TO_NAME: Record<string, string> = {
+  mtn: "MTN",
+  telecel: "TELECEL",
+  "at-bigtime": "AT BIG TIME",
+  "at-premium": "AT PREMIUM",
+};
 
 function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClear }: {
   dateFrom?: Date;
@@ -116,6 +129,25 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [ghBalance, setGhBalance] = useState<number | null>(null);
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
   const [showProfit, setShowProfit] = useState(false);
+  const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
+
+  useEffect(() => {
+    const fetchCustomCosts = async () => {
+      const { data } = await supabase
+        .from("custom_bundles")
+        .select("network_id, bundle_size, agent_price");
+      if (!data) return;
+      const map: Record<string, Record<string, number>> = {};
+      for (const row of data) {
+        const networkName = NETWORK_ID_TO_NAME[row.network_id] ?? row.network_id?.toUpperCase();
+        if (!map[networkName]) map[networkName] = {};
+        // agent_price acts as the cost basis (matches ORIGINAL_PRICES convention)
+        map[networkName][row.bundle_size] = Number(row.agent_price);
+      }
+      setCustomCostMap(map);
+    };
+    fetchCustomCosts();
+  }, []);
 
   const fetchGhBalance = async () => {
     setGhBalanceLoading(true);
@@ -173,7 +205,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const blockedUsers = users.filter(u => u.is_blocked).length;
     const pendingTopups = filteredTopups.filter(t => t.status === "pending").length;
 
-    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
     const totalProfit = totalRevenue - totalCost;
 
     const totalCapacityGB = filteredOrders.reduce((sum, o) => {
@@ -201,7 +233,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       totalProfit,
       totalCapacityGB,
     };
-  }, [users, filteredOrders, filteredTopups, filteredComplaints]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints, customCostMap]);
 
   // Profit per day (last 7 days)
   const profitPerDay = useMemo(() => {
@@ -213,10 +245,10 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     return days.map(({ date, label }) => {
       const dayOrders = filteredOrders.filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
       const revenue = dayOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
       return { day: label, profit: Math.round((revenue - cost) * 100) / 100 };
     });
-  }, [filteredOrders, dateTo]);
+  }, [filteredOrders, dateTo, customCostMap]);
 
   // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {
