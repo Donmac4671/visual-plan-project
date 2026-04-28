@@ -214,11 +214,21 @@ function cleanText(s: string): string {
     .replace(/^#{1,6}\s+/gm, "");
 }
 
+let CURRENT_TZ = "UTC";
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "N/A";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return String(iso);
-  return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) + " UTC";
+  try {
+    const formatted = d.toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: CURRENT_TZ,
+    });
+    return `${formatted} (${CURRENT_TZ})`;
+  } catch {
+    return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) + " UTC";
+  }
 }
 
 async function getPromoHistory(supabase: any): Promise<string> {
