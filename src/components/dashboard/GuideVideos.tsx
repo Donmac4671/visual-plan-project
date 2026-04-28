@@ -9,6 +9,7 @@ import momoStep2 from "@/assets/guides/momo-2-send-money.jpg";
 import momoStep3 from "@/assets/guides/momo-3-claim.jpg";
 import complaintStep1 from "@/assets/guides/complaint-1-new.jpg";
 import complaintStep2 from "@/assets/guides/complaint-2-submit.jpg";
+import agentStep1 from "@/assets/guides/agent-1-apply.jpg";
 
 export default function GuideVideos() {
   return (
@@ -65,8 +66,8 @@ export default function GuideVideos() {
         emoji="🤝"
         accentColor="#ec4899"
         steps={[
-          { caption: "Open Become an Agent, fill in your details and reason for applying." },
-          { caption: "Submit your application — we'll review and get back to you soon!" },
+          { image: agentStep1, caption: "Open Become an Agent and fill in your full name, email, phone, location and reason." },
+          { image: agentStep1, caption: "Send the ₵40 registration fee via MTN MoMo to 0549358359 (Osei Michael), then enter the Transaction ID and tap Submit Application." },
         ]}
       />
     </div>
