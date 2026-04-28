@@ -193,8 +193,8 @@ function LiveChatTab() {
     const path = `${user.id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (!error) {
-      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
-      await sendMessage(urlData.publicUrl);
+      // Store the storage path; signed URLs are generated on render.
+      await sendMessage(path);
     }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
