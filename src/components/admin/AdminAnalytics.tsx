@@ -248,7 +248,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
       return { day: label, profit: Math.round((revenue - cost) * 100) / 100 };
     });
-  }, [filteredOrders, dateTo]);
+  }, [filteredOrders, dateTo, customCostMap]);
 
   // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {
