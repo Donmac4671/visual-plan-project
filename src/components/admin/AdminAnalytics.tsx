@@ -65,9 +65,22 @@ const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
   },
 };
 
-function getOrderCost(network: string, bundleSize: string): number {
+function getOrderCost(
+  network: string,
+  bundleSize: string,
+  customCostMap?: Record<string, Record<string, number>>
+): number {
+  const fromCustom = customCostMap?.[network]?.[bundleSize];
+  if (typeof fromCustom === "number") return fromCustom;
   return ORIGINAL_PRICES[network]?.[bundleSize] ?? 0;
 }
+
+const NETWORK_ID_TO_NAME: Record<string, string> = {
+  mtn: "MTN",
+  telecel: "TELECEL",
+  "at-bigtime": "AT BIG TIME",
+  "at-premium": "AT PREMIUM",
+};
 
 function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClear }: {
   dateFrom?: Date;
