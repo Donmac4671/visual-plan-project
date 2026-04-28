@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import ChatMedia from "@/components/chat/ChatMedia";
 
 type AiMessage = { role: "user" | "assistant"; content: string };
 
