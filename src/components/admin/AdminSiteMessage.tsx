@@ -58,8 +58,10 @@ export default function AdminSiteMessage() {
 
   const toggleField = async (m: SiteMessage, field: "is_active" | "show_as_banner", value: boolean) => {
     updateExisting(m.id, { [field]: value });
-    const payload: Record<string, any> = { updated_at: new Date().toISOString() };
-    payload[field] = value;
+    const payload =
+      field === "is_active"
+        ? { is_active: value, updated_at: new Date().toISOString() }
+        : { show_as_banner: value, updated_at: new Date().toISOString() };
     const { error } = await supabase.from("site_messages").update(payload).eq("id", m.id);
     if (error) {
       updateExisting(m.id, { [field]: !value });
