@@ -49,7 +49,7 @@ export default function PromoCountdown() {
   const headlineIcon = isLive ? Sparkles : CalendarClock;
   const HeadlineIcon = headlineIcon;
   const headline = isLive
-    ? `🎉 ${active.discount_percent}% OFF for ${audience}!`
+    ? `${active.discount_percent}% OFF for ${audience}!`
     : `${format(new Date(active.starts_at), "MMM do")}: ${active.discount_percent}% OFF for ${audience}`;
   const countdownLabel = isLive ? "Ends in:" : "Starts in:";
 
