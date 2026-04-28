@@ -83,16 +83,124 @@ const NETWORKS = [
   },
 ];
 
-function buildPricingText(tier: "agent" | "general" | "guest"): string {
-  return NETWORKS.map((n) => {
+type Bundle = { size: string; agent: number; general: number };
+type Network = { id: string; name: string; bundles: Bundle[] };
+
+function sizeToMB(size: string): number {
+  const m = size.trim().toUpperCase().match(/^([\d.]+)\s*(GB|MB)$/);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  return m[2] === "GB" ? n * 1000 : n;
+}
+
+async function buildLiveNetworks(supabase: any): Promise<Network[]> {
+  // Start with hardcoded defaults
+  const networks: Network[] = NETWORKS.map((n) => ({
+    id: n.id,
+    name: n.name,
+    bundles: n.bundles.map((b) => ({ ...b })),
+  }));
+
+  try {
+    const [{ data: custom }, { data: hidden }] = await Promise.all([
+      supabase.from("custom_bundles").select("network_id, bundle_size, agent_price, general_price"),
+      supabase.from("hidden_bundles").select("network_id, bundle_size"),
+    ]);
+
+    // Merge admin overrides / additions from custom_bundles
+    if (Array.isArray(custom)) {
+      for (const c of custom) {
+        let net = networks.find((n) => n.id === c.network_id);
+        if (!net) {
+          net = { id: c.network_id, name: c.network_id.toUpperCase(), bundles: [] };
+          networks.push(net);
+        }
+        const existing = net.bundles.find((b) => b.size === c.bundle_size);
+        const agent = Number(c.agent_price);
+        const general = Number(c.general_price);
+        if (existing) {
+          existing.agent = agent;
+          existing.general = general;
+        } else {
+          net.bundles.push({ size: c.bundle_size, agent, general });
+        }
+      }
+    }
+
+    // Remove hidden bundles
+    if (Array.isArray(hidden)) {
+      const hiddenSet = new Set(hidden.map((h: any) => `${h.network_id}::${h.bundle_size}`));
+      for (const net of networks) {
+        net.bundles = net.bundles.filter((b) => !hiddenSet.has(`${net.id}::${b.size}`));
+      }
+    }
+
+    // Sort bundles by size
+    for (const net of networks) {
+      net.bundles.sort((a, b) => sizeToMB(a.size) - sizeToMB(b.size));
+    }
+  } catch (e) {
+    console.error("buildLiveNetworks failed, falling back to defaults:", e);
+  }
+
+  return networks;
+}
+
+function buildPricingText(
+  networks: Network[],
+  tier: "agent" | "general" | "guest",
+  promo: { discount: number; applies: boolean } | null,
+): string {
+  return networks.map((n) => {
+    if (n.bundles.length === 0) return "";
     const lines = n.bundles.map((b) => {
-      if (tier === "agent") return `  ${b.size}: ₵${b.agent.toFixed(2)}`;
-      if (tier === "general") return `  ${b.size}: ₵${b.general.toFixed(2)}`;
-      // guest: show general price only (default public price)
-      return `  ${b.size}: ₵${b.general.toFixed(2)}`;
+      const base = tier === "agent" ? b.agent : b.general;
+      if (promo && promo.applies && promo.discount > 0) {
+        const discounted = Math.round(base * (1 - promo.discount / 100) * 100) / 100;
+        return `  ${b.size}: ₵${discounted.toFixed(2)} (was ₵${base.toFixed(2)}, ${promo.discount}% promo)`;
+      }
+      return `  ${b.size}: ₵${base.toFixed(2)}`;
     }).join("\n");
     return `${n.name}:\n${lines}`;
-  }).join("\n\n");
+  }).filter(Boolean).join("\n\n");
+}
+
+async function getActivePromo(
+  supabase: any,
+  tier: "agent" | "general" | "guest",
+): Promise<{ discount: number; description: string; starts_at: string; expires_at: string; target_audience: string; applies: boolean } | null> {
+  try {
+    const { data } = await supabase
+      .from("promotions")
+      .select("discount_percent, description, starts_at, expires_at, target_audience, is_active")
+      .eq("is_active", true);
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const now = Date.now();
+    const valid = data.filter((p: any) => {
+      const starts = new Date(p.starts_at).getTime();
+      const expires = new Date(p.expires_at).getTime();
+      return !isNaN(expires) && expires >= now && (isNaN(starts) || starts <= now);
+    });
+    if (valid.length === 0) return null;
+    valid.sort((a: any, b: any) => Number(b.discount_percent) - Number(a.discount_percent));
+    const p = valid[0];
+    const audience = (p.target_audience || "everyone").toLowerCase();
+    const applies =
+      audience === "everyone" ||
+      (audience === "agent" && tier === "agent") ||
+      (audience === "general" && tier !== "agent");
+    return {
+      discount: Number(p.discount_percent),
+      description: p.description || "",
+      starts_at: p.starts_at,
+      expires_at: p.expires_at,
+      target_audience: audience,
+      applies,
+    };
+  } catch (e) {
+    console.error("getActivePromo failed:", e);
+    return null;
+  }
 }
 
 // Strip markdown asterisks/underscores so chat reads as plain conversational text
@@ -163,9 +271,39 @@ ${ordersText}`;
       }
     }
 
-    const pricing = buildPricingText(userTier);
+    // Service-role client to read live bundle/promo data regardless of auth
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+
+    const [liveNetworks, promo] = await Promise.all([
+      buildLiveNetworks(adminClient),
+      getActivePromo(adminClient, userTier),
+    ]);
+
+    const pricing = buildPricingText(
+      liveNetworks,
+      userTier,
+      promo ? { discount: promo.discount, applies: promo.applies } : null,
+    );
     const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
     const nowGMT = new Date().toUTCString();
+
+    let promoSection = "PROMOTION: No active promotion right now.";
+    if (promo) {
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? iso : d.toUTCString();
+      };
+      promoSection = `PROMOTION (active):
+- Discount: ${promo.discount}% off
+- Description: ${promo.description || "(no description provided)"}
+- Audience: ${promo.target_audience}
+- Starts: ${fmt(promo.starts_at)}
+- Ends: ${fmt(promo.expires_at)}
+- Applies to this user: ${promo.applies ? "YES — quote the discounted price shown in PRICING" : "NO — this promo does not apply to their tier; quote the regular price"}`;
+    }
 
     const systemPrompt = `You are the Donmac Data Hub support assistant — friendly, warm, and concise. Speak like a real Ghanaian customer service rep. Keep answers short and natural.
 
@@ -192,7 +330,9 @@ ABOUT DONMAC DATA HUB:
 
 CURRENT TIME (GMT): ${nowGMT}
 
-PRICING for this user (tier: ${tierLabel}) — always use these exact figures and never quote a different tier's price:
+${promoSection}
+
+PRICING for this user (tier: ${tierLabel}) — always use these EXACT figures (they reflect the latest admin updates and any active promotion). Never quote a different tier's price. If a promo is active and applies to this user, the discounted price shown is the price to quote, and you may briefly mention the promo and when it ends.
 ${pricing}
 
 ${userContext}
