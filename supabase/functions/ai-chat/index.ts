@@ -214,6 +214,71 @@ function cleanText(s: string): string {
     .replace(/^#{1,6}\s+/gm, "");
 }
 
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) + " UTC";
+}
+
+async function getPromoHistory(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("promotions")
+      .select("discount_percent, description, starts_at, expires_at, target_audience, is_active, created_at")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (!Array.isArray(data) || data.length === 0) return "PROMO HISTORY: No promotions have ever been created.";
+    const now = Date.now();
+    const lines = data.map((p: any) => {
+      const starts = new Date(p.starts_at).getTime();
+      const expires = new Date(p.expires_at).getTime();
+      let state = "expired";
+      if (p.is_active && !isNaN(expires) && expires >= now && (isNaN(starts) || starts <= now)) state = "ACTIVE NOW";
+      else if (p.is_active && !isNaN(starts) && starts > now) state = "scheduled";
+      else if (!p.is_active) state = "disabled";
+      return `  • ${p.discount_percent}% off (${p.target_audience}) — ${p.description || "no description"} | ${fmtDate(p.starts_at)} → ${fmtDate(p.expires_at)} [${state}]`;
+    }).join("\n");
+    return `PROMO HISTORY (latest 10, newest first):\n${lines}`;
+  } catch (e) {
+    console.error("getPromoHistory failed:", e);
+    return "PROMO HISTORY: unavailable.";
+  }
+}
+
+async function getRecentBroadcasts(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("broadcasts")
+      .select("title, message, audience, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    if (!Array.isArray(data) || data.length === 0) return "RECENT BROADCASTS: None.";
+    const lines = data.map((b: any) => `  • [${fmtDate(b.created_at)}] (${b.audience}) ${b.title}: ${b.message}`).join("\n");
+    return `RECENT BROADCASTS (latest 5):\n${lines}`;
+  } catch (e) {
+    console.error("getRecentBroadcasts failed:", e);
+    return "RECENT BROADCASTS: unavailable.";
+  }
+}
+
+async function getActiveSiteMessage(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("site_messages")
+      .select("message, is_active, show_as_banner, updated_at")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    if (!Array.isArray(data) || data.length === 0) return "SITE ANNOUNCEMENT: None active.";
+    const m = data[0];
+    return `SITE ANNOUNCEMENT (active, last updated ${fmtDate(m.updated_at)}):\n  "${m.message}"${m.show_as_banner ? " (also shown as banner)" : ""}`;
+  } catch (e) {
+    console.error("getActiveSiteMessage failed:", e);
+    return "SITE ANNOUNCEMENT: unavailable.";
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -222,7 +287,6 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Try to load user context (wallet, tier, recent orders) using their auth token
     let userContext = "User is not signed in.";
     let userTier: "agent" | "general" | "guest" = "guest";
     const authHeader = req.headers.get("Authorization");
@@ -235,51 +299,86 @@ serve(async (req) => {
         );
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, tier, wallet_balance, agent_code, referral_code")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          const { data: orders } = await supabase
-            .from("orders")
-            .select("order_ref, network, bundle_size, phone_number, amount, status, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(5);
+          const [
+            { data: profile },
+            { data: orders },
+            { data: topups },
+            { data: transactions },
+            { data: complaints },
+            { data: referrals },
+          ] = await Promise.all([
+            supabase.from("profiles").select("full_name, tier, wallet_balance, agent_code, referral_code, phone, email, created_at").eq("user_id", user.id).maybeSingle(),
+            supabase.from("orders").select("order_ref, network, bundle_size, phone_number, amount, status, payment_method, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+            supabase.from("wallet_topups").select("amount, method, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+            supabase.from("transactions").select("type, description, amount, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+            supabase.from("complaints").select("subject, status, order_ref, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+            supabase.from("referrals").select("reward_paid, reward_amount, created_at").eq("referrer_id", user.id),
+          ]);
 
           const tier = profile?.tier || "general";
           userTier = tier === "agent" ? "agent" : "general";
+
           const ordersText = (orders || []).length
             ? orders!.map((o: any) => {
                 const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
-                return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} to ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} (${new Date(o.created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })})`;
+                return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} via ${o.payment_method} (${fmtDate(o.created_at)})`;
               }).join("\n")
-            : "  (No recent orders)";
+            : "  (No orders yet)";
 
-          userContext = `Signed-in user info:
+          const topupsText = (topups || []).length
+            ? topups!.map((t: any) => `  - ₵${Number(t.amount).toFixed(2)} via ${t.method} — ${t.status} (${fmtDate(t.created_at)})`).join("\n")
+            : "  (No top-ups yet)";
+
+          const txText = (transactions || []).length
+            ? transactions!.map((t: any) => `  - ${t.type}: ${t.description} | ₵${Number(t.amount).toFixed(2)} (${fmtDate(t.created_at)})`).join("\n")
+            : "  (No transactions yet)";
+
+          const complaintsText = (complaints || []).length
+            ? complaints!.map((c: any) => `  - "${c.subject}" on order ${c.order_ref} — ${c.status} (${fmtDate(c.created_at)})`).join("\n")
+            : "  (No complaints filed)";
+
+          const refList = referrals || [];
+          const refStats = `Total referrals: ${refList.length}, paid out: ${refList.filter((r: any) => r.reward_paid).length}, total earned: ₵${refList.reduce((s: number, r: any) => s + Number(r.reward_amount || 0), 0).toFixed(2)}`;
+
+          userContext = `SIGNED-IN USER INFO:
 - Name: ${profile?.full_name || "Customer"}
+- Email: ${profile?.email || "N/A"}
+- Phone: ${profile?.phone || "N/A"}
 - Tier: ${tier === "agent" ? "Agent" : "General"}
 - Wallet balance: ₵${Number(profile?.wallet_balance || 0).toFixed(2)}
+- Member since: ${fmtDate(profile?.created_at)}
 - Referral code: ${profile?.referral_code || "N/A"}
 ${tier === "agent" ? `- Agent code: ${profile?.agent_code || "N/A"}` : ""}
+- Referrals: ${refStats}
 
-Last 5 orders:
-${ordersText}`;
+Last 10 orders:
+${ordersText}
+
+Last 5 wallet top-ups:
+${topupsText}
+
+Last 8 transactions:
+${txText}
+
+User's complaints (last 5):
+${complaintsText}`;
         }
       } catch (e) {
         console.error("user context fetch failed:", e);
       }
     }
 
-    // Service-role client to read live bundle/promo data regardless of auth
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
     );
 
-    const [liveNetworks, promo] = await Promise.all([
+    const [liveNetworks, promo, promoHistory, broadcasts, siteMessage] = await Promise.all([
       buildLiveNetworks(adminClient),
       getActivePromo(adminClient, userTier),
+      getPromoHistory(adminClient),
+      getRecentBroadcasts(adminClient),
+      getActiveSiteMessage(adminClient),
     ]);
 
     const pricing = buildPricingText(
@@ -290,18 +389,14 @@ ${ordersText}`;
     const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
     const nowGMT = new Date().toUTCString();
 
-    let promoSection = "PROMOTION: No active promotion right now.";
+    let promoSection = "CURRENT PROMOTION: No active promotion right now.";
     if (promo) {
-      const fmt = (iso: string) => {
-        const d = new Date(iso);
-        return isNaN(d.getTime()) ? iso : d.toUTCString();
-      };
-      promoSection = `PROMOTION (active):
+      promoSection = `CURRENT PROMOTION (active):
 - Discount: ${promo.discount}% off
 - Description: ${promo.description || "(no description provided)"}
 - Audience: ${promo.target_audience}
-- Starts: ${fmt(promo.starts_at)}
-- Ends: ${fmt(promo.expires_at)}
+- Starts: ${fmtDate(promo.starts_at)}
+- Ends: ${fmtDate(promo.expires_at)}
 - Applies to this user: ${promo.applies ? "YES — quote the discounted price shown in PRICING" : "NO — this promo does not apply to their tier; quote the regular price"}`;
     }
 
@@ -311,28 +406,39 @@ CRITICAL RULES:
 1. Never use markdown formatting (no asterisks *, no bold **, no headings #, no underscores _). Write plain conversational text only.
 2. Always use the EXACT prices from the PRICING section below. Do NOT invent or guess prices.
 3. Use ₵ for cedis. Always show two decimals (e.g. ₵15.00).
-4. When the user asks about a bundle price, give ONLY the price for THEIR tier (${tierLabel}). The PRICING section below already contains only their tier's prices — never mention "general" or "agent" pricing tiers in the answer. Just say e.g. "MTN 3GB is ₵13.90." For guest users (not signed in), quote the listed price and gently mention they can sign in to see if agent rates apply.
-5. If the user asks about THEIR own order, wallet, or account — use the "Signed-in user info" section below. Do not make things up.
-6. If you cannot solve the issue (refunds, stuck orders older than 4 hours, account changes, complaints, agent approval), politely tell the user to contact admin via WhatsApp 0549358359 or use the Live Chat tab in this widget. Keep the handoff message warm.
-7. Never mention internal systems (Supabase, edge functions, etc).
+4. When the user asks about a bundle price, give ONLY the price for THEIR tier (${tierLabel}). Never mention "general" or "agent" pricing tiers in the answer. For guest users, quote the listed price and gently mention they can sign in to see if agent rates apply.
+5. If the user asks about THEIR account, orders, top-ups, transactions, complaints, or referrals — use the SIGNED-IN USER INFO section. Do not make things up.
+6. If the user asks about promotions (current, past, last one, when did the last promo run, etc.) — use the PROMO HISTORY section to give an accurate answer with dates.
+7. If the user asks about announcements or recent updates from the team — use SITE ANNOUNCEMENT and RECENT BROADCASTS.
+8. If you cannot solve the issue (refunds, stuck orders older than 4 hours, account changes, complaints, agent approval), politely tell the user to contact admin via WhatsApp 0549358359 or use the Live Chat tab in this widget.
+9. Never mention internal systems (database, edge functions, Supabase, etc).
 
 ABOUT DONMAC DATA HUB:
 - We sell affordable data bundles for MTN, Telecel, AT Big Time, and AT Premium in Ghana.
+- Website: donmacdatahub.com
+- Support WhatsApp: 0549358359 (Osei Michael).
 - Payment options: Wallet (top up first) or Paystack (direct, 2% fee).
-- Wallet top-up: Paystack online, OR send MoMo to 0549358359 (Osei Michael) and claim with the transaction ID on the Top Up page.
+- Wallet top-up: Paystack online, OR send MoMo to 0549358359 and claim with the transaction ID on the Top Up page.
 - Minimum top-up: ₵5 for general users, ₵20 for agents.
-- Order delivery: MTN takes 3 to 10 minutes. Telecel and AT are instant.
-- We run a 24/7 service — orders are processed immediately at any time of day or night.
-- Becoming an agent: pay a one-time ₵40 MoMo fee to 0549358359 and apply on the Become an Agent page. Agents get wholesale prices and a unique agent code.
+- Order delivery: MTN takes 3 minutes to 4 hours. Telecel and AT are instant.
+- Orders placed between 10pm and 5am UTC are queued and fulfilled at 5am.
+- Becoming an agent: pay a one-time ₵40 MoMo fee to 0549358359 and apply on the Become an Agent page. Agents get wholesale prices and a unique sequential agent code.
 - Bundle validity: AT Big Time has no expiry. AT Premium = 60 days. MTN = 90 days. Telecel = 90 days.
 - Referrals: General users earn ₵0.50 when their referral makes their first purchase. Agents earn ₵10 when their referral becomes an agent.
 - Complaints: users can file a complaint about any order from the past 48 hours on the Complaints page.
+- Pages: Dashboard, Data Bundles, Cart, Orders, Top Up Wallet, Top Ups history, Transactions, Complaints, Referrals, Become an Agent, Profile.
 
-CURRENT TIME (GMT): ${nowGMT}
+CURRENT TIME (UTC): ${nowGMT}
 
 ${promoSection}
 
-PRICING for this user (tier: ${tierLabel}) — always use these EXACT figures (they reflect the latest admin updates and any active promotion). Never quote a different tier's price. If a promo is active and applies to this user, the discounted price shown is the price to quote, and you may briefly mention the promo and when it ends.
+${promoHistory}
+
+${siteMessage}
+
+${broadcasts}
+
+PRICING for this user (tier: ${tierLabel}) — always use these EXACT figures (they reflect the latest admin updates and any active promotion). Never quote a different tier's price. If a promo is active and applies to this user, quote the discounted price and mention when the promo ends.
 ${pricing}
 
 ${userContext}
