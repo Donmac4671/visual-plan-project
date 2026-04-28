@@ -46,7 +46,7 @@ const PIE_COLORS = [
 const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
   "MTN": {
     '1GB': 3.94, '2GB': 7.98, '3GB': 12.00, '4GB': 16.06, '5GB': 20.10,
-    '6GB': 23.94, '7GB': 28.03, '8GB': 32.12, '10GB': 39.30, '15GB': 57.77, '20GB': 76.96,
+    '6GB': 23.94, '7GB': 27.60, '8GB': 32.12, '10GB': 39.30, '15GB': 57.77, '20GB': 76.96,
     '25GB': 97.16, '30GB': 117.67, '40GB': 154.53, '50GB': 194.93,
   },
   "TELECEL": {
