@@ -280,18 +280,18 @@ export default function Admin() {
   return (
     <DashboardLayout title="Admin Panel">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-4 w-full h-auto flex flex-wrap justify-start gap-1">
-          <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
-          <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
-          <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length}</Badge></TabsTrigger>
-          <TabsTrigger value="verified-id" className="gap-2"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
-          <TabsTrigger value="complaints" className="gap-2"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
-          <TabsTrigger value="agent-apps" className="gap-2"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
-          <TabsTrigger value="bundles" className="gap-2"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
-          <TabsTrigger value="promos" className="gap-2"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
-          <TabsTrigger value="site-message" className="gap-2"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
-          <TabsTrigger value="broadcast" className="gap-2"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
-          <TabsTrigger value="live-chat" className="gap-2"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
+        <TabsList className="mb-4 w-full h-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
+          <TabsTrigger value="analytics" className="gap-2 justify-center"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
+          <TabsTrigger value="users" className="gap-2 justify-center"><Users className="w-4 h-4" /> Users</TabsTrigger>
+          <TabsTrigger value="orders" className="gap-2 justify-center"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length}</Badge></TabsTrigger>
+          <TabsTrigger value="verified-id" className="gap-2 justify-center"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
+          <TabsTrigger value="complaints" className="gap-2 justify-center"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
+          <TabsTrigger value="agent-apps" className="gap-2 justify-center"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
+          <TabsTrigger value="bundles" className="gap-2 justify-center"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
+          <TabsTrigger value="promos" className="gap-2 justify-center"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
+          <TabsTrigger value="site-message" className="gap-2 justify-center"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-2 justify-center"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
+          <TabsTrigger value="live-chat" className="gap-2 justify-center"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
         </TabsList>
 
         {/* ANALYTICS TAB */}
