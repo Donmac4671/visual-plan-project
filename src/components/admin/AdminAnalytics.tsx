@@ -148,6 +148,9 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     };
     fetchCustomCosts();
   }, []);
+
+  const fetchGhBalance = async () => {
+    setGhBalanceLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("ghconnect-balance");
       if (error) throw error;
