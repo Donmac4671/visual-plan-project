@@ -56,6 +56,19 @@ export default function AdminSiteMessage() {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   };
 
+  const toggleField = async (m: SiteMessage, field: "is_active" | "show_as_banner", value: boolean) => {
+    updateExisting(m.id, { [field]: value });
+    const payload =
+      field === "is_active"
+        ? { is_active: value, updated_at: new Date().toISOString() }
+        : { show_as_banner: value, updated_at: new Date().toISOString() };
+    const { error } = await supabase.from("site_messages").update(payload).eq("id", m.id);
+    if (error) {
+      updateExisting(m.id, { [field]: !value });
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+    }
+  };
+
   const updateDraft = (draftId: string, patch: Partial<DraftMessage>) => {
     setDrafts((prev) => prev.map((d) => (d.draftId === draftId ? { ...d, ...patch } : d)));
   };
@@ -201,7 +214,7 @@ export default function AdminSiteMessage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={m.is_active}
-                  onCheckedChange={(v) => updateExisting(m.id, { is_active: v })}
+                  onCheckedChange={(v) => toggleField(m, "is_active", v)}
                   id={`active-${m.id}`}
                 />
                 <Label htmlFor={`active-${m.id}`}>Active</Label>
@@ -209,7 +222,7 @@ export default function AdminSiteMessage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={m.show_as_banner}
-                  onCheckedChange={(v) => updateExisting(m.id, { show_as_banner: v })}
+                  onCheckedChange={(v) => toggleField(m, "show_as_banner", v)}
                   id={`banner-${m.id}`}
                 />
                 <Label htmlFor={`banner-${m.id}`}>Show as top banner</Label>
