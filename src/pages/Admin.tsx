@@ -280,7 +280,7 @@ export default function Admin() {
   return (
     <DashboardLayout title="Admin Panel">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-4 w-full h-auto flex overflow-x-auto overflow-y-hidden whitespace-nowrap justify-start gap-1 scrollbar-thin">
+        <TabsList className="mb-4 w-full h-auto flex flex-wrap justify-start gap-1">
           <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
           <TabsTrigger value="orders" className="gap-2"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length}</Badge></TabsTrigger>
