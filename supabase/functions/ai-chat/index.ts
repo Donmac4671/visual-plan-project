@@ -465,7 +465,8 @@ ABOUT DONMAC DATA HUB:
 - Complaints: users can file a complaint about any order from the past 48 hours on the Complaints page.
 - Pages: Dashboard, Data Bundles, Cart, Orders, Top Up Wallet, Top Ups history, Transactions, Complaints, Referrals, Become an Agent, Profile.
 
-CURRENT TIME (UTC): ${nowGMT}
+CURRENT TIME (${CURRENT_TZ}): ${nowLocal}
+NOTE: All dates in this prompt are shown in the user's local timezone (${CURRENT_TZ}). When you mention dates/times to the user, present them as-is in that timezone — do NOT convert to UTC or another zone.
 
 ${promoSection}
 
