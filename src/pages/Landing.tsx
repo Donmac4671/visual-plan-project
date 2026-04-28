@@ -3,6 +3,7 @@ import { useCanonical } from "@/hooks/useCanonical";
 import { Wifi, Zap, Shield, Clock, Star, ChevronRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
+import PromoCountdown from "@/components/dashboard/PromoCountdown";
 
 const networks = [
   { name: "MTN", color: "bg-yellow-500", desc: "Cheapest MTN data bundles in Ghana – from 1GB to 100GB+" },
