@@ -70,9 +70,12 @@ function getOrderCost(
   bundleSize: string,
   customCostMap?: Record<string, Record<string, number>>
 ): number {
-  const fromCustom = customCostMap?.[network]?.[bundleSize];
-  if (typeof fromCustom === "number") return fromCustom;
-  return ORIGINAL_PRICES[network]?.[bundleSize] ?? 0;
+  const originalCost = ORIGINAL_PRICES[network]?.[bundleSize];
+  if (typeof originalCost === "number") return originalCost;
+
+  const fallbackCost = customCostMap?.[network]?.[bundleSize];
+  if (typeof fallbackCost === "number") return fallbackCost;
+  return 0;
 }
 
 const NETWORK_ID_TO_NAME: Record<string, string> = {
@@ -141,7 +144,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       for (const row of data) {
         const networkName = NETWORK_ID_TO_NAME[row.network_id] ?? row.network_id?.toUpperCase();
         if (!map[networkName]) map[networkName] = {};
-        // agent_price acts as the cost basis (matches ORIGINAL_PRICES convention)
+        // Fallback only for bundles that do not exist in the original cost table.
         map[networkName][row.bundle_size] = Number(row.agent_price);
       }
       setCustomCostMap(map);
