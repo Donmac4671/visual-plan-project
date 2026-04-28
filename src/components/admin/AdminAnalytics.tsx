@@ -205,7 +205,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const blockedUsers = users.filter(u => u.is_blocked).length;
     const pendingTopups = filteredTopups.filter(t => t.status === "pending").length;
 
-    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
     const totalProfit = totalRevenue - totalCost;
 
     const totalCapacityGB = filteredOrders.reduce((sum, o) => {
