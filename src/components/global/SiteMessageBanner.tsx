@@ -16,8 +16,7 @@ export default function SiteMessageBanner() {
     const fetchBanner = async () => {
       const { data } = await supabase
         .from("site_messages")
-        .select("id, message, updated_at, is_active, show_as_banner")
-        .eq("is_active", true)
+        .select("id, message, updated_at, show_as_banner")
         .eq("show_as_banner", true)
         .order("updated_at", { ascending: false })
         .limit(1);
