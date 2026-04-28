@@ -11,6 +11,7 @@ export default function AdminSiteMessage() {
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [showAsBanner, setShowAsBanner] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -25,6 +26,7 @@ export default function AdminSiteMessage() {
       if (data && data.length > 0) {
         setMessage(data[0].message);
         setIsActive(data[0].is_active);
+        setShowAsBanner((data[0] as any).show_as_banner ?? false);
         setExistingId(data[0].id);
       }
     };
@@ -37,13 +39,13 @@ export default function AdminSiteMessage() {
       if (existingId) {
         const { error } = await supabase
           .from("site_messages")
-          .update({ message, is_active: isActive, updated_at: new Date().toISOString() })
+          .update({ message, is_active: isActive, show_as_banner: showAsBanner, updated_at: new Date().toISOString() })
           .eq("id", existingId);
         if (error) throw error;
       } else {
         const { data, error } = await supabase
           .from("site_messages")
-          .insert({ message, is_active: isActive })
+          .insert({ message, is_active: isActive, show_as_banner: showAsBanner })
           .select()
           .single();
         if (error) throw error;
@@ -69,15 +71,24 @@ export default function AdminSiteMessage() {
         onChange={(e) => setMessage(e.target.value)}
         rows={4}
       />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Switch checked={isActive} onCheckedChange={setIsActive} id="msg-active" />
-          <Label htmlFor="msg-active">Active</Label>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch checked={isActive} onCheckedChange={setIsActive} id="msg-active" />
+            <Label htmlFor="msg-active">Active</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={showAsBanner} onCheckedChange={setShowAsBanner} id="msg-banner" />
+            <Label htmlFor="msg-banner">Show as top banner</Label>
+          </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save Message"}
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        When "Active" is on: shows as a popup. Enable "Show as top banner" to also display a dismissible banner at the top of every page.
+      </p>
     </div>
   );
 }
