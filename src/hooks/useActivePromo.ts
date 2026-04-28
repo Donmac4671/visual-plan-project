@@ -41,27 +41,42 @@ export function useActivePromo(userTier?: string) {
     };
   }, []);
 
+  const audienceMatches = (audience: string) => {
+    if (audience === "everyone") return true;
+    if (audience === "agent" && userTier === "agent") return true;
+    if (audience === "general" && userTier !== "agent") return true;
+    return false;
+  };
+
+  // Currently-running promo (started and not yet expired)
   const promo = useMemo(() => {
     const now = Date.now();
-
-    const applicablePromos = promos.filter((p) => {
+    const applicable = promos.filter((p) => {
       const startsAt = new Date(p.starts_at).getTime();
       const expiresAt = new Date(p.expires_at).getTime();
-      const hasValidExpiry = !Number.isNaN(expiresAt) && expiresAt >= now;
-      const hasStarted =
-        Number.isNaN(startsAt) ||
-        startsAt <= now ||
-        (!Number.isNaN(expiresAt) && startsAt > expiresAt);
-
-      if (!hasValidExpiry || !hasStarted) return false;
-      if (p.target_audience === "everyone") return true;
-      if (p.target_audience === "agent" && userTier === "agent") return true;
-      if (p.target_audience === "general" && userTier !== "agent") return true;
-      return false;
+      if (Number.isNaN(expiresAt) || expiresAt < now) return false;
+      const hasStarted = Number.isNaN(startsAt) || startsAt <= now;
+      if (!hasStarted) return false;
+      return audienceMatches(p.target_audience);
     });
-
-    return applicablePromos.sort(
+    return applicable.sort(
       (a, b) => Number(b.discount_percent) - Number(a.discount_percent)
+    )[0] || null;
+  }, [promos, userTier]);
+
+  // Upcoming promo (scheduled for the future, not yet started)
+  const upcomingPromo = useMemo(() => {
+    const now = Date.now();
+    const upcoming = promos.filter((p) => {
+      const startsAt = new Date(p.starts_at).getTime();
+      const expiresAt = new Date(p.expires_at).getTime();
+      if (Number.isNaN(startsAt) || startsAt <= now) return false;
+      if (Number.isNaN(expiresAt) || expiresAt < now) return false;
+      return audienceMatches(p.target_audience);
+    });
+    // Soonest first
+    return upcoming.sort(
+      (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
     )[0] || null;
   }, [promos, userTier]);
 
@@ -69,10 +84,9 @@ export function useActivePromo(userTier?: string) {
     if (!promo) return price;
     const discountPercent = Number(promo.discount_percent);
     if (Number.isNaN(discountPercent) || discountPercent <= 0) return price;
-
     const discounted = price * (1 - discountPercent / 100);
     return Math.round(discounted * 100) / 100;
   };
 
-  return { promo, loading, applyDiscount };
+  return { promo, upcomingPromo, loading, applyDiscount };
 }
