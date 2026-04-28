@@ -293,7 +293,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, timezone } = await req.json();
+    if (typeof timezone === "string" && timezone.trim()) {
+      try {
+        // Validate by attempting a format
+        new Date().toLocaleString("en-GB", { timeZone: timezone });
+        CURRENT_TZ = timezone;
+      } catch {
+        CURRENT_TZ = "UTC";
+      }
+    } else {
+      CURRENT_TZ = "UTC";
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
