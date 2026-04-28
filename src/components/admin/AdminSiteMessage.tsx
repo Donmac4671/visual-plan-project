@@ -58,10 +58,9 @@ export default function AdminSiteMessage() {
 
   const toggleField = async (m: SiteMessage, field: "is_active" | "show_as_banner", value: boolean) => {
     updateExisting(m.id, { [field]: value });
-    const { error } = await supabase
-      .from("site_messages")
-      .update({ [field]: value, updated_at: new Date().toISOString() })
-      .eq("id", m.id);
+    const payload: Record<string, any> = { updated_at: new Date().toISOString() };
+    payload[field] = value;
+    const { error } = await supabase.from("site_messages").update(payload).eq("id", m.id);
     if (error) {
       updateExisting(m.id, { [field]: !value });
       toast({ title: "Failed to update", description: error.message, variant: "destructive" });
@@ -213,7 +212,7 @@ export default function AdminSiteMessage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={m.is_active}
-                  onCheckedChange={(v) => updateExisting(m.id, { is_active: v })}
+                  onCheckedChange={(v) => toggleField(m, "is_active", v)}
                   id={`active-${m.id}`}
                 />
                 <Label htmlFor={`active-${m.id}`}>Active</Label>
@@ -221,7 +220,7 @@ export default function AdminSiteMessage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={m.show_as_banner}
-                  onCheckedChange={(v) => updateExisting(m.id, { show_as_banner: v })}
+                  onCheckedChange={(v) => toggleField(m, "show_as_banner", v)}
                   id={`banner-${m.id}`}
                 />
                 <Label htmlFor={`banner-${m.id}`}>Show as top banner</Label>
