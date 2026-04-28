@@ -271,9 +271,39 @@ ${ordersText}`;
       }
     }
 
-    const pricing = buildPricingText(userTier);
+    // Service-role client to read live bundle/promo data regardless of auth
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+
+    const [liveNetworks, promo] = await Promise.all([
+      buildLiveNetworks(adminClient),
+      getActivePromo(adminClient, userTier),
+    ]);
+
+    const pricing = buildPricingText(
+      liveNetworks,
+      userTier,
+      promo ? { discount: promo.discount, applies: promo.applies } : null,
+    );
     const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
     const nowGMT = new Date().toUTCString();
+
+    let promoSection = "PROMOTION: No active promotion right now.";
+    if (promo) {
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? iso : d.toUTCString();
+      };
+      promoSection = `PROMOTION (active):
+- Discount: ${promo.discount}% off
+- Description: ${promo.description || "(no description provided)"}
+- Audience: ${promo.target_audience}
+- Starts: ${fmt(promo.starts_at)}
+- Ends: ${fmt(promo.expires_at)}
+- Applies to this user: ${promo.applies ? "YES — quote the discounted price shown in PRICING" : "NO — this promo does not apply to their tier; quote the regular price"}`;
+    }
 
     const systemPrompt = `You are the Donmac Data Hub support assistant — friendly, warm, and concise. Speak like a real Ghanaian customer service rep. Keep answers short and natural.
 
