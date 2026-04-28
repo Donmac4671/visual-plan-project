@@ -12,6 +12,7 @@ import LiveChatWidget from "@/components/global/LiveChatWidget";
 import RealtimeNotifications from "@/components/global/RealtimeNotifications";
 import EnableNotificationsBanner from "@/components/global/EnableNotificationsBanner";
 import SiteMessagePopup from "@/components/global/SiteMessagePopup";
+import SiteMessageBanner from "@/components/global/SiteMessageBanner";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
@@ -83,6 +84,7 @@ const App = () => (
           <BrowserRouter>
             <RecoveryRedirect />
             <RealtimeNotifications />
+            <SiteMessageBanner />
             <EnableNotificationsBanner />
             <SiteMessagePopup />
 
