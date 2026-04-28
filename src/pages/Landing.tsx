@@ -3,6 +3,7 @@ import { useCanonical } from "@/hooks/useCanonical";
 import { Wifi, Zap, Shield, Clock, Star, ChevronRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
+import PromoCountdown from "@/components/dashboard/PromoCountdown";
 
 const networks = [
   { name: "MTN", color: "bg-yellow-500", desc: "Cheapest MTN data bundles in Ghana – from 1GB to 100GB+" },
@@ -109,6 +110,9 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 pt-4">
+        <PromoCountdown />
+      </div>
       {/* Hero */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 gradient-primary opacity-90" />
