@@ -1,4 +1,9 @@
 import VideoGuide from "./VideoGuide";
+import buyStep1 from "@/assets/guides/buy-1-choose-network.jpg";
+import buyStep2 from "@/assets/guides/buy-2-select-package.jpg";
+import buyStep3 from "@/assets/guides/buy-3-enter-number.jpg";
+import buyStep4 from "@/assets/guides/buy-4-open-cart.jpg";
+import buyStep5 from "@/assets/guides/buy-5-proceed-pay.jpg";
 
 export default function GuideVideos() {
   return (
@@ -10,10 +15,11 @@ export default function GuideVideos() {
         emoji="🛒"
         accentColor="#3b82f6"
         steps={[
-          { caption: "Choose the network and the package you want to buy." },
-          { caption: "Enter the recipient phone number, then tap Add to Cart." },
-          { caption: "Tap the cart icon at the top to open your cart." },
-          { caption: "Choose Wallet or Paystack, then tap Proceed to Pay to place the order." },
+          { image: buyStep1, caption: "Choose the network you want to buy from." },
+          { image: buyStep2, caption: "Select the package you want to buy." },
+          { image: buyStep3, caption: "Enter the number to receive the data, then tap Add to Cart." },
+          { image: buyStep4, caption: "Click the cart icon at the top to open your cart." },
+          { image: buyStep5, caption: "Tap Proceed to Pay to complete placing your order — make sure your wallet has enough balance." },
         ]}
       />
 
