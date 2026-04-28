@@ -245,7 +245,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     return days.map(({ date, label }) => {
       const dayOrders = filteredOrders.filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
       const revenue = dayOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size), 0);
+      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
       return { day: label, profit: Math.round((revenue - cost) * 100) / 100 };
     });
   }, [filteredOrders, dateTo]);
