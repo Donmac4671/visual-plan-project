@@ -56,6 +56,18 @@ export default function AdminSiteMessage() {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   };
 
+  const toggleField = async (m: SiteMessage, field: "is_active" | "show_as_banner", value: boolean) => {
+    updateExisting(m.id, { [field]: value });
+    const { error } = await supabase
+      .from("site_messages")
+      .update({ [field]: value, updated_at: new Date().toISOString() })
+      .eq("id", m.id);
+    if (error) {
+      updateExisting(m.id, { [field]: !value });
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+    }
+  };
+
   const updateDraft = (draftId: string, patch: Partial<DraftMessage>) => {
     setDrafts((prev) => prev.map((d) => (d.draftId === draftId ? { ...d, ...patch } : d)));
   };
