@@ -7,6 +7,8 @@ import buyStep5 from "@/assets/guides/buy-5-proceed-pay.jpg";
 import momoStep1 from "@/assets/guides/momo-1-open-wallet.jpg";
 import momoStep2 from "@/assets/guides/momo-2-send-money.jpg";
 import momoStep3 from "@/assets/guides/momo-3-claim.jpg";
+import complaintStep1 from "@/assets/guides/complaint-1-new.jpg";
+import complaintStep2 from "@/assets/guides/complaint-2-submit.jpg";
 
 export default function GuideVideos() {
   return (
@@ -53,8 +55,8 @@ export default function GuideVideos() {
         emoji="⚠️"
         accentColor="#f59e0b"
         steps={[
-          { caption: "Open Complaints and tap New Complaint." },
-          { caption: "Fill in the required details and submit your complaint." },
+          { image: complaintStep1, caption: "Open Complaints and tap New Complaint." },
+          { image: complaintStep2, caption: "Fill in the required details and tap Submit Complaint." },
         ]}
       />
 
