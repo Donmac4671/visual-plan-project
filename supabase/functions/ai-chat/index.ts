@@ -299,9 +299,11 @@ serve(async (req) => {
         );
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           const [
             { data: profile },
             { data: orders },
+            { data: orders24h },
             { data: topups },
             { data: transactions },
             { data: complaints },
@@ -309,6 +311,7 @@ serve(async (req) => {
           ] = await Promise.all([
             supabase.from("profiles").select("full_name, tier, wallet_balance, agent_code, referral_code, phone, email, created_at").eq("user_id", user.id).maybeSingle(),
             supabase.from("orders").select("order_ref, network, bundle_size, phone_number, amount, status, payment_method, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+            supabase.from("orders").select("order_ref, network, bundle_size, phone_number, amount, status, payment_method, created_at").eq("user_id", user.id).gte("created_at", since24h).order("created_at", { ascending: false }),
             supabase.from("wallet_topups").select("amount, method, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
             supabase.from("transactions").select("type, description, amount, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
             supabase.from("complaints").select("subject, status, order_ref, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
