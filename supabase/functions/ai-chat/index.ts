@@ -321,12 +321,16 @@ serve(async (req) => {
           const tier = profile?.tier || "general";
           userTier = tier === "agent" ? "agent" : "general";
 
-          const ordersText = (orders || []).length
-            ? orders!.map((o: any) => {
-                const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
-                return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} via ${o.payment_method} (${fmtDate(o.created_at)})`;
-              }).join("\n")
-            : "  (No orders yet)";
+          const formatOrder = (o: any) => {
+            const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
+            return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} via ${o.payment_method} (${fmtDate(o.created_at)})`;
+          };
+          const ordersText = (orders || []).length ? orders!.map(formatOrder).join("\n") : "  (No orders yet)";
+          const orders24hList = orders24h || [];
+          const orders24hText = orders24hList.length
+            ? orders24hList.map(formatOrder).join("\n")
+            : "  (No orders in the last 24 hours)";
+          const orders24hTotal = orders24hList.reduce((s: number, o: any) => s + Number(o.amount || 0), 0);
 
           const topupsText = (topups || []).length
             ? topups!.map((t: any) => `  - ₵${Number(t.amount).toFixed(2)} via ${t.method} — ${t.status} (${fmtDate(t.created_at)})`).join("\n")
