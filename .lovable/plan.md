@@ -1,51 +1,86 @@
+I checked the latest failed AT Premium order and the backend logs. The failure is real and the cause is clear:
 
+- Order `DMH822` was sent to GHData at `2026-04-28 21:19 UTC`.
+- The fulfillment function tried every current AT Premium network key:
+  - `AT_PREMIUM`
+  - `AT-PREMIUM`
+  - `AIRTELTIGO_PREMIUM`
+  - `AIRTELTIGOPREMIUM`
+  - `atpremium`
+  - `at_premium`
+  - `at-premium`
+  - `airteltigo_premium`
+  - `airteltigopremium`
+- GHData rejected all of them with: `Validation failed: The selected network is invalid.`
 
-## Issues to fix
+So this is not a frontend issue. The app is sending the request, but the provider no longer accepts the AT Premium network values currently coded.
 
-1. **Order status not syncing** — Need to verify `gh_reference` is saved on order creation and webhook is firing.
-2. **Verified IDs not visible on laptop** — Likely RLS / realtime cache issue on `verified_topups`.
-3. **Delete two mistake accounts** — `hannahgbanwoo22@gmai.com`, `adwoaberry65@gmail.com`.
-4. **Duplicate notifications** — Both client Realtime toast AND server push are firing for admin.
-5. **Add notification sound** — Sound exists in `notifications.ts` but SW push isn't playing it.
+## Plan to fix properly
 
-## Investigation (default mode)
+### 1. Stop marking AT Premium as permanently failed on provider network validation
+For AT Premium only, if GHData returns `The selected network is invalid`, the order should not be marked `failed` and refunded immediately.
 
-- Check `fulfill-order/index.ts` — does it save `gh_reference` after GHData call?
-- Check recent orders: `SELECT order_ref, gh_reference, status FROM orders ORDER BY created_at DESC LIMIT 10`
-- Check `verified_topups` realtime publication + `AdminVerifiedTopups.tsx` query (maybe filtering claimed by default).
-- Check `sw.js` — does the push event play sound? (SW can't use `Audio()` — must use notification `sound` option or client postMessage).
+Instead, it should be marked `waiting` with its local reference saved. This prevents the app from wrongly treating a customer order as failed when it may need manual/provider-side action.
 
-## Fix plan
+Result:
+- Customer payment stays recorded.
+- Order remains visible as needing attention.
+- No accidental refund while you manually fulfill.
+- Admin can later mark it completed/delivered.
 
-### 1. Order status sync
-- Patch `fulfill-order` to save provider reference into `orders.gh_reference` immediately after GHData responds.
-- Add backfill: re-resolve `gh_reference` for recent stuck orders by matching on `order_ref` if GHData echoes it.
-- Confirm webhook URL is set on GHData side (user already confirmed).
+### 2. Add stronger diagnostics to `fulfill-order`
+Update `supabase/functions/fulfill-order/index.ts` so failed provider attempts return/store clearer information in logs:
 
-### 2. Verified IDs visibility on laptop
-- Force the admin Verified Top-ups list to refetch on focus + add Realtime subscription on `verified_topups` so both devices stay in sync.
-- Verify RLS allows admin to see all rows (already does per schema).
+- network attempted
+- payload shape used
+- GHData HTTP status
+- GHData validation errors
+- final decision: `waiting` vs `failed`
 
-### 3. Delete mistake accounts
-- SQL: delete from `profiles`, `user_roles`, `transactions`, `wallet_topups`, `orders`, `referrals`, `push_subscriptions`, `chat_messages`, `complaints`, `agent_applications` for those two emails, then delete from `auth.users`.
+This makes the next provider issue traceable immediately instead of guessing.
 
-### 4. Duplicate notifications
-Root cause: admin gets BOTH:
-- In-app toast from `RealtimeNotifications.tsx` (Supabase Realtime listener)
-- Web Push from `notifications-dispatcher` → `send-push` → SW `showNotification`
+### 3. Test AT Premium with the real deployed backend using the known failed order
+After changing the function, deploy it and call it against a safe test path/order flow where possible.
 
-Fix: when the tab is **visible**, skip the SW push notification (dispatcher already gates this conceptually but SW shows it anyway). Cleanest fix: in `sw.js` push handler, check `clients.matchAll({type:'window'})` — if any client is `focused`, post a message to the client to show in-app toast and **do not** call `showNotification`. The client side already shows toasts via Realtime, so SW just stays silent when tab is focused.
+For the recent order `DMH822`, since you already manually fulfilled and changed it to completed, I will not re-send that exact order to GHData. I will use it only for log verification and avoid duplicate fulfillment.
 
-### 5. Notification sound
-- Update `sw.js` push handler to also send a `{type:'play-sound'}` message to all clients so the existing `playNotificationSound()` fires.
-- For background (no client open), the OS notification sound plays by default; ensure `silent: false` on `showNotification`.
-- Add explicit short audio play in `RealtimeNotifications.showToast()` so in-app toasts also chime.
+### 4. Try to discover the correct GHData AT Premium key without risking user orders
+Add a small admin-only diagnostic mode to the fulfillment function or a separate admin diagnostic function that can test candidate network keys without changing the order status unless GHData accepts one.
 
-## Files to change
+Candidate additions to test/include will cover likely provider labels such as:
 
-- `supabase/functions/fulfill-order/index.ts` — save `gh_reference`
-- `public/sw.js` — dedupe push when tab focused, post sound message
-- `src/components/global/RealtimeNotifications.tsx` — listen for SW sound message + play sound on every toast
-- `src/components/admin/AdminVerifiedTopups.tsx` — add realtime subscription + refetch on focus
-- New SQL migration — delete the two accounts and all their data
+```text
+at
+AT
+airteltigo
+AIRTELTIGO
+bigtime
+premium
+AT_PREMIUM_BUNDLE
+AIRTELTIGO_PREMIUM_BUNDLE
+```
 
+If GHData only validates network names during a real purchase, the safe fallback from step 1 still prevents customer damage.
+
+### 5. Update Telegram ordering too
+The Telegram bot has its own GHData network-key list for AT Premium. I will update it with the same safer behavior and network mapping logic so AT Premium does not fail in one channel while the web checkout is fixed in another.
+
+Files involved:
+- `supabase/functions/fulfill-order/index.ts`
+- `supabase/functions/telegram-momo/index.ts`
+- optionally `supabase/functions/process-pending-orders/index.ts` if its retry behavior needs to respect the new waiting state
+
+### 6. Add admin-visible handling for `waiting`
+The admin orders table already supports status changes and has a status value `waiting` in backend functions. I will confirm the UI clearly shows `waiting` orders so you can see AT Premium orders that need manual attention instead of hunting for failed/completed edits.
+
+### 7. Deploy and verify logs
+After implementation, I will deploy the changed backend functions and check the live logs. The target result is:
+
+```text
+AT Premium provider network validation error -> order status waiting, not failed/refunded
+Valid provider success -> order status completed for AT Premium
+Other genuine provider failures -> failed/refunded only when appropriate
+```
+
+## Important note
+The current evidence shows GHData rejected the AT Premium network names, not that the customer order creation failed. I will fix the app so this cannot keep causing false failed/refunded orders, and I will make the provider mapping easier to correct once the accepted GHData AT Premium key is confirmed.
