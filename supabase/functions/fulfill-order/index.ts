@@ -64,8 +64,11 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
+    const isServiceRequest = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const { data: { user }, error: authError } = isServiceRequest
+      ? { data: { user: null }, error: null }
+      : await supabase.auth.getUser(token);
+    if (!isServiceRequest && (authError || !user)) {
       return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -102,13 +105,13 @@ serve(async (req) => {
       });
     }
 
-    const { data: roles } = await supabase
+    const { data: roles } = user ? await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id);
-    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+      .eq("user_id", user.id) : { data: [] };
+    const isAdmin = isServiceRequest || (roles ?? []).some((r: { role: string }) => r.role === "admin");
 
-    if (!isAdmin && orderRow.user_id !== user.id) {
+    if (!isAdmin && orderRow.user_id !== user?.id) {
       return new Response(JSON.stringify({ success: false, message: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
