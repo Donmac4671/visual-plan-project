@@ -72,9 +72,32 @@ serve(async (req) => {
       });
     }
 
-    // Use the order_ref itself as the reference so webhooks can match either gh_reference or order_ref.
-    const { data: orderRow } = await supabase.from("orders").select("order_ref").eq("id", order_id).maybeSingle();
-    const reference = orderRow?.order_ref || `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    // Fetch order and verify ownership (admins may fulfill any order)
+    const { data: orderRow } = await supabase
+      .from("orders")
+      .select("order_ref, user_id")
+      .eq("id", order_id)
+      .maybeSingle();
+
+    if (!orderRow) {
+      return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+
+    if (!isAdmin && orderRow.user_id !== user.id) {
+      return new Response(JSON.stringify({ success: false, message: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const reference = orderRow.order_ref || `DMH${Date.now()}${Math.floor(Math.random() * 1000)}`;
     await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
 
     console.log(`Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB to ${phone}`);
