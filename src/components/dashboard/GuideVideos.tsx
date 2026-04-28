@@ -4,6 +4,9 @@ import buyStep2 from "@/assets/guides/buy-2-select-package.jpg";
 import buyStep3 from "@/assets/guides/buy-3-enter-number.jpg";
 import buyStep4 from "@/assets/guides/buy-4-open-cart.jpg";
 import buyStep5 from "@/assets/guides/buy-5-proceed-pay.jpg";
+import momoStep1 from "@/assets/guides/momo-1-open-wallet.jpg";
+import momoStep2 from "@/assets/guides/momo-2-send-money.jpg";
+import momoStep3 from "@/assets/guides/momo-3-claim.jpg";
 
 export default function GuideVideos() {
   return (
@@ -28,8 +31,9 @@ export default function GuideVideos() {
         emoji="💰"
         accentColor="#22c55e"
         steps={[
-          { caption: "Go to Top Up Wallet, copy the MoMo number, send the money, then tap I've Sent the Money." },
-          { caption: "Enter the 11-digit Transaction ID from your SMS and tap Claim Payment." },
+          { image: momoStep1, caption: "On the Dashboard, tap the Wallet button to open Wallet Top-up." },
+          { image: momoStep2, caption: "Copy the MoMo number, send the money, then tap I've Sent the Money." },
+          { image: momoStep3, caption: "Enter the 11-digit Transaction ID from your SMS and tap Claim Payment — your wallet is credited immediately." },
         ]}
       />
 
