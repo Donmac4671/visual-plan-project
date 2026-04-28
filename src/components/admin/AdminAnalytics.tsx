@@ -129,9 +129,25 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [ghBalance, setGhBalance] = useState<number | null>(null);
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
   const [showProfit, setShowProfit] = useState(false);
+  const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
 
-  const fetchGhBalance = async () => {
-    setGhBalanceLoading(true);
+  useEffect(() => {
+    const fetchCustomCosts = async () => {
+      const { data } = await supabase
+        .from("custom_bundles")
+        .select("network_id, bundle_size, agent_price");
+      if (!data) return;
+      const map: Record<string, Record<string, number>> = {};
+      for (const row of data) {
+        const networkName = NETWORK_ID_TO_NAME[row.network_id] ?? row.network_id?.toUpperCase();
+        if (!map[networkName]) map[networkName] = {};
+        // agent_price acts as the cost basis (matches ORIGINAL_PRICES convention)
+        map[networkName][row.bundle_size] = Number(row.agent_price);
+      }
+      setCustomCostMap(map);
+    };
+    fetchCustomCosts();
+  }, []);
     try {
       const { data, error } = await supabase.functions.invoke("ghconnect-balance");
       if (error) throw error;
