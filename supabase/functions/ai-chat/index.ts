@@ -214,11 +214,21 @@ function cleanText(s: string): string {
     .replace(/^#{1,6}\s+/gm, "");
 }
 
+let CURRENT_TZ = "UTC";
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "N/A";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return String(iso);
-  return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) + " UTC";
+  try {
+    const formatted = d.toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: CURRENT_TZ,
+    });
+    return `${formatted} (${CURRENT_TZ})`;
+  } catch {
+    return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) + " UTC";
+  }
 }
 
 async function getPromoHistory(supabase: any): Promise<string> {
@@ -283,7 +293,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, timezone } = await req.json();
+    if (typeof timezone === "string" && timezone.trim()) {
+      try {
+        // Validate by attempting a format
+        new Date().toLocaleString("en-GB", { timeZone: timezone });
+        CURRENT_TZ = timezone;
+      } catch {
+        CURRENT_TZ = "UTC";
+      }
+    } else {
+      CURRENT_TZ = "UTC";
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -397,7 +418,13 @@ ${complaintsText}`;
       promo ? { discount: promo.discount, applies: promo.applies } : null,
     );
     const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
-    const nowGMT = new Date().toUTCString();
+    const nowLocal = (() => {
+      try {
+        return new Date().toLocaleString("en-GB", { dateStyle: "full", timeStyle: "long", timeZone: CURRENT_TZ });
+      } catch {
+        return new Date().toUTCString();
+      }
+    })();
 
     let promoSection = "CURRENT PROMOTION: No active promotion right now.";
     if (promo) {
@@ -438,7 +465,8 @@ ABOUT DONMAC DATA HUB:
 - Complaints: users can file a complaint about any order from the past 48 hours on the Complaints page.
 - Pages: Dashboard, Data Bundles, Cart, Orders, Top Up Wallet, Top Ups history, Transactions, Complaints, Referrals, Become an Agent, Profile.
 
-CURRENT TIME (UTC): ${nowGMT}
+CURRENT TIME (${CURRENT_TZ}): ${nowLocal}
+NOTE: All dates in this prompt are shown in the user's local timezone (${CURRENT_TZ}). When you mention dates/times to the user, present them as-is in that timezone — do NOT convert to UTC or another zone.
 
 ${promoSection}
 
