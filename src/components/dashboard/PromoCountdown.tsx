@@ -66,7 +66,7 @@ export default function PromoCountdown() {
         <p className="text-xs opacity-90 mb-3">
           Goes live on{" "}
           <span className="font-semibold">
-            {format(new Date(active.starts_at), "MMM dd, yyyy • HH:mm")}
+            {format(new Date(active.starts_at), "MMM dd, yyyy • h:mm a")}
           </span>
         </p>
       )}
