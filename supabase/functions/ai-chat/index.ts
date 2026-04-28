@@ -299,9 +299,11 @@ serve(async (req) => {
         );
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           const [
             { data: profile },
             { data: orders },
+            { data: orders24h },
             { data: topups },
             { data: transactions },
             { data: complaints },
@@ -309,6 +311,7 @@ serve(async (req) => {
           ] = await Promise.all([
             supabase.from("profiles").select("full_name, tier, wallet_balance, agent_code, referral_code, phone, email, created_at").eq("user_id", user.id).maybeSingle(),
             supabase.from("orders").select("order_ref, network, bundle_size, phone_number, amount, status, payment_method, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+            supabase.from("orders").select("order_ref, network, bundle_size, phone_number, amount, status, payment_method, created_at").eq("user_id", user.id).gte("created_at", since24h).order("created_at", { ascending: false }),
             supabase.from("wallet_topups").select("amount, method, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
             supabase.from("transactions").select("type, description, amount, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
             supabase.from("complaints").select("subject, status, order_ref, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
@@ -318,12 +321,16 @@ serve(async (req) => {
           const tier = profile?.tier || "general";
           userTier = tier === "agent" ? "agent" : "general";
 
-          const ordersText = (orders || []).length
-            ? orders!.map((o: any) => {
-                const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
-                return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} via ${o.payment_method} (${fmtDate(o.created_at)})`;
-              }).join("\n")
-            : "  (No orders yet)";
+          const formatOrder = (o: any) => {
+            const statusLabel = o.status === "completed" ? "Delivered" : o.status.charAt(0).toUpperCase() + o.status.slice(1);
+            return `  - ${o.order_ref}: ${o.network} ${o.bundle_size} → ${o.phone_number}, ₵${Number(o.amount).toFixed(2)}, ${statusLabel} via ${o.payment_method} (${fmtDate(o.created_at)})`;
+          };
+          const ordersText = (orders || []).length ? orders!.map(formatOrder).join("\n") : "  (No orders yet)";
+          const orders24hList = orders24h || [];
+          const orders24hText = orders24hList.length
+            ? orders24hList.map(formatOrder).join("\n")
+            : "  (No orders in the last 24 hours)";
+          const orders24hTotal = orders24hList.reduce((s: number, o: any) => s + Number(o.amount || 0), 0);
 
           const topupsText = (topups || []).length
             ? topups!.map((t: any) => `  - ₵${Number(t.amount).toFixed(2)} via ${t.method} — ${t.status} (${fmtDate(t.created_at)})`).join("\n")
@@ -351,7 +358,10 @@ serve(async (req) => {
 ${tier === "agent" ? `- Agent code: ${profile?.agent_code || "N/A"}` : ""}
 - Referrals: ${refStats}
 
-Last 10 orders:
+Orders in the last 24 hours (${orders24hList.length} order${orders24hList.length === 1 ? "" : "s"}, total ₵${orders24hTotal.toFixed(2)}):
+${orders24hText}
+
+Last 10 orders (overall):
 ${ordersText}
 
 Last 5 wallet top-ups:
