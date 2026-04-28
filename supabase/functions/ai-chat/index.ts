@@ -418,7 +418,13 @@ ${complaintsText}`;
       promo ? { discount: promo.discount, applies: promo.applies } : null,
     );
     const tierLabel = userTier === "agent" ? "Agent" : userTier === "general" ? "General" : "Guest (not signed in)";
-    const nowGMT = new Date().toUTCString();
+    const nowLocal = (() => {
+      try {
+        return new Date().toLocaleString("en-GB", { dateStyle: "full", timeStyle: "long", timeZone: CURRENT_TZ });
+      } catch {
+        return new Date().toUTCString();
+      }
+    })();
 
     let promoSection = "CURRENT PROMOTION: No active promotion right now.";
     if (promo) {
