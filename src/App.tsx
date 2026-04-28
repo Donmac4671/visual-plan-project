@@ -84,7 +84,6 @@ const App = () => (
           <BrowserRouter>
             <RecoveryRedirect />
             <RealtimeNotifications />
-            <SiteMessageBanner />
             <EnableNotificationsBanner />
             <SiteMessagePopup />
 

@@ -45,7 +45,7 @@ export default function SiteMessageBanner() {
   if (!banner || hidden) return null;
 
   return (
-    <div className="w-full gradient-primary text-primary-foreground px-4 py-2 flex items-start gap-3 shadow-md relative z-40">
+    <div className="w-full gradient-primary text-primary-foreground px-4 py-2 flex items-start gap-3 shadow-md relative z-40 rounded-xl">
       <Megaphone className="w-4 h-4 mt-0.5 shrink-0" />
       <p className="flex-1 text-sm whitespace-pre-wrap leading-snug">{banner.message}</p>
       <button
