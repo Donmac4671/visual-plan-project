@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import { useAuth } from "@/contexts/AuthContext";
-import { Clock, Sparkles } from "lucide-react";
+import { Clock, Sparkles, CalendarClock } from "lucide-react";
+import { format } from "date-fns";
 
-function getTimeLeft(expiresAt: string) {
-  const diff = new Date(expiresAt).getTime() - Date.now();
+function getTimeLeft(target: string) {
+  const diff = new Date(target).getTime() - Date.now();
   if (diff <= 0) return null;
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -15,40 +16,63 @@ function getTimeLeft(expiresAt: string) {
 
 export default function PromoCountdown() {
   const { profile } = useAuth();
-  const { promo } = useActivePromo(profile?.tier);
+  const { promo, upcomingPromo } = useActivePromo(profile?.tier);
+
+  // Prefer the live promo; otherwise show the upcoming one as a heads-up
+  const isLive = Boolean(promo);
+  const active = promo || upcomingPromo;
+  const targetDate = active
+    ? isLive
+      ? active.expires_at
+      : active.starts_at
+    : null;
+
   const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft>>(null);
 
   useEffect(() => {
-    if (!promo) return;
-    setTimeLeft(getTimeLeft(promo.expires_at));
+    if (!targetDate) return;
+    setTimeLeft(getTimeLeft(targetDate));
     const interval = setInterval(() => {
-      const tl = getTimeLeft(promo.expires_at);
+      const tl = getTimeLeft(targetDate);
       setTimeLeft(tl);
       if (!tl) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
-  }, [promo]);
+  }, [targetDate]);
 
-  if (!promo || !timeLeft) return null;
+  if (!active || !timeLeft) return null;
 
   const audience =
-    promo.target_audience === "agent" ? "Agents" :
-    promo.target_audience === "general" ? "General Users" : "Everyone";
+    active.target_audience === "agent" ? "Agents" :
+    active.target_audience === "general" ? "General Users" : "Everyone";
+
+  const headlineIcon = isLive ? Sparkles : CalendarClock;
+  const HeadlineIcon = headlineIcon;
+  const headline = isLive
+    ? `🎉 ${active.discount_percent}% OFF for ${audience}!`
+    : `📅 Upcoming: ${active.discount_percent}% OFF for ${audience}`;
+  const countdownLabel = isLive ? "Ends in:" : "Starts in:";
 
   return (
     <div className="rounded-xl gradient-primary p-4 text-primary-foreground">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-5 h-5" />
-        <span className="font-bold text-sm">
-          🎉 {promo.discount_percent}% OFF for {audience}!
-        </span>
+        <HeadlineIcon className="w-5 h-5" />
+        <span className="font-bold text-sm">{headline}</span>
       </div>
-      {promo.description && (
-        <p className="text-xs opacity-90 mb-3">{promo.description}</p>
+      {active.description && (
+        <p className="text-xs opacity-90 mb-2">{active.description}</p>
+      )}
+      {!isLive && (
+        <p className="text-xs opacity-90 mb-3">
+          Goes live on{" "}
+          <span className="font-semibold">
+            {format(new Date(active.starts_at), "MMM dd, yyyy • HH:mm")}
+          </span>
+        </p>
       )}
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 opacity-80" />
-        <span className="text-xs opacity-80">Ends in:</span>
+        <span className="text-xs opacity-80">{countdownLabel}</span>
       </div>
       <div className="flex gap-2 mt-2">
         {[
