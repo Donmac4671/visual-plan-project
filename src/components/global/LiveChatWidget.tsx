@@ -213,14 +213,7 @@ function LiveChatTab() {
             <div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${
               m.sender_role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted text-foreground rounded-bl-sm"
             }`}>
-              {m.media_url && isImage(m.media_url) && (
-                <a href={m.media_url} target="_blank" rel="noopener noreferrer">
-                  <img src={m.media_url} alt="media" className="rounded-lg max-w-full max-h-40 mb-1 cursor-pointer" />
-                </a>
-              )}
-              {m.media_url && !isImage(m.media_url) && (
-                <a href={m.media_url} target="_blank" rel="noopener noreferrer" className="underline text-xs block mb-1">📎 View attachment</a>
-              )}
+              {m.media_url && <ChatMedia value={m.media_url} />}
               {m.message && m.message !== "📎 Media" && <p className="whitespace-pre-wrap break-words">{m.message}</p>}
               <p className={`text-[10px] mt-1 ${m.sender_role === "user" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                 {format(new Date(m.created_at), "h:mm a")}
