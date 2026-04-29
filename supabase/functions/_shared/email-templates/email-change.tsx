@@ -4,13 +4,13 @@ import * as React from 'npm:react@18.3.1'
 
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
+  Hr,
   Html,
-  Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -19,40 +19,34 @@ interface EmailChangeEmailProps {
   email: string
   newEmail: string
   confirmationUrl: string
+  token?: string
 }
 
 export const EmailChangeEmail = ({
   siteName,
   email,
   newEmail,
-  confirmationUrl,
+  token,
 }: EmailChangeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>Your {siteName} email change code: {token}</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Section style={brandBar}>
+          <Heading style={brand}>{siteName}</Heading>
+        </Section>
         <Heading style={h1}>Confirm your email change</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
+          You requested to change your email address from <strong>{email}</strong> to <strong>{newEmail}</strong>. Use the code below to confirm.
         </Text>
-        <Text style={text}>
-          Click the button below to confirm this change:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
+        <Section style={codeBox}>
+          <Text style={codeText}>{token}</Text>
+        </Section>
+        <Text style={text}>This code expires in 1 hour.</Text>
+        <Hr style={hr} />
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          If you didn't request this change, please secure your account immediately.
         </Text>
       </Container>
     </Body>
@@ -61,27 +55,27 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
+const main = { backgroundColor: '#ffffff', fontFamily: 'Inter, Arial, sans-serif' }
+const container = { padding: '20px 25px', maxWidth: '560px' }
+const brandBar = { padding: '16px 0', borderBottom: '2px solid hsl(246, 65%, 56%)', marginBottom: '24px' }
+const brand = { fontSize: '20px', fontWeight: 'bold' as const, color: 'hsl(246, 65%, 56%)', margin: '0' }
+const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: 'hsl(222, 84%, 4.9%)', margin: '0 0 16px' }
+const text = { fontSize: '15px', color: 'hsl(215, 16.3%, 46.9%)', lineHeight: '1.6', margin: '0 0 20px' }
+const codeBox = {
+  backgroundColor: 'hsl(246, 65%, 97%)',
+  border: '2px solid hsl(246, 65%, 56%)',
+  borderRadius: '12px',
+  padding: '20px',
+  textAlign: 'center' as const,
+  margin: '24px 0',
+}
+const codeText = {
+  fontSize: '36px',
   fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  color: 'hsl(246, 65%, 56%)',
+  letterSpacing: '8px',
+  margin: '0',
+  fontFamily: 'monospace',
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const hr = { borderColor: 'hsl(214, 31.8%, 91.4%)', margin: '28px 0 20px' }
+const footer = { fontSize: '12px', color: 'hsl(215, 16.3%, 46.9%)', margin: '0' }
