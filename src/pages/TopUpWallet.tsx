@@ -70,9 +70,10 @@ export default function TopUpWallet() {
     // Paystack requires unique emails per transaction. Build a synthetic email
     // from the user's phone number so each customer is properly separated.
     const userPhone = (profile?.phone || "").replace(/\D/g, "");
+    const uniqueSuffix = Date.now();
     const payerEmail = userPhone
-      ? `${userPhone}@donmacdatahub.com`
-      : `user-${user?.id?.slice(0, 8) || Date.now()}@donmacdatahub.com`;
+      ? `${userPhone}-${uniqueSuffix}@donmacdatahub.com`
+      : `user-${user?.id?.slice(0, 8) || uniqueSuffix}-${uniqueSuffix}@donmacdatahub.com`;
 
     await initPaystack({
       email: payerEmail,
