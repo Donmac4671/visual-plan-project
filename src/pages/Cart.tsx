@@ -103,8 +103,14 @@ export default function Cart() {
       return;
     }
 
+    // Paystack requires unique emails per transaction. Build a synthetic email
+    // from the beneficiary phone number(s) so each transaction looks unique.
+    const phones = items.map((i) => i.phoneNumber.replace(/\D/g, "")).filter(Boolean);
+    const phoneKey = phones.length === 1 ? phones[0] : `${phones[0]}-${Date.now()}`;
+    const syntheticEmail = `${phoneKey}@donmacdatahub.com`;
+
     await initPaystack({
-      email: profile.email,
+      email: syntheticEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {

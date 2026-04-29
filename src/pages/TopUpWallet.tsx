@@ -67,11 +67,12 @@ export default function TopUpWallet() {
       toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
-    const payerEmail = profile?.email || user?.email;
-    if (!payerEmail) {
-      toast({ title: "Payment Error", description: "Your account email is missing.", variant: "destructive" });
-      return;
-    }
+    // Paystack requires unique emails per transaction. Build a synthetic email
+    // from the user's phone number so each customer is properly separated.
+    const userPhone = (profile?.phone || "").replace(/\D/g, "");
+    const payerEmail = userPhone
+      ? `${userPhone}@donmacdatahub.com`
+      : `user-${user?.id?.slice(0, 8) || Date.now()}@donmacdatahub.com`;
 
     await initPaystack({
       email: payerEmail,
