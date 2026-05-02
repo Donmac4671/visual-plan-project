@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-[220px] h-screen sticky top-0 bg-card border-r border-border p-4 overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-[220px] h-screen sticky top-0 bg-card border-r border-border p-4 overflow-y-auto overscroll-contain">
       <div className="flex items-center gap-2 mb-6">
         <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-lg">D</span>
