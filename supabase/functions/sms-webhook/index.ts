@@ -260,6 +260,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Try auto-claim by reference code FIRST
+    if (parsed.referenceCode) {
+      const { data: claimedId, error: claimError } = await supabase.rpc("auto_claim_topup_by_reference", {
+        p_reference_code: parsed.referenceCode,
+        p_transaction_id: parsed.transactionId,
+        p_amount: parsed.amount,
+        p_network: parsed.network,
+      });
+
+      if (claimError) {
+        console.error("auto_claim_topup_by_reference failed:", claimError);
+      } else if (claimedId) {
+        console.log(`sms-webhook auto-claimed via reference ${parsed.referenceCode} -> ${claimedId}`);
+        return new Response(JSON.stringify({
+          status: "auto-claimed",
+          transactionId: parsed.transactionId,
+          amount: parsed.amount,
+          network: parsed.network,
+          referenceCode: parsed.referenceCode,
+          source,
+        }), {
+          status: 201,
+          headers: jsonHeaders,
+        });
+      } else {
+        console.log(`sms-webhook reference code ${parsed.referenceCode} did not match any user, falling back to unclaimed insert`);
+      }
+    }
+
     const { error } = await supabase.from("verified_topups").insert({
       transaction_id: parsed.transactionId,
       amount: parsed.amount,
@@ -279,6 +308,7 @@ Deno.serve(async (req) => {
       transactionId: parsed.transactionId,
       amount: parsed.amount,
       network: parsed.network,
+      referenceCode: parsed.referenceCode,
       source,
     }), {
       status: 201,
