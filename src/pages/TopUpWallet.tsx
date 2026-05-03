@@ -193,8 +193,61 @@ export default function TopUpWallet() {
                 <p className="font-bold text-foreground">Michael Osei</p>
               </div>
             </div>
+
+            {/* Auto-claim reference code */}
+            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-sm">Auto-Claim with Reference Code</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use this 6-character code as the <span className="font-semibold">Reference</span> when sending the money. The exact amount you send will be added to your wallet automatically — no need to claim manually.
+                  </p>
+                </div>
+              </div>
+
+              {referenceCode ? (
+                <div className="flex items-center justify-between bg-card rounded-lg p-3 border border-border">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <KeyRound className="w-4 h-4 text-primary flex-shrink-0" />
+                    <p className="font-bold text-foreground text-xl tracking-widest truncate">{referenceCode}</p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(referenceCode)}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateReferenceCode}
+                      disabled={generatingCode}
+                      title="Generate a new code (old code stops working)"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${generatingCode ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGenerateReferenceCode}
+                  disabled={generatingCode}
+                >
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  {generatingCode ? "Generating..." : "Generate My Reference Code"}
+                </Button>
+              )}
+
+              {referenceCode && (
+                <p className="text-xs text-muted-foreground">
+                  💡 If you generate a new code, the old one stops working immediately.
+                </p>
+              )}
+            </div>
+
             <p className="text-sm text-muted-foreground text-center">
-              After sending the payment, click below to claim with your Transaction ID
+              Or send without a reference code, then click below to claim manually with your Transaction ID.
             </p>
             <Button className="w-full gradient-primary border-0" size="lg" onClick={() => setShowMomoDetails(true)}>
               I've Sent the Money
