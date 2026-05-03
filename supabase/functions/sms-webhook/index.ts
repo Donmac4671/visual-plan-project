@@ -241,26 +241,8 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: existing } = await supabase
-      .from("verified_topups")
-      .select("id")
-      .eq("transaction_id", parsed.transactionId)
-      .maybeSingle();
-
-    if (existing) {
-      return new Response(JSON.stringify({
-        status: "duplicate",
-        transactionId: parsed.transactionId,
-        amount: parsed.amount,
-        network: parsed.network,
-        source,
-      }), {
-        status: 200,
-        headers: jsonHeaders,
-      });
-    }
-
-    // Try auto-claim by reference code FIRST
+    // Try auto-claim by reference code FIRST (before duplicate check, so a legit
+    // owner can still auto-claim even if someone else already inserted the txn id)
     if (parsed.referenceCode) {
       const { data: claimedId, error: claimError } = await supabase.rpc("auto_claim_topup_by_reference", {
         p_reference_code: parsed.referenceCode,
@@ -287,6 +269,27 @@ Deno.serve(async (req) => {
       } else {
         console.log(`sms-webhook reference code ${parsed.referenceCode} did not match any user, falling back to unclaimed insert`);
       }
+    }
+
+    // No reference match — fall back to inserting an unclaimed verified topup,
+    // but skip if the txn id already exists in verified_topups.
+    const { data: existing } = await supabase
+      .from("verified_topups")
+      .select("id")
+      .eq("transaction_id", parsed.transactionId)
+      .maybeSingle();
+
+    if (existing) {
+      return new Response(JSON.stringify({
+        status: "duplicate",
+        transactionId: parsed.transactionId,
+        amount: parsed.amount,
+        network: parsed.network,
+        source,
+      }), {
+        status: 200,
+        headers: jsonHeaders,
+      });
     }
 
     const { error } = await supabase.from("verified_topups").insert({
