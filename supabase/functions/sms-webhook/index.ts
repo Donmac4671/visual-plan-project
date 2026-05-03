@@ -18,6 +18,7 @@ type ParsedMomoSms = {
   transactionId: string;
   amount: number;
   network: string;
+  referenceCode: string | null;
 };
 
 type ExtractionResult = {
@@ -55,7 +56,20 @@ function parseMomoSms(smsBody: string): ParsedMomoSms | null {
     network = "AirtelTigo";
   }
 
-  return { transactionId, amount, network };
+  // Extract a 6-character A-Z0-9 reference code from common SMS phrasings:
+  // "Reference: ABC123", "Ref: ABC123", "with reference ABC123", "payment details: ABC123"
+  let referenceCode: string | null = null;
+  const refMatch = text.match(/(?:reference|ref(?:erence)?(?:\s*(?:no|number|#))?|payment\s*details?)[:\s#-]*([A-Z0-9]{6})\b/i)
+    || text.match(/\bref[:\s#-]+([A-Z0-9]{6})\b/i);
+  if (refMatch) {
+    const candidate = refMatch[1].toUpperCase();
+    // Reject pure-digit matches that are likely amounts/dates/txn fragments
+    if (!/^\d{6}$/.test(candidate)) {
+      referenceCode = candidate;
+    }
+  }
+
+  return { transactionId, amount, network, referenceCode };
 }
 
 function firstStringValue(record: Record<string, unknown>, keys: string[]): string {
@@ -246,6 +260,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Try auto-claim by reference code FIRST
+    if (parsed.referenceCode) {
+      const { data: claimedId, error: claimError } = await supabase.rpc("auto_claim_topup_by_reference", {
+        p_reference_code: parsed.referenceCode,
+        p_transaction_id: parsed.transactionId,
+        p_amount: parsed.amount,
+        p_network: parsed.network,
+      });
+
+      if (claimError) {
+        console.error("auto_claim_topup_by_reference failed:", claimError);
+      } else if (claimedId) {
+        console.log(`sms-webhook auto-claimed via reference ${parsed.referenceCode} -> ${claimedId}`);
+        return new Response(JSON.stringify({
+          status: "auto-claimed",
+          transactionId: parsed.transactionId,
+          amount: parsed.amount,
+          network: parsed.network,
+          referenceCode: parsed.referenceCode,
+          source,
+        }), {
+          status: 201,
+          headers: jsonHeaders,
+        });
+      } else {
+        console.log(`sms-webhook reference code ${parsed.referenceCode} did not match any user, falling back to unclaimed insert`);
+      }
+    }
+
     const { error } = await supabase.from("verified_topups").insert({
       transaction_id: parsed.transactionId,
       amount: parsed.amount,
@@ -265,6 +308,7 @@ Deno.serve(async (req) => {
       transactionId: parsed.transactionId,
       amount: parsed.amount,
       network: parsed.network,
+      referenceCode: parsed.referenceCode,
       source,
     }), {
       status: 201,

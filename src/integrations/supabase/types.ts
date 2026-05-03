@@ -294,6 +294,7 @@ export type Database = {
           phone: string
           referral_code: string
           tier: string
+          topup_reference_code: string
           updated_at: string
           user_id: string
           wallet_balance: number
@@ -308,6 +309,7 @@ export type Database = {
           phone?: string
           referral_code?: string
           tier?: string
+          topup_reference_code?: string
           updated_at?: string
           user_id: string
           wallet_balance?: number
@@ -322,6 +324,7 @@ export type Database = {
           phone?: string
           referral_code?: string
           tier?: string
+          topup_reference_code?: string
           updated_at?: string
           user_id?: string
           wallet_balance?: number
@@ -669,6 +672,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      auto_claim_topup_by_reference: {
+        Args: {
+          p_amount: number
+          p_network: string
+          p_reference_code: string
+          p_transaction_id: string
+        }
+        Returns: string
+      }
       claim_verified_topup: {
         Args: { p_transaction_id: string }
         Returns: undefined
@@ -681,6 +693,7 @@ export type Database = {
         Args: { p_amount: number; p_reference: string; p_user_id: string }
         Returns: undefined
       }
+      generate_topup_reference_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
