@@ -18,6 +18,7 @@ type ParsedMomoSms = {
   transactionId: string;
   amount: number;
   network: string;
+  referenceCode: string | null;
 };
 
 type ExtractionResult = {
