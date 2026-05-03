@@ -17,6 +17,20 @@ export default function TopUpWallet() {
   const [claiming, setClaiming] = useState(false);
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const referenceCode = (profile as any)?.topup_reference_code || "";
+
+  const handleGenerateReferenceCode = async () => {
+    setGeneratingCode(true);
+    const { data, error } = await supabase.rpc("generate_topup_reference_code");
+    setGeneratingCode(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await refreshProfile();
+    toast({ title: referenceCode ? "New Code Generated" : "Code Generated", description: `Your reference code is ${data}. Old code (if any) is now invalid.` });
+  };
 
   const tier = profile?.tier ?? "general";
   const minTopUp = getMinTopUp(tier);
