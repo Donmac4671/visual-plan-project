@@ -271,6 +271,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // No reference match — fall back to inserting an unclaimed verified topup,
+    // but skip if the txn id already exists in verified_topups.
+    const { data: existing } = await supabase
+      .from("verified_topups")
+      .select("id")
+      .eq("transaction_id", parsed.transactionId)
+      .maybeSingle();
+
+    if (existing) {
+      return new Response(JSON.stringify({
+        status: "duplicate",
+        transactionId: parsed.transactionId,
+        amount: parsed.amount,
+        network: parsed.network,
+        source,
+      }), {
+        status: 200,
+        headers: jsonHeaders,
+      });
+    }
+
     const { error } = await supabase.from("verified_topups").insert({
       transaction_id: parsed.transactionId,
       amount: parsed.amount,
