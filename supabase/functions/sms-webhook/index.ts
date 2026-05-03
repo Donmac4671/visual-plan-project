@@ -56,7 +56,20 @@ function parseMomoSms(smsBody: string): ParsedMomoSms | null {
     network = "AirtelTigo";
   }
 
-  return { transactionId, amount, network };
+  // Extract a 6-character A-Z0-9 reference code from common SMS phrasings:
+  // "Reference: ABC123", "Ref: ABC123", "with reference ABC123", "payment details: ABC123"
+  let referenceCode: string | null = null;
+  const refMatch = text.match(/(?:reference|ref(?:erence)?(?:\s*(?:no|number|#))?|payment\s*details?)[:\s#-]*([A-Z0-9]{6})\b/i)
+    || text.match(/\bref[:\s#-]+([A-Z0-9]{6})\b/i);
+  if (refMatch) {
+    const candidate = refMatch[1].toUpperCase();
+    // Reject pure-digit matches that are likely amounts/dates/txn fragments
+    if (!/^\d{6}$/.test(candidate)) {
+      referenceCode = candidate;
+    }
+  }
+
+  return { transactionId, amount, network, referenceCode };
 }
 
 function firstStringValue(record: Record<string, unknown>, keys: string[]): string {
