@@ -2,7 +2,7 @@ import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, CreditCard, Smartphone, Copy, CheckCircle, Hash } from "lucide-react";
+import { Wallet, CreditCard, Smartphone, Copy, CheckCircle, Hash, KeyRound, RefreshCw, Sparkles } from "lucide-react";
 import { formatCurrency, calculatePaystackFee, getMinTopUp } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
