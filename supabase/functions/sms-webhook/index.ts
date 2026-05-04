@@ -56,17 +56,38 @@ function parseMomoSms(smsBody: string): ParsedMomoSms | null {
     network = "AirtelTigo";
   }
 
-  // Extract a 6-character A-Z0-9 reference code from common SMS phrasings:
-  // "Reference: ABC123", "Ref: ABC123", "with reference ABC123", "payment details: ABC123"
+  // Extract candidate 6-character A-Z0-9 reference codes.
+  // Strategy: scan the WHOLE message for any 6-char alphanumeric token that
+  // contains BOTH letters and digits (this excludes pure words like "VODAFONE"
+  // segments and pure numbers like phone fragments / amounts).
+  // This handles Telecel→MTN forwards where "Reference:" is overridden with
+  // the sender name, e.g. "Reference: PATIENCE OPOKU ,233505165779,344EMU".
+  const referenceCandidates: string[] = [];
+  const seen = new Set<string>();
+  const tokenRegex = /\b([A-Z0-9]{6})\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = tokenRegex.exec(text)) !== null) {
+    const candidate = m[1].toUpperCase();
+    if (seen.has(candidate)) continue;
+    // Must contain at least one letter AND one digit (rules out names & numbers)
+    if (!/[A-Z]/.test(candidate) || !/[0-9]/.test(candidate)) continue;
+    // Skip if it's part of the transaction id we already extracted
+    if (transactionId.includes(candidate)) continue;
+    seen.add(candidate);
+    referenceCandidates.push(candidate);
+  }
+
+  // Prefer a code that appears near "reference"/"ref" wording; otherwise take first
   let referenceCode: string | null = null;
-  const refMatch = text.match(/(?:reference|ref(?:erence)?(?:\s*(?:no|number|#))?|payment\s*details?)[:\s#-]*([A-Z0-9]{6})\b/i)
-    || text.match(/\bref[:\s#-]+([A-Z0-9]{6})\b/i);
-  if (refMatch) {
-    const candidate = refMatch[1].toUpperCase();
-    // Reject pure-digit matches that are likely amounts/dates/txn fragments
-    if (!/^\d{6}$/.test(candidate)) {
-      referenceCode = candidate;
+  const nearRef = text.match(/(?:reference|ref(?:erence)?(?:\s*(?:no|number|#))?|payment\s*details?)[^\n]{0,80}?\b([A-Z0-9]{6})\b(?![A-Z0-9])/i);
+  if (nearRef) {
+    const c = nearRef[1].toUpperCase();
+    if (/[A-Z]/.test(c) && /[0-9]/.test(c) && !transactionId.includes(c)) {
+      referenceCode = c;
     }
+  }
+  if (!referenceCode && referenceCandidates.length > 0) {
+    referenceCode = referenceCandidates[0];
   }
 
   return { transactionId, amount, network, referenceCode };
