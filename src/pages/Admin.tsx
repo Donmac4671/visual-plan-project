@@ -97,6 +97,10 @@ export default function Admin() {
   useEffect(() => {
     if (!isAdmin) return;
     fetchData();
+    (async () => {
+      const { data } = await supabase.rpc("admin_get_auto_deliver_minutes");
+      setAutoDeliverMinutes(data == null ? "manual" : String(data));
+    })();
 
     const ordersChannel = supabase
       .channel('admin-orders-realtime')
@@ -105,6 +109,17 @@ export default function Admin() {
 
     return () => { supabase.removeChannel(ordersChannel); };
   }, [isAdmin]);
+
+  const handleSetAutoDeliver = async (value: string) => {
+    setAutoDeliverMinutes(value);
+    const minutes = value === "manual" ? null : parseInt(value, 10);
+    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes });
+    if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({
+      title: "Auto-Deliver Updated",
+      description: minutes ? `Orders will auto-deliver after ${minutes} min` : "Auto-deliver disabled (manual only)",
+    });
+  };
 
   // Filtered data
   const filteredUsers = useMemo(() => {
