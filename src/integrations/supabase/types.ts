@@ -80,6 +80,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       broadcasts: {
         Row: {
           audience: string
@@ -647,6 +668,11 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_auto_deliver_minutes: { Args: never; Returns: number }
+      admin_set_auto_deliver_minutes: {
+        Args: { p_minutes: number }
+        Returns: undefined
+      }
       admin_set_user_tier: {
         Args: { new_tier: string; target_user_id: string }
         Returns: undefined
@@ -735,6 +761,7 @@ export type Database = {
       process_pending_orders: { Args: never; Returns: undefined }
       refund_failed_order: { Args: { p_order_id: string }; Returns: undefined }
       register_referral: { Args: { p_code: string }; Returns: undefined }
+      run_auto_deliver: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
