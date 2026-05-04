@@ -60,6 +60,7 @@ export default function Admin() {
   const [replyText, setReplyText] = useState("");
   const [agentApplications, setAgentApplications] = useState<any[]>([]);
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+  const [autoDeliverMinutes, setAutoDeliverMinutes] = useState<string>("manual");
 
   // Filters
   const [userSearch, setUserSearch] = useState("");
