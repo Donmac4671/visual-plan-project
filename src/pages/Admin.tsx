@@ -60,6 +60,7 @@ export default function Admin() {
   const [replyText, setReplyText] = useState("");
   const [agentApplications, setAgentApplications] = useState<any[]>([]);
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+  const [autoDeliverMinutes, setAutoDeliverMinutes] = useState<string>("manual");
 
   // Filters
   const [userSearch, setUserSearch] = useState("");
@@ -96,6 +97,10 @@ export default function Admin() {
   useEffect(() => {
     if (!isAdmin) return;
     fetchData();
+    (async () => {
+      const { data } = await supabase.rpc("admin_get_auto_deliver_minutes");
+      setAutoDeliverMinutes(data == null ? "manual" : String(data));
+    })();
 
     const ordersChannel = supabase
       .channel('admin-orders-realtime')
@@ -104,6 +109,17 @@ export default function Admin() {
 
     return () => { supabase.removeChannel(ordersChannel); };
   }, [isAdmin]);
+
+  const handleSetAutoDeliver = async (value: string) => {
+    setAutoDeliverMinutes(value);
+    const minutes = value === "manual" ? null : parseInt(value, 10);
+    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes });
+    if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({
+      title: "Auto-Deliver Updated",
+      description: minutes ? `Orders will auto-deliver after ${minutes} min` : "Auto-deliver disabled (manual only)",
+    });
+  };
 
   // Filtered data
   const filteredUsers = useMemo(() => {
@@ -435,11 +451,30 @@ export default function Admin() {
               </div>
             );
           })()}
-          <div className="mb-4 flex flex-wrap gap-3 items-end">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search phone number" value={orderPhoneSearch} onChange={e => setOrderPhoneSearch(e.target.value)} className="pl-8 w-[200px]" />
+          <div className="mb-4 rounded-xl border border-border bg-card p-3 flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-sm font-semibold text-foreground">Auto-Deliver Timer</p>
+              <p className="text-xs text-muted-foreground">
+                {autoDeliverMinutes === "manual"
+                  ? "Manual only — orders will not auto-deliver."
+                  : `Pending/processing/waiting orders auto-mark as delivered after ${autoDeliverMinutes} minutes.`}
+              </p>
             </div>
+            <Select value={autoDeliverMinutes} onValueChange={handleSetAutoDeliver}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual (off)</SelectItem>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="20">20 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="60">60 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mb-4 flex flex-wrap gap-3 items-end">
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
