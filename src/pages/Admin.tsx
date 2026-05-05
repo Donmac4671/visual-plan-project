@@ -22,6 +22,7 @@ import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
 import AdminSiteMessage from "@/components/admin/AdminSiteMessage";
 import AdminBroadcast from "@/components/admin/AdminBroadcast";
 import AdminLiveChat from "@/components/admin/AdminLiveChat";
+import AdminMonthlyRankings from "@/components/admin/AdminMonthlyRankings";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -318,6 +319,7 @@ export default function Admin() {
 
         {/* ANALYTICS TAB */}
         <TabsContent value="analytics">
+          <AdminMonthlyRankings users={users} orders={orders} />
           <AdminAnalytics users={users} orders={orders} topups={topups} complaints={complaints} />
         </TabsContent>
 
