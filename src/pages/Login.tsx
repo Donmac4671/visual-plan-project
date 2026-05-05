@@ -33,9 +33,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    // If "Remember Me" is unchecked, clear any persisted session on sign-out
     if (!rememberMe) {
-      // Store preference so AuthContext can use sessionStorage
       sessionStorage.setItem("donmac_no_persist", "1");
     } else {
       sessionStorage.removeItem("donmac_no_persist");
@@ -112,10 +110,7 @@ export default function Login() {
     }
     setLoading(true);
 
-    // Send code instead of reset link
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Remove redirectTo - we'll handle via code
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {});
 
     setLoading(false);
     if (error) {
@@ -284,7 +279,6 @@ export default function Login() {
                 </Button>
               </form>
 
-              {/* Resend verification code section */}
               {!showVerificationCodeInput ? (
                 <button
                   type="button"
