@@ -119,7 +119,7 @@ export default function Login() {
     } else {
       toast({ title: "Code Verified", description: "You can now reset your password." });
       // Redirect to password reset page
-      navigate("/update-password");
+      navigate("/reset-password");
     }
   };
 
