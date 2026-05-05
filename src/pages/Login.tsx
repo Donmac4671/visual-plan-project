@@ -23,6 +23,8 @@ export default function Login() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resetCode, setResetCode] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
+  const [showVerificationCodeInput, setShowVerificationCodeInput] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -46,7 +48,7 @@ export default function Login() {
       toast({
         title: "Login Failed",
         description: isUnconfirmed
-          ? "Your email is not verified yet. Click 'Resend verification email' below."
+          ? "Your email is not verified yet. Click 'Resend verification code' below."
           : error.message,
         variant: "destructive",
       });
@@ -70,7 +72,35 @@ export default function Login() {
     if (error) {
       toast({ title: "Could not resend", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Verification email sent", description: "Check your inbox (and spam folder)." });
+      setShowVerificationCodeInput(true);
+      toast({ title: "Verification code sent", description: "Check your email for the verification code." });
+    }
+  };
+
+  const verifyEmailCode = async () => {
+    if (!verificationCode || verificationCode.length !== 8) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter the 8-digit code from your email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email,
+      token: verificationCode,
+      type: "signup",
+    });
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Invalid Code", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email Verified!", description: "Your email has been verified. You can now sign in." });
+      setShowVerificationCodeInput(false);
+      setVerificationCode("");
     }
   };
 
@@ -92,7 +122,7 @@ export default function Login() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       setShowCodeInput(true);
-      toast({ title: "Code Sent", description: "Check your email for the 8-digit verification code." });
+      toast({ title: "Code Sent", description: "Check your email for the verification code." });
     }
   };
 
@@ -110,7 +140,7 @@ export default function Login() {
     const { error } = await supabase.auth.verifyOtp({
       email: email,
       token: resetCode,
-      type: "email",
+      type: "recovery",
     });
     setLoading(false);
 
@@ -118,7 +148,6 @@ export default function Login() {
       toast({ title: "Invalid Code", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Code Verified", description: "You can now reset your password." });
-      // Redirect to password reset page
       navigate("/reset-password");
     }
   };
@@ -153,7 +182,7 @@ export default function Login() {
                     </div>
                   </div>
                   <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
-                    {loading ? "Sending..." : "Send 8-Digit Code"}
+                    {loading ? "Sending..." : "Send Verification Code"}
                   </Button>
                 </>
               ) : (
@@ -163,7 +192,7 @@ export default function Login() {
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Enter 8-digit code from email"
+                        placeholder="Enter verification code from email"
                         value={resetCode}
                         onChange={(e) => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
                         className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
@@ -171,7 +200,7 @@ export default function Login() {
                         autoFocus
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Enter the 8-digit code sent to {email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Enter the code sent to {email}</p>
                   </div>
                   <Button
                     type="button"
@@ -254,14 +283,44 @@ export default function Login() {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-                className="w-full text-center text-sm text-primary hover:underline mt-3 disabled:opacity-60"
-              >
-                {resendLoading ? "Sending..." : "Resend verification email"}
-              </button>
+
+              {/* Resend verification code section */}
+              {!showVerificationCodeInput ? (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className="w-full text-center text-sm text-primary hover:underline mt-3 disabled:opacity-60"
+                >
+                  {resendLoading ? "Sending..." : "Resend verification code"}
+                </button>
+              ) : (
+                <div className="mt-4 p-4 border border-border rounded-lg space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Verification Code</label>
+                    <input
+                      type="text"
+                      placeholder="Enter verification code from email"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                      maxLength={8}
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Enter the 8-digit code sent to {email}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={verifyEmailCode}
+                    className="w-full"
+                    variant="outline"
+                    disabled={loading || verificationCode.length !== 8}
+                  >
+                    {loading ? "Verifying..." : "Verify Email Code"}
+                  </Button>
+                </div>
+              )}
+
               <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">
