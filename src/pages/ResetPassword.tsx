@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock, Eye, EyeOff } from "lucide-react";
@@ -13,22 +13,35 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(true); // Changed to true by default
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const initializeRecoveryState = async () => {
+    // Check if we have an active session
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      // If there's a session, we're in recovery mode
+      if (session) {
+        setIsRecovery(true);
+        return;
+      }
+
+      // Check URL parameters for recovery info
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const searchParams = new URLSearchParams(window.location.search);
-      const hasRecoveryType =
-        hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery";
+      const hasRecoveryType = hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery";
       const hasAccessToken = Boolean(hashParams.get("access_token"));
       const code = searchParams.get("code");
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
+          console.error("Code exchange error:", error);
           toast({
             title: "Invalid reset link",
             description: "Please request a new password reset email.",
@@ -36,21 +49,37 @@ export default function ResetPassword() {
           });
           setIsRecovery(false);
           return;
+        } else {
+          setIsRecovery(true);
+          return;
         }
+      }
+
+      // If we came from the login page's code verification, show the form
+      if (location.state?.fromReset === true) {
+        setIsRecovery(true);
+        return;
       }
 
       setIsRecovery(hasRecoveryType || hasAccessToken || Boolean(code));
     };
 
-    void initializeRecoveryState();
+    checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change:", event);
+      if (event === "PASSWORD_RECOVERY" || event === "USER_UPDATED") {
+        setIsRecovery(true);
+      }
+      if (session && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
         setIsRecovery(true);
       }
     });
+
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, [toast, location]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +92,9 @@ export default function ResetPassword() {
       return;
     }
     setLoading(true);
+
     const { error } = await supabase.auth.updateUser({ password });
+
     setLoading(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -85,53 +116,48 @@ export default function ResetPassword() {
           <p className="text-muted-foreground mt-1">Enter your new password below</p>
         </div>
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-          {!isRecovery ? (
-            <div className="space-y-4 text-center py-2">
-              <p className="text-sm text-muted-foreground">
-                This reset link is invalid or expired. Please request a new password reset link from the login page.
-              </p>
-              <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/login")}>
-                Back to Login
-              </Button>
+          <form onSubmit={handleReset} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-          ) : (
-            <form onSubmit={handleReset} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">New Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter new password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Confirm New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                  minLength={6}
+                />
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Confirm New Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
-                {loading ? "Updating..." : "Update Password"}
-              </Button>
-            </form>
-          )}
+            </div>
+            <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
+              {loading ? "Updating..." : "Update Password"}
+            </Button>
+          </form>
         </div>
         <p className="text-center text-xs text-muted-foreground mt-4">© 2026 Donmac Data Hub. All rights reserved.</p>
       </div>
