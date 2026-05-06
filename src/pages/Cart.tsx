@@ -10,16 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { initPaystack } from "@/lib/paystack";
 
-const fulfillOrder = async (orderId: string, networkId: string, phone: string, bundleSizeGB: number) => {
-  try {
-    await supabase.functions.invoke("fulfill-order", {
-      body: { order_id: orderId, network_id: networkId, phone, bundle_size_gb: bundleSizeGB },
-    });
-  } catch (err) {
-    console.error("Auto-fulfillment error:", err);
-  }
-};
-
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
   const { toast } = useToast();
@@ -60,20 +50,22 @@ export default function Cart() {
         setProcessing(false);
         return;
       }
-      for (const item of items) {
-        const { data: orderId, error } = await supabase.rpc("pay_with_wallet", {
-          p_network: item.network,
-          p_phone: item.phoneNumber,
-          p_bundle: item.bundle.size,
-          p_amount: item.effectivePrice,
-        });
+      const { data, error } = await supabase.functions.invoke("place-wallet-order", {
+        body: {
+          items: items.map((item) => ({
+            network: item.network,
+            network_id: item.networkId,
+            phone: item.phoneNumber,
+            bundle: item.bundle.size,
+            bundle_size_gb: item.bundle.sizeGB,
+            amount: item.effectivePrice,
+          })),
+        },
+      });
 
-        if (error) throw error;
-
-        // Auto-fulfill via GHDataConnect (fire and forget)
-        if (orderId) {
-          fulfillOrder(orderId, item.networkId, item.phoneNumber, item.bundle.sizeGB);
-        }
+      if (error || (data && (data as any).error)) {
+        const msg = (data as any)?.error || error?.message || "Order failed";
+        throw new Error(msg);
       }
 
       await refreshProfile();
@@ -118,8 +110,10 @@ export default function Cart() {
             reference,
             items: items.map((item) => ({
               network: item.network,
+              network_id: item.networkId,
               phone: item.phoneNumber,
               bundle: item.bundle.size,
+              bundle_size_gb: item.bundle.sizeGB,
               amount: item.effectivePrice,
             })),
           };
@@ -129,14 +123,6 @@ export default function Cart() {
             const msg = (data as any)?.error || error?.message || "Payment verification failed";
             throw new Error(msg);
           }
-
-          const orderIds: string[] = (data as any)?.orderIds || [];
-          orderIds.forEach((orderId, idx) => {
-            const item = items[idx];
-            if (orderId && item) {
-              fulfillOrder(orderId, item.networkId, item.phoneNumber, item.bundle.sizeGB);
-            }
-          });
 
           await refreshProfile();
           toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
