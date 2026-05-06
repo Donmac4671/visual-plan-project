@@ -11,9 +11,31 @@ const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
 interface CartItem {
   network: string;
+  network_id?: string;
   phone: string;
   bundle: string;
+  bundle_size_gb?: number;
   amount: number;
+}
+
+async function fulfillOrder(
+  supabaseUrl: string,
+  serviceKey: string,
+  orderId: string,
+  networkId: string,
+  phone: string,
+  bundleSizeGb: number,
+) {
+  const resp = await fetch(`${supabaseUrl}/functions/v1/fulfill-order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ order_id: orderId, network_id: networkId, phone, bundle_size_gb: bundleSizeGb }),
+  });
+  const result = await resp.json().catch(() => ({}));
+  return { ok: resp.ok, status: resp.status, result };
 }
 
 Deno.serve(async (req) => {
@@ -101,6 +123,7 @@ Deno.serve(async (req) => {
     }
 
     const orderIds: string[] = [];
+    const fulfillments: unknown[] = [];
     for (const item of items) {
       const { data, error } = await admin.rpc("pay_order_with_paystack_for_user", {
         p_user_id: userId,
@@ -114,10 +137,17 @@ Deno.serve(async (req) => {
         console.error("pay_order_with_paystack_for_user failed:", error);
         return new Response(JSON.stringify({ error: error.message, createdOrderIds: orderIds }), { status: 500, headers: jsonHeaders });
       }
-      if (data) orderIds.push(data as string);
+      if (data) {
+        const orderId = String(data);
+        orderIds.push(orderId);
+        const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, ""));
+        const fulfillment = await fulfillOrder(supabaseUrl, serviceKey, orderId, item.network_id ?? item.network, item.phone, bundleSizeGb);
+        fulfillments.push({ orderId, ...fulfillment });
+        console.log("Paystack order fulfillment result:", JSON.stringify({ orderId, fulfillment }));
+      }
     }
 
-    return new Response(JSON.stringify({ status: "ok", orderIds }), { status: 200, headers: jsonHeaders });
+    return new Response(JSON.stringify({ status: "ok", orderIds, fulfillments }), { status: 200, headers: jsonHeaders });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("paystack-verify-order error:", err);
