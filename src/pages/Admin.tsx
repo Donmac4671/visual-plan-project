@@ -114,7 +114,7 @@ export default function Admin() {
   const handleSetAutoDeliver = async (value: string) => {
     setAutoDeliverMinutes(value);
     const minutes = value === "manual" ? null : parseInt(value, 10);
-    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes });
+    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes as any });
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     toast({
       title: "Auto-Deliver Updated",
