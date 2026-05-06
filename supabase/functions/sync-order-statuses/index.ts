@@ -43,6 +43,11 @@ function mapStatus(raw: string, current: string): string {
   return current;
 }
 
+function parseBundleSizeGb(bundle: string): number {
+  const value = parseFloat(String(bundle).replace(/[^\d.]/g, ""));
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -55,8 +60,41 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Get all non-final orders from the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: unsubmittedOrders, error: unsubmittedError } = await supabase
+      .from("orders")
+      .select("id, order_ref, network, phone_number, bundle_size, status")
+      .in("status", ["processing", "waiting"])
+      .is("gh_reference", null)
+      .gte("created_at", sevenDaysAgo)
+      .limit(25);
+
+    if (unsubmittedError) throw unsubmittedError;
+
+    const submitResults: any[] = [];
+    for (const order of unsubmittedOrders ?? []) {
+      try {
+        const resp = await fetch(`${Deno.env.get("SUPABASE_URL")!}/functions/v1/fulfill-order`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+          },
+          body: JSON.stringify({
+            order_id: order.id,
+            network_id: order.network,
+            phone: order.phone_number,
+            bundle_size_gb: parseBundleSizeGb(order.bundle_size),
+          }),
+        });
+        const result = await resp.json().catch(() => ({}));
+        submitResults.push({ order_ref: order.order_ref, sent: resp.ok, status: resp.status, result });
+      } catch (e: any) {
+        submitResults.push({ order_ref: order.order_ref, sent: false, error: e?.message || "Unknown error" });
+      }
+    }
+
+    // Get all non-final orders from the last 7 days
     const { data: orders, error } = await supabase
       .from("orders")
       .select("id, gh_reference, order_ref, status")
@@ -117,8 +155,8 @@ serve(async (req) => {
       }
     }
 
-    console.log(`sync-order-statuses: checked=${orders.length} updated=${updated}`);
-    return new Response(JSON.stringify({ checked: orders.length, updated, results }), {
+    console.log(`sync-order-statuses: submitted=${submitResults.length} checked=${orders.length} updated=${updated}`);
+    return new Response(JSON.stringify({ submitted: submitResults.length, checked: orders.length, updated, submitResults, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
