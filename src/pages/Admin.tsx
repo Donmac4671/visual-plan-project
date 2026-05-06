@@ -114,7 +114,7 @@ export default function Admin() {
   const handleSetAutoDeliver = async (value: string) => {
     setAutoDeliverMinutes(value);
     const minutes = value === "manual" ? null : parseInt(value, 10);
-    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes });
+    const { error } = await supabase.rpc("admin_set_auto_deliver_minutes", { p_minutes: minutes as any });
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     toast({
       title: "Auto-Deliver Updated",
@@ -477,6 +477,15 @@ export default function Admin() {
             </Select>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by phone number..."
+                value={orderPhoneSearch}
+                onChange={(e) => setOrderPhoneSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
