@@ -211,7 +211,7 @@ export default function MashupAirtime() {
                 <p className="text-sm font-semibold">
                   {pkg.data} + {pkg.minutes}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">5% fee will be added at checkout</p>
+                <p className="text-xs text-muted-foreground mt-1">A small fee will be added at checkout</p>
                 <p className="text-xs text-muted-foreground mt-1">⚠️ MTN numbers only</p>
               </div>
               <div>
