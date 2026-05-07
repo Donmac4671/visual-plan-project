@@ -33,7 +33,7 @@ export default function Admin() {
 
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
-    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "broadcast", "live-chat"];
+    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "broadcast", "live-chat", "rankings"];
     return validTabs.includes(hash) ? hash : "analytics";
   };
 
@@ -314,13 +314,18 @@ export default function Admin() {
             <TabsTrigger value="site-message" className="gap-2 justify-center whitespace-nowrap"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
             <TabsTrigger value="broadcast" className="gap-2 justify-center whitespace-nowrap"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
             <TabsTrigger value="live-chat" className="gap-2 justify-center whitespace-nowrap"><MessageCircle className="w-4 h-4" /> Live Chat</TabsTrigger>
+            <TabsTrigger value="rankings" className="gap-2 justify-center whitespace-nowrap"><Crown className="w-4 h-4" /> Rankings</TabsTrigger>
           </TabsList>
         </div>
 
         {/* ANALYTICS TAB */}
         <TabsContent value="analytics">
-          <AdminMonthlyRankings users={users} orders={orders} />
           <AdminAnalytics users={users} orders={orders} topups={topups} complaints={complaints} />
+        </TabsContent>
+
+        {/* RANKINGS TAB */}
+        <TabsContent value="rankings">
+          <AdminMonthlyRankings users={users} orders={orders} />
         </TabsContent>
 
         {/* USERS TAB */}
