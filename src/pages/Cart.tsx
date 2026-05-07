@@ -59,7 +59,7 @@ export default function Cart() {
     setProcessing(true);
 
     try {
-      // Handle Airtime & Mashup - direct RPC
+      // Handle Airtime & Mashup
       for (const item of airtimeMashupItems) {
         const amount =
           item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice;
@@ -84,7 +84,7 @@ export default function Cart() {
         });
       }
 
-      // Handle Data orders - DIRECT call to fulfill-order (bypass place-wallet-order)
+      // Handle Data orders - FIXED: Call fulfill-order directly
       if (dataItems.length > 0) {
         const dataPhones = dataItems.map((i) => i.phoneNumber);
         const pendingPhones = await checkPendingOrders(dataPhones);
@@ -99,7 +99,6 @@ export default function Cart() {
           return;
         }
 
-        // Create each order and call fulfill-order directly
         for (const item of dataItems) {
           // Step 1: Create order and deduct wallet
           const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
@@ -111,8 +110,8 @@ export default function Cart() {
 
           if (orderError) throw new Error(`Order failed: ${orderError.message}`);
 
-          // Step 2: Call fulfill-order directly
-          const { error: fulfillError } = await supabase.functions.invoke("fulfill-order", {
+          // Step 2: Call fulfill-order directly (same as resend button)
+          await supabase.functions.invoke("fulfill-order", {
             body: {
               order_id: orderId,
               network_id: item.networkId,
@@ -120,27 +119,15 @@ export default function Cart() {
               bundle_size_gb: getBundleSizeGB(item.bundle.size),
             },
           });
-
-          if (fulfillError) {
-            console.error("Fulfill order error:", fulfillError);
-            toast({
-              title: "Warning",
-              description: `Order created but processing may be delayed.`,
-              variant: "default",
-            });
-          } else {
-            console.log(`✅ Order ${orderId} sent to GHData`);
-          }
         }
 
         toast({ title: "Data Orders Placed!", description: `${dataItems.length} data order(s) are processing.` });
       }
 
       await refreshProfile();
-      toast({ title: "Success!", description: "Orders placed successfully" });
+      toast({ title: "Success!", description: `${airtimeMashupItems.length + dataItems.length} order(s) placed.` });
       clearCart();
     } catch (err: any) {
-      console.error("Payment error:", err);
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setProcessing(false);
@@ -151,7 +138,9 @@ export default function Cart() {
     if (!profile) return;
     setProcessing(true);
 
+    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
     const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+
     const dataPhones = dataItems.map((i) => i.phoneNumber);
     const pendingPhones = await checkPendingOrders(dataPhones);
 
@@ -168,20 +157,34 @@ export default function Cart() {
     const phones = items.map((i) => i.phoneNumber.replace(/\D/g, "")).filter(Boolean);
     const syntheticEmail = `${phones[0] || "guest"}-${Date.now()}@donmacdatahub.com`;
 
+    const itemsForBackend = [
+      ...dataItems.map((item) => ({
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: getBundleSizeGB(item.bundle.size),
+        amount: item.effectivePrice,
+      })),
+      ...airtimeMashupItems.map((item) => ({
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: 0,
+        amount:
+          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice,
+      })),
+    ];
+
     await initPaystack({
       email: syntheticEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          const { error } = await supabase.functions.invoke("paystack-verify-order", {
-            body: {
-              reference,
-              items: items.map((item) => ({ ...item, bundle_size_gb: getBundleSizeGB(item.bundle.size) })),
-            },
-          });
-          if (error) throw new Error(error.message);
+          await supabase.functions.invoke("paystack-verify-order", { body: { reference, items: itemsForBackend } });
           await refreshProfile();
-          toast({ title: "Order Placed!", description: `${items.length} item(s) ordered` });
+          toast({ title: "Order Placed!", description: `${items.length} item(s) ordered via Paystack` });
           clearCart();
         } catch (err: any) {
           toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -209,7 +212,7 @@ export default function Cart() {
                 Clear All
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} title="Close cart">
               <X className="w-5 h-5" />
             </Button>
           </div>
@@ -219,20 +222,26 @@ export default function Cart() {
           <div className="p-12 text-center text-muted-foreground">
             <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Your cart is empty</p>
+            <p className="text-sm">Select data bundles from the dashboard to add them here</p>
           </div>
         ) : (
           <>
             <div className="divide-y divide-border">
               {items.map((item) => (
                 <div key={item.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">
-                      {item.network} — {item.bundle.size}
-                    </p>
-                    <p className="text-sm text-muted-foreground">📞 {item.phoneNumber}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center">
+                      <span className="text-xs font-bold">{item.network.slice(0, 3)}</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {item.network} — {item.bundle.size}
+                      </p>
+                      <p className="text-sm text-muted-foreground">📞 {item.phoneNumber}</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold">{formatCurrency(item.effectivePrice)}</span>
+                    <span className="font-bold text-foreground">{formatCurrency(item.effectivePrice)}</span>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -242,37 +251,77 @@ export default function Cart() {
             </div>
 
             <div className="p-4 border-t border-border space-y-4">
-              <div className="flex justify-between">
-                <span>Total</span>
-                <span className="text-xl font-bold">{formatCurrency(grandTotal)}</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+                {mashupFee > 0 && (
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>MashUp Fee (5%)</span>
+                    <span>{formatCurrency(mashupFee)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="font-semibold text-foreground">Total</span>
+                  <span className="text-xl font-bold text-foreground">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setPaymentMethod("wallet")}
-                  className={`flex-1 p-3 rounded-xl border-2 ${paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border"}`}
-                >
-                  <Wallet className="w-5 h-5 mx-auto mb-1 text-primary" />
-                  <span className="text-sm">Wallet</span>
-                </button>
-                <button
-                  onClick={() => setPaymentMethod("paystack")}
-                  className={`flex-1 p-3 rounded-xl border-2 ${paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border"}`}
-                >
-                  <CreditCard className="w-5 h-5 mx-auto mb-1 text-green-600" />
-                  <span className="text-sm">Paystack</span>
-                </button>
+              <div>
+                <p className="font-semibold text-foreground mb-2">Payment method</p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("wallet")}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "wallet" ? "border-primary" : "border-muted-foreground"}`}
+                    >
+                      {paymentMethod === "wallet" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                    </span>
+                    <Wallet className="w-5 h-5 text-primary" />
+                    <div className="text-left">
+                      <p className="font-semibold text-foreground">Pay with Wallet</p>
+                      <p className="text-xs text-muted-foreground">
+                        Balance: {formatCurrency(profile?.wallet_balance ?? 0)}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("paystack")}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "paystack" ? "border-primary" : "border-muted-foreground"}`}
+                    >
+                      {paymentMethod === "paystack" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                    </span>
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                    <div className="text-left">
+                      <p className="font-semibold text-foreground">Pay with Paystack</p>
+                      {paymentMethod === "paystack" && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrency(grandTotal)} + {formatCurrency(paystackFee)} fee ={" "}
+                          {formatCurrency(paystackTotal)}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                </div>
               </div>
 
               <Button
-                className="w-full"
+                className="w-full gradient-primary border-0"
                 size="lg"
                 disabled={processing}
                 onClick={paymentMethod === "wallet" ? handlePayWithWallet : handlePayWithPaystack}
               >
                 {processing
                   ? "Processing…"
-                  : `Pay ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
+                  : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
               </Button>
             </div>
           </>
