@@ -265,7 +265,7 @@ export default function Cart() {
                 disabled={processing}
                 onClick={paymentMethod === "wallet" ? handlePayWithWallet : handlePayWithPaystack}
               >
-                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : total)}`}
+                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
               </Button>
             </div>
           </>
