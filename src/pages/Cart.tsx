@@ -258,7 +258,7 @@ export default function Cart() {
                 </div>
                 {mashupFee > 0 && (
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>MashUp Fee (5%)</span>
+                    <span>Fee </span>
                     <span>{formatCurrency(mashupFee)}</span>
                   </div>
                 )}
