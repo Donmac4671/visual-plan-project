@@ -36,25 +36,34 @@ export default function Cart() {
 
   // Helper function to extract bundle size in GB
   const extractBundleSizeGB = (bundleSize: string, sizeGB: number): number => {
-    // If sizeGB is already a valid number, use it
     if (sizeGB && sizeGB > 0) {
       return sizeGB;
     }
-
-    // Otherwise parse from the bundle size string
     const match = bundleSize.match(/(\d+(?:\.\d+)?)\s*(GB|MB)/i);
     if (match) {
       const value = parseFloat(match[1]);
       const unit = match[2].toUpperCase();
       return unit === "MB" ? value / 1000 : value;
     }
-
-    // Default to 1GB if can't parse
     return 1;
   };
 
   const handlePayWithWallet = async () => {
     if (!profile) return;
+
+    console.log("=== CART DEBUG ===");
+    console.log(
+      "All cart items:",
+      items.map((i) => ({
+        id: i.id,
+        networkId: i.networkId,
+        network: i.network,
+        bundle: i.bundle.size,
+        sizeGB: i.bundle.sizeGB,
+        phone: i.phoneNumber,
+        price: i.effectivePrice,
+      })),
+    );
 
     if (profile.wallet_balance < grandTotal) {
       toast({
@@ -65,8 +74,16 @@ export default function Cart() {
       return;
     }
 
+    // Filter items by type
     const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
     const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+
+    console.log("Airtime/Mashup items:", airtimeMashupItems.length);
+    console.log("Data items:", dataItems.length);
+    console.log(
+      "Data items details:",
+      dataItems.map((i) => ({ networkId: i.networkId, bundle: i.bundle.size, sizeGB: i.bundle.sizeGB })),
+    );
 
     setProcessing(true);
 
@@ -106,7 +123,7 @@ export default function Cart() {
         console.log(`✅ ${item.networkId} order ${orderId} is processing (manual delivery required)`);
         toast({
           title: `${item.networkId.toUpperCase()} Order Created!`,
-          description: `Order for ${item.phoneNumber} is processing. You will be notified when delivered.`,
+          description: `Order for ${item.phoneNumber} is processing.`,
         });
       }
 
@@ -114,6 +131,8 @@ export default function Cart() {
       // Handle Data orders - Call place-wallet-order
       // ============================================================
       if (dataItems.length > 0) {
+        console.log(`📡 WILL CALL place-wallet-order for ${dataItems.length} data items`);
+
         const dataPhones = dataItems.map((i) => i.phoneNumber);
         const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
 
@@ -130,9 +149,6 @@ export default function Cart() {
         // Build data items for backend with proper bundle_size_gb
         const dataItemsForBackend = dataItems.map((item) => {
           const bundleSizeGb = extractBundleSizeGB(item.bundle.size, item.bundle.sizeGB);
-
-          console.log(`📦 Item: ${item.networkId}, Bundle: ${item.bundle.size}, SizeGB: ${bundleSizeGb}`);
-
           return {
             network: item.network,
             network_id: item.networkId,
@@ -143,13 +159,13 @@ export default function Cart() {
           };
         });
 
-        console.log("🔍 Sending to place-wallet-order:", JSON.stringify(dataItemsForBackend, null, 2));
+        console.log("📦 Sending to place-wallet-order:", JSON.stringify(dataItemsForBackend, null, 2));
 
         const { data, error } = await supabase.functions.invoke("place-wallet-order", {
           body: { items: dataItemsForBackend },
         });
 
-        console.log("🔍 Response from place-wallet-order:", { data, error });
+        console.log("📡 Response from place-wallet-order:", { data, error });
 
         if (error || (data && (data as any).error)) {
           const msg = (data as any)?.error || error?.message || "Order failed";
@@ -158,14 +174,16 @@ export default function Cart() {
 
         toast({
           title: "Data Orders Placed!",
-          description: `${dataItems.length} data order(s) are processing. Will auto-complete in 30 minutes.`,
+          description: `${dataItems.length} data order(s) are processing.`,
         });
+      } else {
+        console.log("⚠️ No data items to send to place-wallet-order");
       }
 
       await refreshProfile();
       toast({
         title: "Success!",
-        description: `${airtimeMashupItems.length} order(s) created. ${dataItems.length} data order(s) processing.`,
+        description: `${airtimeMashupItems.length + dataItems.length} order(s) placed.`,
       });
       clearCart();
     } catch (err: any) {
