@@ -34,6 +34,25 @@ export default function Cart() {
     return data?.map((o) => o.phone_number) || [];
   };
 
+  // Helper function to extract bundle size in GB
+  const extractBundleSizeGB = (bundleSize: string, sizeGB: number): number => {
+    // If sizeGB is already a valid number, use it
+    if (sizeGB && sizeGB > 0) {
+      return sizeGB;
+    }
+
+    // Otherwise parse from the bundle size string
+    const match = bundleSize.match(/(\d+(?:\.\d+)?)\s*(GB|MB)/i);
+    if (match) {
+      const value = parseFloat(match[1]);
+      const unit = match[2].toUpperCase();
+      return unit === "MB" ? value / 1000 : value;
+    }
+
+    // Default to 1GB if can't parse
+    return 1;
+  };
+
   const handlePayWithWallet = async () => {
     if (!profile) return;
 
@@ -72,7 +91,6 @@ export default function Cart() {
           throw new Error(`${item.networkId} order failed: ${orderError.message}`);
         }
 
-        // ✅ Set to "processing" (not completed) - manual delivery
         const { error: updateError } = await supabase
           .from("orders")
           .update({
@@ -93,7 +111,7 @@ export default function Cart() {
       }
 
       // ============================================================
-      // Handle Data orders - Also set to "processing" (auto-delivery after 30 min)
+      // Handle Data orders - Call place-wallet-order
       // ============================================================
       if (dataItems.length > 0) {
         const dataPhones = dataItems.map((i) => i.phoneNumber);
@@ -109,18 +127,29 @@ export default function Cart() {
           return;
         }
 
-        const dataItemsForBackend = dataItems.map((item) => ({
-          network: item.network,
-          network_id: item.networkId,
-          phone: item.phoneNumber,
-          bundle: item.bundle.size,
-          bundle_size_gb: item.bundle.sizeGB,
-          amount: item.effectivePrice,
-        }));
+        // Build data items for backend with proper bundle_size_gb
+        const dataItemsForBackend = dataItems.map((item) => {
+          const bundleSizeGb = extractBundleSizeGB(item.bundle.size, item.bundle.sizeGB);
+
+          console.log(`📦 Item: ${item.networkId}, Bundle: ${item.bundle.size}, SizeGB: ${bundleSizeGb}`);
+
+          return {
+            network: item.network,
+            network_id: item.networkId,
+            phone: item.phoneNumber,
+            bundle: item.bundle.size,
+            bundle_size_gb: bundleSizeGb,
+            amount: item.effectivePrice,
+          };
+        });
+
+        console.log("🔍 Sending to place-wallet-order:", JSON.stringify(dataItemsForBackend, null, 2));
 
         const { data, error } = await supabase.functions.invoke("place-wallet-order", {
           body: { items: dataItemsForBackend },
         });
+
+        console.log("🔍 Response from place-wallet-order:", { data, error });
 
         if (error || (data && (data as any).error)) {
           const msg = (data as any)?.error || error?.message || "Order failed";
@@ -182,7 +211,7 @@ export default function Cart() {
         network_id: item.networkId,
         phone: item.phoneNumber,
         bundle: item.bundle.size,
-        bundle_size_gb: item.bundle.sizeGB,
+        bundle_size_gb: extractBundleSizeGB(item.bundle.size, item.bundle.sizeGB),
         amount: item.effectivePrice,
         is_non_gh: false,
       })),
