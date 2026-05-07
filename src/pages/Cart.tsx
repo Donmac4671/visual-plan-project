@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatCurrency, calculatePaystackFee } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee, calculateMashupFee } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingCart, Wallet, CreditCard, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
