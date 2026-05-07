@@ -10,7 +10,7 @@ import { MASHUP_PACKAGES, MashupPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrenc
 type Mode = null | "mashup" | "airtime";
 
 // MTN prefixes for Mashup validation
-const MTN_PREFIXES = ["024", "054", "055", "059", "020", "050"];
+const MTN_PREFIXES = ["024", "054", "055", "059", "050", "0257"];
 
 function isMTNNumber(phone: string): boolean {
   return MTN_PREFIXES.some((prefix) => phone.startsWith(prefix));
