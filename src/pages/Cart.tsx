@@ -18,9 +18,7 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
   const [processing, setProcessing] = useState(false);
 
-  const mashupSubtotal = items
-    .filter((i) => i.networkId === "mashup")
-    .reduce((sum, i) => sum + i.effectivePrice, 0);
+  const mashupSubtotal = items.filter((i) => i.networkId === "mashup").reduce((sum, i) => sum + i.effectivePrice, 0);
   const mashupFee = calculateMashupFee(mashupSubtotal);
   const grandTotal = total + mashupFee;
   const paystackFee = calculatePaystackFee(grandTotal);
@@ -38,51 +36,116 @@ export default function Cart() {
 
   const handlePayWithWallet = async () => {
     if (!profile) return;
+
     if (profile.wallet_balance < grandTotal) {
-      toast({ title: "Insufficient Balance", description: "Please top up your wallet first.", variant: "destructive" });
+      toast({
+        title: "Insufficient Balance",
+        description: "Please top up your wallet first.",
+        variant: "destructive",
+      });
       return;
     }
-    const itemsForBackend = items.map((item) => {
-      const amt = item.networkId === "mashup"
-        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
-        : item.effectivePrice;
-      return {
-        network: item.network,
-        network_id: item.networkId,
-        phone: item.phoneNumber,
-        bundle: item.bundle.size,
-        bundle_size_gb: item.bundle.sizeGB,
-        amount: amt,
-      };
-    });
+
+    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
 
     setProcessing(true);
-    try {
-      const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
-      const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
-      if (pendingPhones.length > 0) {
-        toast({
-          title: "Pending Order Exists",
-          description: `Phone number(s) ${pendingPhones.join(", ")} already have a pending/processing order. Wait for delivery first.`,
-          variant: "destructive",
-        });
-        setProcessing(false);
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("place-wallet-order", {
-        body: { items: itemsForBackend },
-      });
 
-      if (error || (data && (data as any).error)) {
-        const msg = (data as any)?.error || error?.message || "Order failed";
-        throw new Error(msg);
+    try {
+      // ============================================================
+      // Handle Airtime & Mashup - Set status to "processing" (manual delivery)
+      // ============================================================
+      for (const item of airtimeMashupItems) {
+        console.log(`Processing ${item.networkId} for ${item.phoneNumber}...`);
+
+        const amount =
+          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice;
+
+        const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
+          p_network: item.network,
+          p_phone: item.phoneNumber,
+          p_bundle: item.bundle.size,
+          p_amount: amount,
+        });
+
+        if (orderError) {
+          throw new Error(`${item.networkId} order failed: ${orderError.message}`);
+        }
+
+        // ✅ Set to "processing" (not completed) - manual delivery
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({
+            status: "processing",
+            gh_reference: `${item.networkId}-manual-${Date.now()}`,
+          })
+          .eq("id", orderId);
+
+        if (updateError) {
+          console.error("Failed to update order status:", updateError);
+        }
+
+        console.log(`✅ ${item.networkId} order ${orderId} is processing (manual delivery required)`);
+        toast({
+          title: `${item.networkId.toUpperCase()} Order Created!`,
+          description: `Order for ${item.phoneNumber} is processing. You will be notified when delivered.`,
+        });
+      }
+
+      // ============================================================
+      // Handle Data orders - Also set to "processing" (auto-delivery after 30 min)
+      // ============================================================
+      if (dataItems.length > 0) {
+        const dataPhones = dataItems.map((i) => i.phoneNumber);
+        const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
+
+        if (pendingPhones.length > 0) {
+          toast({
+            title: "Pending Order Exists",
+            description: `Phone number(s) ${pendingPhones.join(", ")} already have a pending/processing order. Wait for delivery first.`,
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
+
+        const dataItemsForBackend = dataItems.map((item) => ({
+          network: item.network,
+          network_id: item.networkId,
+          phone: item.phoneNumber,
+          bundle: item.bundle.size,
+          bundle_size_gb: item.bundle.sizeGB,
+          amount: item.effectivePrice,
+        }));
+
+        const { data, error } = await supabase.functions.invoke("place-wallet-order", {
+          body: { items: dataItemsForBackend },
+        });
+
+        if (error || (data && (data as any).error)) {
+          const msg = (data as any)?.error || error?.message || "Order failed";
+          throw new Error(msg);
+        }
+
+        toast({
+          title: "Data Orders Placed!",
+          description: `${dataItems.length} data order(s) are processing. Will auto-complete in 30 minutes.`,
+        });
       }
 
       await refreshProfile();
-      toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered for ${formatCurrency(total)}` });
+      toast({
+        title: "Success!",
+        description: `${airtimeMashupItems.length} order(s) created. ${dataItems.length} data order(s) processing.`,
+      });
       clearCart();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
+      console.error("Payment error:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Payment failed. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setProcessing(false);
     }
@@ -93,9 +156,12 @@ export default function Cart() {
 
     setProcessing(true);
 
-    // Check for pending orders before initiating payment (data orders only)
-    const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
+    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+
+    const dataPhones = dataItems.map((i) => i.phoneNumber);
     const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
+
     if (pendingPhones.length > 0) {
       toast({
         title: "Pending Order Exists",
@@ -106,32 +172,38 @@ export default function Cart() {
       return;
     }
 
-    // Paystack requires unique emails per transaction. Build a synthetic email
-    // from the beneficiary phone number(s) so each transaction looks unique.
     const phones = items.map((i) => i.phoneNumber.replace(/\D/g, "")).filter(Boolean);
     const phoneKey = `${phones[0] || "guest"}-${Date.now()}`;
     const syntheticEmail = `${phoneKey}@donmacdatahub.com`;
 
-    const itemsForBackend = items.map((item) => {
-      const amt = item.networkId === "mashup"
-        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
-        : item.effectivePrice;
-      return {
+    const allItemsForBackend = [
+      ...dataItems.map((item) => ({
         network: item.network,
         network_id: item.networkId,
         phone: item.phoneNumber,
         bundle: item.bundle.size,
         bundle_size_gb: item.bundle.sizeGB,
-        amount: amt,
-      };
-    });
+        amount: item.effectivePrice,
+        is_non_gh: false,
+      })),
+      ...airtimeMashupItems.map((item) => ({
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: 0,
+        amount:
+          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice,
+        is_non_gh: true,
+      })),
+    ];
 
     await initPaystack({
       email: syntheticEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          const payload = { reference, items: itemsForBackend };
+          const payload = { reference, items: allItemsForBackend };
 
           const { data, error } = await supabase.functions.invoke("paystack-verify-order", { body: payload });
           if (error || (data && (data as any).error)) {
@@ -140,9 +212,8 @@ export default function Cart() {
           }
 
           await refreshProfile();
-          toast({ title: "Order Placed!", description: `${items.length} bundle(s) ordered via Paystack` });
+          toast({ title: "Order Placed!", description: `${items.length} item(s) ordered via Paystack` });
           clearCart();
-
         } catch (err: any) {
           toast({ title: "Error", description: err.message || "Payment failed", variant: "destructive" });
         } finally {
@@ -165,7 +236,9 @@ export default function Cart() {
           </h2>
           <div className="flex items-center gap-2">
             {items.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>Clear All</Button>
+              <Button variant="ghost" size="sm" className="text-destructive" onClick={clearCart}>
+                Clear All
+              </Button>
             )}
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} title="Close cart">
               <X className="w-5 h-5" />
@@ -189,7 +262,9 @@ export default function Cart() {
                       <span className="text-xs font-bold">{item.network.slice(0, 3)}</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">{item.network} — {item.bundle.size}</p>
+                      <p className="font-semibold text-foreground">
+                        {item.network} — {item.bundle.size}
+                      </p>
                       <p className="text-sm text-muted-foreground">📞 {item.phoneNumber}</p>
                     </div>
                   </div>
@@ -211,7 +286,7 @@ export default function Cart() {
                 </div>
                 {mashupFee > 0 && (
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Fees</span>
+                    <span>MashUp Fee (5%)</span>
                     <span>{formatCurrency(mashupFee)}</span>
                   </div>
                 )}
@@ -229,13 +304,17 @@ export default function Cart() {
                     onClick={() => setPaymentMethod("wallet")}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border"}`}
                   >
-                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "wallet" ? "border-primary" : "border-muted-foreground"}`}>
+                    <span
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "wallet" ? "border-primary" : "border-muted-foreground"}`}
+                    >
                       {paymentMethod === "wallet" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
                     </span>
                     <Wallet className="w-5 h-5 text-primary" />
                     <div className="text-left">
                       <p className="font-semibold text-foreground">Pay with Wallet</p>
-                      <p className="text-xs text-muted-foreground">Balance: {formatCurrency(profile?.wallet_balance ?? 0)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Balance: {formatCurrency(profile?.wallet_balance ?? 0)}
+                      </p>
                     </div>
                   </button>
                   <button
@@ -243,7 +322,9 @@ export default function Cart() {
                     onClick={() => setPaymentMethod("paystack")}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border"}`}
                   >
-                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "paystack" ? "border-primary" : "border-muted-foreground"}`}>
+                    <span
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "paystack" ? "border-primary" : "border-muted-foreground"}`}
+                    >
                       {paymentMethod === "paystack" && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
                     </span>
                     <CreditCard className="w-5 h-5 text-green-600" />
@@ -251,7 +332,8 @@ export default function Cart() {
                       <p className="font-semibold text-foreground">Pay with Paystack</p>
                       {paymentMethod === "paystack" && (
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(grandTotal)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
+                          {formatCurrency(grandTotal)} + {formatCurrency(paystackFee)} fee ={" "}
+                          {formatCurrency(paystackTotal)}
                         </p>
                       )}
                     </div>
@@ -265,13 +347,14 @@ export default function Cart() {
                 disabled={processing}
                 onClick={paymentMethod === "wallet" ? handlePayWithWallet : handlePayWithPaystack}
               >
-                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
+                {processing
+                  ? "Processing…"
+                  : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
               </Button>
             </div>
           </>
         )}
       </div>
-
     </DashboardLayout>
   );
 }
