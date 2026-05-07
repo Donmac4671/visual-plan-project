@@ -38,10 +38,23 @@ export default function Cart() {
 
   const handlePayWithWallet = async () => {
     if (!profile) return;
-    if (profile.wallet_balance < total) {
+    if (profile.wallet_balance < grandTotal) {
       toast({ title: "Insufficient Balance", description: "Please top up your wallet first.", variant: "destructive" });
       return;
     }
+    const itemsForBackend = items.map((item) => {
+      const amt = item.networkId === "mashup"
+        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
+        : item.effectivePrice;
+      return {
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: item.bundle.sizeGB,
+        amount: amt,
+      };
+    });
 
     setProcessing(true);
     try {
