@@ -251,7 +251,7 @@ export default function Cart() {
                       <p className="font-semibold text-foreground">Pay with Paystack</p>
                       {paymentMethod === "paystack" && (
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(total)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
+                          {formatCurrency(grandTotal)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
                         </p>
                       )}
                     </div>
