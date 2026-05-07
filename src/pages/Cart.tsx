@@ -58,7 +58,8 @@ export default function Cart() {
 
     setProcessing(true);
     try {
-      const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+      const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
+      const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
       if (pendingPhones.length > 0) {
         toast({
           title: "Pending Order Exists",
@@ -69,16 +70,7 @@ export default function Cart() {
         return;
       }
       const { data, error } = await supabase.functions.invoke("place-wallet-order", {
-        body: {
-          items: items.map((item) => ({
-            network: item.network,
-            network_id: item.networkId,
-            phone: item.phoneNumber,
-            bundle: item.bundle.size,
-            bundle_size_gb: item.bundle.sizeGB,
-            amount: item.effectivePrice,
-          })),
-        },
+        body: { items: itemsForBackend },
       });
 
       if (error || (data && (data as any).error)) {
