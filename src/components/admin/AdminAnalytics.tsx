@@ -3,14 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, subDays, startOfDay, endOfDay, isBefore, isAfter } from "date-fns";
-import { Users, ShoppingBag, DollarSign, TrendingUp, AlertCircle, CheckCircle2, CalendarIcon, X, RefreshCw, Wallet, Eye, EyeOff, Database } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+  Users,
+  ShoppingBag,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  CalendarIcon,
+  X,
+  RefreshCw,
+  Wallet,
+  Eye,
+  EyeOff,
+  Database,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -35,46 +44,130 @@ const profitChartConfig: ChartConfig = {
   profit: { label: "Profit", color: "hsl(var(--primary))" },
 };
 
-const PIE_COLORS = [
-  "hsl(var(--warning))",
-  "hsl(var(--primary))",
-  "hsl(var(--success))",
-  "hsl(var(--destructive))",
-];
+const PIE_COLORS = ["hsl(var(--warning))", "hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--destructive))"];
 
-// Original cost prices per network/bundle
+// Original cost prices per network/bundle (DATA ONLY)
 const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
-  "MTN": {
-    '1GB': 3.94, '2GB': 7.98, '3GB': 12.00, '4GB': 16.06, '5GB': 20.10,
-    '6GB': 23.94, '7GB': 27.60, '8GB': 32.12, '10GB': 39.30, '15GB': 57.77, '20GB': 76.96,
-    '25GB': 97.16, '30GB': 117.67, '40GB': 154.53, '50GB': 194.93,
+  MTN: {
+    "1GB": 3.94,
+    "2GB": 7.98,
+    "3GB": 12.0,
+    "4GB": 16.06,
+    "5GB": 20.1,
+    "6GB": 23.94,
+    "7GB": 27.6,
+    "8GB": 32.12,
+    "10GB": 39.3,
+    "15GB": 57.77,
+    "20GB": 76.96,
+    "25GB": 97.16,
+    "30GB": 117.67,
+    "40GB": 154.53,
+    "50GB": 194.93,
   },
-  "TELECEL": {
-    '2GB': 9.09, '3GB': 13.54, '5GB': 19.09, '10GB': 36.26, '15GB': 53.43,
-    '20GB': 70.70, '30GB': 104.03, '40GB': 138.37, '50GB': 172.71,
+  TELECEL: {
+    "2GB": 9.09,
+    "3GB": 13.54,
+    "5GB": 19.09,
+    "10GB": 36.26,
+    "15GB": 53.43,
+    "20GB": 70.7,
+    "30GB": 104.03,
+    "40GB": 138.37,
+    "50GB": 172.71,
   },
   "AT BIG TIME": {
-    '15GB': 47.47, '20GB': 55.55, '30GB': 65.65, '40GB': 78.78, '50GB': 86.86,
-    '60GB': 98.98, '70GB': 121.20, '80GB': 141.40, '90GB': 151.50,
-    '100GB': 161.60, '130GB': 202.00, '140GB': 225.23, '150GB': 250.48, '200GB': 321.18,
+    "15GB": 47.47,
+    "20GB": 55.55,
+    "30GB": 65.65,
+    "40GB": 78.78,
+    "50GB": 86.86,
+    "60GB": 98.98,
+    "70GB": 121.2,
+    "80GB": 141.4,
+    "90GB": 151.5,
+    "100GB": 161.6,
+    "130GB": 202.0,
+    "140GB": 225.23,
+    "150GB": 250.48,
+    "200GB": 321.18,
   },
   "AT PREMIUM": {
-    '1GB': 3.73, '2GB': 7.46, '3GB': 11.21, '4GB': 14.95, '5GB': 18.69,
-    '6GB': 22.42, '7GB': 26.16, '8GB': 29.90, '10GB': 37.27, '12GB': 44.84,
-    '15GB': 56.05, '20GB': 74.74, '25GB': 93.43, '30GB': 112.11,
+    "1GB": 3.73,
+    "2GB": 7.46,
+    "3GB": 11.21,
+    "4GB": 14.95,
+    "5GB": 18.69,
+    "6GB": 22.42,
+    "7GB": 26.16,
+    "8GB": 29.9,
+    "10GB": 37.27,
+    "12GB": 44.84,
+    "15GB": 56.05,
+    "20GB": 74.74,
+    "25GB": 93.43,
+    "30GB": 112.11,
   },
 };
 
-function getOrderCost(
-  network: string,
-  bundleSize: string,
-  customCostMap?: Record<string, Record<string, number>>
-): number {
-  const originalCost = ORIGINAL_PRICES[network]?.[bundleSize];
-  if (typeof originalCost === "number") return originalCost;
+// ============================================================
+// 🔥 FIXED: Calculate profit correctly for each order type
+// ============================================================
+function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+  const network = order.network?.toLowerCase();
+  const amount = Number(order.amount);
 
-  const fallbackCost = customCostMap?.[network]?.[bundleSize];
-  if (typeof fallbackCost === "number") return fallbackCost;
+  // Airtime - NO profit (profit = 0)
+  if (network === "airtime") {
+    return 0;
+  }
+
+  // Mashup - Profit is ONLY the 5% fee
+  if (network === "mashup") {
+    // The amount includes the 5% fee, so profit = amount * 0.05 / 1.05
+    // Or if fee is added separately, adjust accordingly
+    // Using 5% of the amount as profit (the fee)
+    return amount * 0.05;
+  }
+
+  // Data bundles - Profit = selling price - cost price
+  let cost = 0;
+  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
+  if (typeof originalCost === "number") {
+    cost = originalCost;
+  } else {
+    const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
+    if (typeof fallbackCost === "number") {
+      cost = fallbackCost;
+    }
+  }
+
+  return amount - cost;
+}
+
+function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+  const network = order.network?.toLowerCase();
+
+  // Airtime has no cost
+  if (network === "airtime") {
+    return 0;
+  }
+
+  // Mashup - cost is the amount minus the 5% fee
+  if (network === "mashup") {
+    const amount = Number(order.amount);
+    return amount - amount * 0.05;
+  }
+
+  // Data bundles - get actual cost
+  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
+  if (typeof originalCost === "number") {
+    return originalCost;
+  }
+  const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
+  if (typeof fallbackCost === "number") {
+    return fallbackCost;
+  }
   return 0;
 }
 
@@ -83,9 +176,17 @@ const NETWORK_ID_TO_NAME: Record<string, string> = {
   telecel: "TELECEL",
   "at-bigtime": "AT BIG TIME",
   "at-premium": "AT PREMIUM",
+  airtime: "Airtime",
+  mashup: "Mashup",
 };
 
-function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClear }: {
+function DateFilter({
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
+  onClear,
+}: {
   dateFrom?: Date;
   dateTo?: Date;
   onDateFromChange: (d?: Date) => void;
@@ -102,7 +203,13 @@ function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClea
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar mode="single" selected={dateFrom} onSelect={onDateFromChange} initialFocus className="p-3 pointer-events-auto" />
+          <Calendar
+            mode="single"
+            selected={dateFrom}
+            onSelect={onDateFromChange}
+            initialFocus
+            className="p-3 pointer-events-auto"
+          />
         </PopoverContent>
       </Popover>
       <Popover>
@@ -113,7 +220,13 @@ function DateFilter({ dateFrom, dateTo, onDateFromChange, onDateToChange, onClea
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar mode="single" selected={dateTo} onSelect={onDateToChange} initialFocus className="p-3 pointer-events-auto" />
+          <Calendar
+            mode="single"
+            selected={dateTo}
+            onSelect={onDateToChange}
+            initialFocus
+            className="p-3 pointer-events-auto"
+          />
         </PopoverContent>
       </Popover>
       {(dateFrom || dateTo) && (
@@ -136,15 +249,12 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
   useEffect(() => {
     const fetchCustomCosts = async () => {
-      const { data } = await supabase
-        .from("custom_bundles")
-        .select("network_id, bundle_size, agent_price");
+      const { data } = await supabase.from("custom_bundles").select("network_id, bundle_size, agent_price");
       if (!data) return;
       const map: Record<string, Record<string, number>> = {};
       for (const row of data) {
         const networkName = NETWORK_ID_TO_NAME[row.network_id] ?? row.network_id?.toUpperCase();
         if (!map[networkName]) map[networkName] = {};
-        // Fallback only for bundles that do not exist in the original cost table.
         map[networkName][row.bundle_size] = Number(row.agent_price);
       }
       setCustomCostMap(map);
@@ -168,10 +278,12 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     }
   };
 
-  useEffect(() => { fetchGhBalance(); }, []);
+  useEffect(() => {
+    fetchGhBalance();
+  }, []);
 
   const filteredOrders = useMemo(() => {
-    return orders.filter(o => {
+    return orders.filter((o) => {
       const d = parseISO(o.created_at);
       if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
       if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
@@ -180,7 +292,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   }, [orders, dateFrom, dateTo]);
 
   const filteredTopups = useMemo(() => {
-    return topups.filter(t => {
+    return topups.filter((t) => {
       const d = parseISO(t.created_at);
       if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
       if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
@@ -189,7 +301,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   }, [topups, dateFrom, dateTo]);
 
   const filteredComplaints = useMemo(() => {
-    return complaints.filter(c => {
+    return complaints.filter((c) => {
       const d = parseISO(c.created_at);
       if (dateFrom && isBefore(d, startOfDay(dateFrom))) return false;
       if (dateTo && isAfter(d, endOfDay(dateTo))) return false;
@@ -199,19 +311,26 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
   const stats = useMemo(() => {
     const totalRevenue = filteredOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-    const totalTopups = filteredTopups.filter(t => t.status === "completed").reduce((sum, t) => sum + Number(t.amount), 0);
-    const pendingOrders = filteredOrders.filter(o => o.status === "pending" || o.status === "processing").length;
-    const completedOrders = filteredOrders.filter(o => o.status === "completed").length;
-    const failedOrders = filteredOrders.filter(o => o.status === "failed").length;
-    const openComplaints = filteredComplaints.filter(c => c.status === "open").length;
+    const totalTopups = filteredTopups
+      .filter((t) => t.status === "completed")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    const pendingOrders = filteredOrders.filter((o) => o.status === "pending" || o.status === "processing").length;
+    const completedOrders = filteredOrders.filter((o) => o.status === "completed" || o.status === "delivered").length;
+    const failedOrders = filteredOrders.filter((o) => o.status === "failed").length;
+    const openComplaints = filteredComplaints.filter((c) => c.status === "open").length;
     const totalWalletBalance = users.reduce((sum, u) => sum + Number(u.wallet_balance), 0);
-    const blockedUsers = users.filter(u => u.is_blocked).length;
-    const pendingTopups = filteredTopups.filter(t => t.status === "pending").length;
+    const blockedUsers = users.filter((u) => u.is_blocked).length;
+    const pendingTopups = filteredTopups.filter((t) => t.status === "pending").length;
 
-    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
-    const totalProfit = totalRevenue - totalCost;
+    // 🔥 FIXED: Calculate cost and profit using the new functions
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCostForDisplay(o, customCostMap), 0);
+    const totalProfit = filteredOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
 
     const totalCapacityGB = filteredOrders.reduce((sum, o) => {
+      // Skip Airtime and Mashup for capacity calculation
+      const network = o.network?.toLowerCase();
+      if (network === "airtime" || network === "mashup") return sum;
+
       const s = String(o.bundle_size || "");
       const m = s.match(/([\d.]+)\s*(GB|MB)/i);
       if (!m) return sum;
@@ -246,10 +365,9 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     });
 
     return days.map(({ date, label }) => {
-      const dayOrders = filteredOrders.filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
-      const revenue = dayOrders.reduce((sum, o) => sum + Number(o.amount), 0);
-      const cost = dayOrders.reduce((sum, o) => sum + getOrderCost(o.network, o.bundle_size, customCostMap), 0);
-      return { day: label, profit: Math.round((revenue - cost) * 100) / 100 };
+      const dayOrders = filteredOrders.filter((o) => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
+      const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
+      return { day: label, profit: Math.round(profit * 100) / 100 };
     });
   }, [filteredOrders, dateTo, customCostMap]);
 
@@ -261,7 +379,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     });
 
     return days.map(({ date, label }) => {
-      const count = filteredOrders.filter(o => {
+      const count = filteredOrders.filter((o) => {
         const d = startOfDay(parseISO(o.created_at));
         return d.getTime() === date.getTime();
       }).length;
@@ -278,7 +396,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
     return days.map(({ date, label }) => {
       const total = filteredOrders
-        .filter(o => startOfDay(parseISO(o.created_at)).getTime() === date.getTime())
+        .filter((o) => startOfDay(parseISO(o.created_at)).getTime() === date.getTime())
         .reduce((sum, o) => sum + Number(o.amount), 0);
       return { day: label, revenue: total };
     });
@@ -286,17 +404,20 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
   // Order status distribution
   const orderStatusData = useMemo(() => {
-    const statuses = ["pending", "processing", "completed", "failed"];
-    return statuses.map(s => ({
-      name: s === "completed" ? "Delivered" : s.charAt(0).toUpperCase() + s.slice(1),
-      value: filteredOrders.filter(o => o.status === s).length,
-    })).filter(d => d.value > 0);
+    const statuses = ["pending", "processing", "completed", "delivered", "failed"];
+    return statuses
+      .map((s) => ({
+        name:
+          s === "delivered" ? "Delivered" : s === "completed" ? "Completed" : s.charAt(0).toUpperCase() + s.slice(1),
+        value: filteredOrders.filter((o) => o.status === s).length,
+      }))
+      .filter((d) => d.value > 0);
   }, [filteredOrders]);
 
   // Network distribution
   const networkData = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredOrders.forEach(o => {
+    filteredOrders.forEach((o) => {
       map[o.network] = (map[o.network] || 0) + 1;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
@@ -328,7 +449,10 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
           dateTo={dateTo}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
-          onClear={() => { setDateFrom(undefined); setDateTo(undefined); }}
+          onClear={() => {
+            setDateFrom(undefined);
+            setDateTo(undefined);
+          }}
         />
       </div>
 
@@ -343,9 +467,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
                 <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                {stats.blockedUsers > 0 && (
-                  <p className="text-xs text-destructive">{stats.blockedUsers} blocked</p>
-                )}
+                {stats.blockedUsers > 0 && <p className="text-xs text-destructive">{stats.blockedUsers} blocked</p>}
               </div>
             </div>
           </CardContent>
@@ -374,7 +496,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Profit</p>
-                  <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? "text-success" : "text-destructive"}`}>
                     {showProfit ? formatCurrency(stats.totalProfit) : "••••••"}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -479,9 +601,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
               <div>
                 <p className="text-sm text-muted-foreground">Delivered Orders</p>
                 <p className="text-xl font-bold">{stats.completedOrders}</p>
-                {stats.failedOrders > 0 && (
-                  <p className="text-xs text-destructive">{stats.failedOrders} failed</p>
-                )}
+                {stats.failedOrders > 0 && <p className="text-xs text-destructive">{stats.failedOrders} failed</p>}
               </div>
             </div>
           </CardContent>
@@ -500,11 +620,11 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
                 <div>
                   <p className="text-sm text-muted-foreground">GHDataConnect Balance</p>
                   <p className="text-2xl font-bold">
-                    {ghBalance !== null ? formatCurrency(ghBalance) : "—"}
+                    {ghBalanceLoading ? "..." : ghBalance !== null ? formatCurrency(ghBalance) : "Not available"}
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={fetchGhBalance} disabled={ghBalanceLoading}>
+              <Button variant="ghost" size="sm" onClick={fetchGhBalance} disabled={ghBalanceLoading}>
                 <RefreshCw className={`w-4 h-4 ${ghBalanceLoading ? "animate-spin" : ""}`} />
               </Button>
             </div>
@@ -512,17 +632,38 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
         </Card>
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Orders (Last 7 Days)</CardTitle>
+            <CardTitle>Profit Trend (Last 7 days)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={orderChartConfig} className="h-[250px] w-full">
+            <ChartContainer config={profitChartConfig} className="h-[300px] w-full">
+              <LineChart data={profitPerDay}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} />
+              </LineChart>
+            </ChartContainer>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              Profit: {showProfit ? formatCurrency(profitPerDay.reduce((s, d) => s + d.profit, 0)) : "••••••"}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Orders Trend (Last 7 days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={orderChartConfig} className="h-[300px] w-full">
               <BarChart data={ordersPerDay}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis allowDecimals={false} className="text-xs" />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="orders" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -532,33 +673,16 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Revenue (Last 7 Days)</CardTitle>
+            <CardTitle>Revenue Trend (Last 7 days)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={revenueChartConfig} className="h-[250px] w-full">
-              <LineChart data={revenuePerDay}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis className="text-xs" />
+            <ChartContainer config={revenueChartConfig} className="h-[300px] w-full">
+              <BarChart data={revenuePerDay}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="revenue" stroke="hsl(var(--success))" strokeWidth={2} dot={{ fill: "hsl(var(--success))" }} />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Profit (Last 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={profitChartConfig} className="h-[250px] w-full">
-              <BarChart data={profitPerDay}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis className="text-xs" />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="profit" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -566,37 +690,45 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Order Status Distribution</CardTitle>
+            <CardTitle>Order Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={statusChartConfig} className="h-[250px] w-full">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie data={orderStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, value }) => `${name}: ${value}`}>
-                  {orderStatusData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            {orderStatusData.length > 0 ? (
+              <ChartContainer config={statusChartConfig} className="h-[300px] w-full">
+                <PieChart>
+                  <Pie data={orderStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {orderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">No orders data</div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Orders by Network</CardTitle>
+            <CardTitle>Network Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={networkChartConfig} className="h-[250px] w-full">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie data={networkData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, value }) => `${name}: ${value}`}>
-                  {networkData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            {networkData.length > 0 ? (
+              <ChartContainer config={networkChartConfig} className="h-[300px] w-full">
+                <PieChart>
+                  <Pie data={networkData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                    {networkData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">No orders data</div>
+            )}
           </CardContent>
         </Card>
       </div>
