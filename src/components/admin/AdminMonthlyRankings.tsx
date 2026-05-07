@@ -1,6 +1,8 @@
+import { useMemo, useState } from "react";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/data";
 
 type AdminMonthlyRankingsProps = {
@@ -30,22 +32,20 @@ const formatCapacity = (gb: number) => {
   return `${Math.round(gb * 1000)}MB`;
 };
 
-const getCurrentMonthOrders = (orders: any[]) => {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
-
+const getMonthOrders = (orders: any[], year: number, month: number) => {
+  const monthStart = new Date(year, month, 1).getTime();
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return orders.filter((order) => {
     const orderTime = new Date(order.created_at).getTime();
     return order.status !== "failed" && orderTime >= monthStart && orderTime <= monthEnd;
   });
 };
 
-const buildRankings = (users: any[], orders: any[], tier: "agent" | "general") => {
+const buildRankings = (users: any[], monthOrders: any[], tier: "agent" | "general") => {
   const userMap = new Map(users.map((user) => [user.user_id, user]));
   const grouped = new Map<string, RankedUser>();
 
-  getCurrentMonthOrders(orders).forEach((order) => {
+  monthOrders.forEach((order) => {
     const user = userMap.get(order.user_id);
     if (!user || user.tier !== tier) return;
 
@@ -115,18 +115,48 @@ function RankingTable({ title, icon, rows }: { title: string; icon: React.ReactN
 }
 
 export default function AdminMonthlyRankings({ users, orders }: AdminMonthlyRankingsProps) {
-  const agentRankings = buildRankings(users, orders, "agent");
-  const generalRankings = buildRankings(users, orders, "general");
-  const monthName = new Date().toLocaleString("en", { month: "long", year: "numeric" });
+  const now = new Date();
+  const [monthKey, setMonthKey] = useState(`${now.getFullYear()}-${now.getMonth()}`);
+
+  const monthOptions = useMemo(() => {
+    const opts: { key: string; label: string }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      opts.push({
+        key: `${d.getFullYear()}-${d.getMonth()}`,
+        label: d.toLocaleString("en", { month: "long", year: "numeric" }),
+      });
+    }
+    return opts;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [yStr, mStr] = monthKey.split("-");
+  const year = parseInt(yStr, 10);
+  const month = parseInt(mStr, 10);
+  const monthOrders = useMemo(() => getMonthOrders(orders, year, month), [orders, year, month]);
+  const agentRankings = useMemo(() => buildRankings(users, monthOrders, "agent"), [users, monthOrders]);
+  const generalRankings = useMemo(() => buildRankings(users, monthOrders, "general"), [users, monthOrders]);
+  const monthLabel = monthOptions.find((o) => o.key === monthKey)?.label || "";
 
   return (
     <section className="mb-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-primary" />
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Monthly Data Rankings</h2>
-          <p className="text-sm text-muted-foreground">Top buyers for {monthName}, ranked by total data capacity purchased.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Monthly Data Rankings</h2>
+            <p className="text-sm text-muted-foreground">Top buyers for {monthLabel}, ranked by total data capacity purchased.</p>
+          </div>
         </div>
+        <Select value={monthKey} onValueChange={setMonthKey}>
+          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {monthOptions.map((o) => (
+              <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         <RankingTable title="Agent Ranking" icon={<Crown className="h-4 w-4 text-primary" />} rows={agentRankings} />

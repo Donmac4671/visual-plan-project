@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatCurrency, calculatePaystackFee } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee, calculateMashupFee } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingCart, Wallet, CreditCard, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +18,13 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
   const [processing, setProcessing] = useState(false);
 
-  const paystackFee = calculatePaystackFee(total);
-  const paystackTotal = total + paystackFee;
+  const mashupSubtotal = items
+    .filter((i) => i.networkId === "mashup")
+    .reduce((sum, i) => sum + i.effectivePrice, 0);
+  const mashupFee = calculateMashupFee(mashupSubtotal);
+  const grandTotal = total + mashupFee;
+  const paystackFee = calculatePaystackFee(grandTotal);
+  const paystackTotal = grandTotal + paystackFee;
 
   const checkPendingOrders = async (phoneNumbers: string[]): Promise<string[]> => {
     const uniquePhones = [...new Set(phoneNumbers)];
@@ -33,14 +38,28 @@ export default function Cart() {
 
   const handlePayWithWallet = async () => {
     if (!profile) return;
-    if (profile.wallet_balance < total) {
+    if (profile.wallet_balance < grandTotal) {
       toast({ title: "Insufficient Balance", description: "Please top up your wallet first.", variant: "destructive" });
       return;
     }
+    const itemsForBackend = items.map((item) => {
+      const amt = item.networkId === "mashup"
+        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
+        : item.effectivePrice;
+      return {
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: item.bundle.sizeGB,
+        amount: amt,
+      };
+    });
 
     setProcessing(true);
     try {
-      const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+      const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
+      const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
       if (pendingPhones.length > 0) {
         toast({
           title: "Pending Order Exists",
@@ -51,16 +70,7 @@ export default function Cart() {
         return;
       }
       const { data, error } = await supabase.functions.invoke("place-wallet-order", {
-        body: {
-          items: items.map((item) => ({
-            network: item.network,
-            network_id: item.networkId,
-            phone: item.phoneNumber,
-            bundle: item.bundle.size,
-            bundle_size_gb: item.bundle.sizeGB,
-            amount: item.effectivePrice,
-          })),
-        },
+        body: { items: itemsForBackend },
       });
 
       if (error || (data && (data as any).error)) {
@@ -83,8 +93,9 @@ export default function Cart() {
 
     setProcessing(true);
 
-    // Check for pending orders before initiating payment
-    const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+    // Check for pending orders before initiating payment (data orders only)
+    const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
+    const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
     if (pendingPhones.length > 0) {
       toast({
         title: "Pending Order Exists",
@@ -101,22 +112,26 @@ export default function Cart() {
     const phoneKey = `${phones[0] || "guest"}-${Date.now()}`;
     const syntheticEmail = `${phoneKey}@donmacdatahub.com`;
 
+    const itemsForBackend = items.map((item) => {
+      const amt = item.networkId === "mashup"
+        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
+        : item.effectivePrice;
+      return {
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: item.bundle.sizeGB,
+        amount: amt,
+      };
+    });
+
     await initPaystack({
       email: syntheticEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          const payload = {
-            reference,
-            items: items.map((item) => ({
-              network: item.network,
-              network_id: item.networkId,
-              phone: item.phoneNumber,
-              bundle: item.bundle.size,
-              bundle_size_gb: item.bundle.sizeGB,
-              amount: item.effectivePrice,
-            })),
-          };
+          const payload = { reference, items: itemsForBackend };
 
           const { data, error } = await supabase.functions.invoke("paystack-verify-order", { body: payload });
           if (error || (data && (data as any).error)) {
@@ -189,9 +204,21 @@ export default function Cart() {
             </div>
 
             <div className="p-4 border-t border-border space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-foreground">Total</span>
-                <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+                {mashupFee > 0 && (
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Fees</span>
+                    <span>{formatCurrency(mashupFee)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="font-semibold text-foreground">Total</span>
+                  <span className="text-xl font-bold text-foreground">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
 
               <div>
@@ -224,7 +251,7 @@ export default function Cart() {
                       <p className="font-semibold text-foreground">Pay with Paystack</p>
                       {paymentMethod === "paystack" && (
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(total)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
+                          {formatCurrency(grandTotal)} + {formatCurrency(paystackFee)} fee = {formatCurrency(paystackTotal)}
                         </p>
                       )}
                     </div>
@@ -238,7 +265,7 @@ export default function Cart() {
                 disabled={processing}
                 onClick={paymentMethod === "wallet" ? handlePayWithWallet : handlePayWithPaystack}
               >
-                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : total)}`}
+                {processing ? "Processing…" : `Proceed to Pay — ${formatCurrency(paymentMethod === "paystack" ? paystackTotal : grandTotal)}`}
               </Button>
             </div>
           </>
