@@ -32,22 +32,20 @@ const formatCapacity = (gb: number) => {
   return `${Math.round(gb * 1000)}MB`;
 };
 
-const getCurrentMonthOrders = (orders: any[]) => {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
-
+const getMonthOrders = (orders: any[], year: number, month: number) => {
+  const monthStart = new Date(year, month, 1).getTime();
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return orders.filter((order) => {
     const orderTime = new Date(order.created_at).getTime();
     return order.status !== "failed" && orderTime >= monthStart && orderTime <= monthEnd;
   });
 };
 
-const buildRankings = (users: any[], orders: any[], tier: "agent" | "general") => {
+const buildRankings = (users: any[], monthOrders: any[], tier: "agent" | "general") => {
   const userMap = new Map(users.map((user) => [user.user_id, user]));
   const grouped = new Map<string, RankedUser>();
 
-  getCurrentMonthOrders(orders).forEach((order) => {
+  monthOrders.forEach((order) => {
     const user = userMap.get(order.user_id);
     if (!user || user.tier !== tier) return;
 
