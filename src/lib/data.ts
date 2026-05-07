@@ -137,6 +137,38 @@ export interface TopUp {
   status: "completed" | "pending" | "failed";
 }
 
+export interface MashupPackage {
+  price: number;     // Cedis the user pays for the package itself (before fees)
+  data: string;      // e.g. "15.27 MB"
+  minutes: string;   // e.g. "15.64 Minutes"
+  label: string;     // human readable summary
+}
+
+export const MASHUP_PACKAGES: MashupPackage[] = [
+  { price: 1, data: "15.27 MB", minutes: "15.64 Minutes", label: "₵1 — 15.27 MB & 15.64 Minutes" },
+  { price: 2, data: "30.53 MB", minutes: "31.27 Minutes", label: "₵2 — 30.53 MB & 31.27 Minutes" },
+  { price: 3, data: "48.8 MB", minutes: "46.92 Minutes", label: "₵3 — 48.8 MB & 46.92 Minutes" },
+  { price: 4, data: "61.07 MB", minutes: "62.55 Minutes", label: "₵4 — 61.07 MB & 62.55 Minutes" },
+  { price: 5, data: "86.12 MB", minutes: "83.24 Minutes", label: "₵5 — 86.12 MB & 83.24 Minutes" },
+  { price: 6, data: "103.35 MB", minutes: "99.88 Minutes", label: "₵6 — 103.35 MB & 99.88 Minutes" },
+  { price: 7, data: "120.27 MB", minutes: "116.53 Minutes", label: "₵7 — 120.27 MB & 116.53 Minutes" },
+  { price: 8, data: "137 MB", minutes: "133.18 Minutes", label: "₵8 — 137 MB & 133.18 Minutes" },
+  { price: 9, data: "155.02 MB", minutes: "149.83 Minutes", label: "₵9 — 155.02 MB & 149.83 Minutes" },
+  { price: 10, data: "180.72 MB", minutes: "173.39 Minutes", label: "₵10 — 180.72 MB & 173.39 Minutes" },
+  { price: 15, data: "271.07 MB", minutes: "260.08 Minutes", label: "₵15 — 271.07 MB & 260.08 Minutes" },
+  { price: 20, data: "361.43 MB", minutes: "346.78 Minutes", label: "₵20 — 361.43 MB & 346.78 Minutes" },
+  { price: 25, data: "451.79 MB", minutes: "433.48 Minutes", label: "₵25 — 451.79 MB & 433.48 Minutes" },
+  { price: 29.99, data: "541.97 MB", minutes: "520 Minutes", label: "₵29.99 — 541.97 MB & 520 Minutes" },
+];
+
+export const MASHUP_FEE_PERCENT = 0.05; // 5% fee added on top of the package price
+export const AIRTIME_MIN = 0.5;
+export const AIRTIME_MAX = 100;
+
+export function calculateMashupFee(amount: number): number {
+  return Math.round(amount * MASHUP_FEE_PERCENT * 100) / 100;
+}
+
 export const PAYSTACK_FEE_PERCENT = 0.02; // 2%
 
 export const MIN_TOPUP_AGENT = 20;
