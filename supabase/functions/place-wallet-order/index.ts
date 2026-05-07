@@ -20,7 +20,7 @@ interface WalletOrderItem {
 
 async function fulfillOrder(
   supabaseUrl: string,
-  serviceKey: string,
+  userToken: string,
   orderId: string,
   networkId: string,
   phone: string,
@@ -30,7 +30,7 @@ async function fulfillOrder(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${serviceKey}`,
+      Authorization: `Bearer ${userToken}`,
     },
     body: JSON.stringify({
       order_id: orderId,
@@ -55,10 +55,9 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const token = authHeader.replace("Bearer ", "");
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
-    const token = authHeader.replace("Bearer ", "");
     const { data: claims, error: claimsErr } = await userClient.auth.getClaims(token);
     if (claimsErr || !claims?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: jsonHeaders });
@@ -72,12 +71,18 @@ Deno.serve(async (req) => {
 
     for (const item of items) {
       if (
-        typeof item.network !== "string" || !item.network ||
-        typeof item.network_id !== "string" || !item.network_id ||
-        typeof item.phone !== "string" || !item.phone ||
-        typeof item.bundle !== "string" || !item.bundle ||
-        typeof item.bundle_size_gb !== "number" || item.bundle_size_gb <= 0 ||
-        typeof item.amount !== "number" || item.amount <= 0
+        typeof item.network !== "string" ||
+        !item.network ||
+        typeof item.network_id !== "string" ||
+        !item.network_id ||
+        typeof item.phone !== "string" ||
+        !item.phone ||
+        typeof item.bundle !== "string" ||
+        !item.bundle ||
+        typeof item.bundle_size_gb !== "number" ||
+        item.bundle_size_gb <= 0 ||
+        typeof item.amount !== "number" ||
+        item.amount <= 0
       ) {
         return new Response(JSON.stringify({ error: "Invalid item shape" }), { status: 400, headers: jsonHeaders });
       }
@@ -103,24 +108,53 @@ Deno.serve(async (req) => {
       }
 
       if (!orderId) {
-        return new Response(JSON.stringify({ error: "Order was not created", createdOrderIds: orderIds, fulfillments }), {
-          status: 500,
-          headers: jsonHeaders,
-        });
+        return new Response(
+          JSON.stringify({ error: "Order was not created", createdOrderIds: orderIds, fulfillments }),
+          {
+            status: 500,
+            headers: jsonHeaders,
+          },
+        );
       }
 
       const orderIdString = String(orderId);
       orderIds.push(orderIdString);
 
       const isNonGh = ["mashup", "airtime"].includes(item.network_id.toLowerCase());
-      const fulfillment = isNonGh
-        ? { ok: true, status: 200, result: { skipped: true, reason: "non-data product" } }
-        : await fulfillOrder(supabaseUrl, serviceKey, orderIdString, item.network_id, item.phone, item.bundle_size_gb);
-      fulfillments.push({ orderId: orderIdString, ...fulfillment });
-      console.log("Wallet order fulfillment result:", JSON.stringify({ orderId: orderIdString, fulfillment }));
+
+      if (isNonGh) {
+        // Update order status to completed for Airtime/Mashup
+        await userClient
+          .from("orders")
+          .update({ status: "completed", gh_reference: `non-gh-${Date.now()}` })
+          .eq("id", orderIdString);
+
+        fulfillments.push({
+          orderId: orderIdString,
+          ok: true,
+          status: 200,
+          result: { success: true, message: `${item.network_id} order completed` },
+        });
+        console.log(`${item.network_id} order ${orderIdString} completed locally`);
+      } else {
+        // Data bundle - call GHData
+        const fulfillment = await fulfillOrder(
+          supabaseUrl,
+          token,
+          orderIdString,
+          item.network_id,
+          item.phone,
+          item.bundle_size_gb,
+        );
+        fulfillments.push({ orderId: orderIdString, ...fulfillment });
+        console.log("Wallet order fulfillment result:", JSON.stringify({ orderId: orderIdString, fulfillment }));
+      }
     }
 
-    return new Response(JSON.stringify({ status: "ok", orderIds, fulfillments }), { status: 200, headers: jsonHeaders });
+    return new Response(JSON.stringify({ status: "ok", orderIds, fulfillments }), {
+      status: 200,
+      headers: jsonHeaders,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("place-wallet-order error:", err);
