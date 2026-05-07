@@ -93,8 +93,9 @@ export default function Cart() {
 
     setProcessing(true);
 
-    // Check for pending orders before initiating payment
-    const pendingPhones = await checkPendingOrders(items.map((i) => i.phoneNumber));
+    // Check for pending orders before initiating payment (data orders only)
+    const dataPhones = items.filter((i) => i.networkId !== "mashup" && i.networkId !== "airtime").map((i) => i.phoneNumber);
+    const pendingPhones = dataPhones.length ? await checkPendingOrders(dataPhones) : [];
     if (pendingPhones.length > 0) {
       toast({
         title: "Pending Order Exists",
@@ -111,22 +112,26 @@ export default function Cart() {
     const phoneKey = `${phones[0] || "guest"}-${Date.now()}`;
     const syntheticEmail = `${phoneKey}@donmacdatahub.com`;
 
+    const itemsForBackend = items.map((item) => {
+      const amt = item.networkId === "mashup"
+        ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100
+        : item.effectivePrice;
+      return {
+        network: item.network,
+        network_id: item.networkId,
+        phone: item.phoneNumber,
+        bundle: item.bundle.size,
+        bundle_size_gb: item.bundle.sizeGB,
+        amount: amt,
+      };
+    });
+
     await initPaystack({
       email: syntheticEmail,
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          const payload = {
-            reference,
-            items: items.map((item) => ({
-              network: item.network,
-              network_id: item.networkId,
-              phone: item.phoneNumber,
-              bundle: item.bundle.size,
-              bundle_size_gb: item.bundle.sizeGB,
-              amount: item.effectivePrice,
-            })),
-          };
+          const payload = { reference, items: itemsForBackend };
 
           const { data, error } = await supabase.functions.invoke("paystack-verify-order", { body: payload });
           if (error || (data && (data as any).error)) {
