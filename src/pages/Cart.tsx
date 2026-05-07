@@ -204,9 +204,21 @@ export default function Cart() {
             </div>
 
             <div className="p-4 border-t border-border space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-foreground">Total</span>
-                <span className="text-xl font-bold text-foreground">{formatCurrency(total)}</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+                {mashupFee > 0 && (
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Fees</span>
+                    <span>{formatCurrency(mashupFee)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="font-semibold text-foreground">Total</span>
+                  <span className="text-xl font-bold text-foreground">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
 
               <div>
