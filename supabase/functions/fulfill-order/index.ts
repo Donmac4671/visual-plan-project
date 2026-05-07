@@ -10,7 +10,6 @@ const corsHeaders = {
 
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
-// Multiple key candidates per network, tried in order until provider accepts.
 const NETWORK_KEYS: Record<string, string[]> = {
   mtn: ["MTN", "mtn"],
   telecel: ["TELECEL", "telecel"],
@@ -110,25 +109,26 @@ serve(async (req) => {
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
 
     // ============================================================
-    // 🔥 SAFETY: Block Airtime and Mashup from ever reaching GHData
+    // 🔥 BLOCK Airtime and Mashup - NEVER go to GHData
     // ============================================================
     if (network_id === "airtime" || network_id === "mashup") {
-      console.log(`🚫 Blocked ${network_id} order ${order_id} from GHData. Marking as completed.`);
+      console.log(`🚫 Blocked ${network_id} order ${order_id} from GHData. Setting to processing (manual delivery).`);
 
       await supabase
         .from("orders")
         .update({
-          status: "completed",
-          gh_reference: `blocked-${network_id}-${Date.now()}`,
+          status: "processing",
+          gh_reference: `manual-${network_id}-${Date.now()}`,
         })
         .eq("id", order_id);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: `${network_id} order completed locally (blocked from GHData)`,
+          message: `${network_id} order set to processing (manual delivery required)`,
           product_type: network_id,
           order_id: order_id,
+          status: "processing",
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -136,6 +136,7 @@ serve(async (req) => {
       );
     }
 
+    // Check if this is a valid GHData network
     const networkKey = normalizeNetworkKey(network_id);
     const candidateKeys = NETWORK_KEYS[networkKey];
     if (!candidateKeys) {
@@ -145,7 +146,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch order and verify ownership (admins may fulfill any order)
+    // Fetch order and verify ownership
     const { data: orderRow, error: orderError } = await supabase
       .from("orders")
       .select("order_ref, user_id")
@@ -160,7 +161,7 @@ serve(async (req) => {
       });
     }
 
-    // Check admin status properly
+    // Check admin status
     const userId = user?.id || null;
     let isAdmin = isServiceRequest;
 
@@ -176,6 +177,7 @@ serve(async (req) => {
       });
     }
 
+    // Generate reference
     const reference = orderRow.order_ref || `DMH${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
 
@@ -237,7 +239,6 @@ serve(async (req) => {
         );
       }
 
-      // For AT Premium especially, always try every alternate key before giving up
       const isAtPremium = networkKey === "at-premium";
       const msg = String(lastResult?.message ?? "").toLowerCase();
       const looksLikeNetworkError =
@@ -252,16 +253,13 @@ serve(async (req) => {
     }
 
     if (networkKey === "at-premium" && sawNetworkValidationError) {
-      console.error(
-        `⚠️ AT Premium GHData network validation failed for order ${order_id}; keeping order waiting for manual/provider review`,
-      );
+      console.error(`⚠️ AT Premium GHData validation failed for order ${order_id}; keeping order waiting.`);
       await supabase.from("orders").update({ status: "waiting", gh_reference: reference }).eq("id", order_id);
       return new Response(
         JSON.stringify({
           success: false,
           status: "waiting",
-          message:
-            "AT Premium was rejected by GHData network validation, so the order is waiting for manual/provider review instead of being failed/refunded.",
+          message: "AT Premium order is waiting for manual review.",
           provider_status: lastStatus,
           diagnostics,
         }),
@@ -273,10 +271,7 @@ serve(async (req) => {
     }
 
     // All attempts failed → mark failed and refund wallet
-    console.error(
-      `❌ All GHDataConnect attempts failed for order ${order_id} [${lastStatus}]:`,
-      JSON.stringify(lastResult),
-    );
+    console.error(`❌ All GHData attempts failed for order ${order_id} [${lastStatus}]:`, JSON.stringify(lastResult));
     await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
     await supabase.rpc("refund_failed_order", { p_order_id: order_id });
 
