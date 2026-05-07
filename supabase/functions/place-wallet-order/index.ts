@@ -112,7 +112,10 @@ Deno.serve(async (req) => {
       const orderIdString = String(orderId);
       orderIds.push(orderIdString);
 
-      const fulfillment = await fulfillOrder(supabaseUrl, serviceKey, orderIdString, item.network_id, item.phone, item.bundle_size_gb);
+      const isNonGh = ["mashup", "airtime"].includes(item.network_id.toLowerCase());
+      const fulfillment = isNonGh
+        ? { ok: true, status: 200, result: { skipped: true, reason: "non-data product" } }
+        : await fulfillOrder(supabaseUrl, serviceKey, orderIdString, item.network_id, item.phone, item.bundle_size_gb);
       fulfillments.push({ orderId: orderIdString, ...fulfillment });
       console.log("Wallet order fulfillment result:", JSON.stringify({ orderId: orderIdString, fulfillment }));
     }

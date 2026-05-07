@@ -140,8 +140,12 @@ Deno.serve(async (req) => {
       if (data) {
         const orderId = String(data);
         orderIds.push(orderId);
-        const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, ""));
-        const fulfillment = await fulfillOrder(supabaseUrl, serviceKey, orderId, item.network_id ?? item.network, item.phone, bundleSizeGb);
+        const networkIdRaw = (item.network_id ?? item.network).toLowerCase();
+        const isNonGh = ["mashup", "airtime"].includes(networkIdRaw);
+        const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, "")) ?? 0;
+        const fulfillment = isNonGh
+          ? { ok: true, status: 200, result: { skipped: true, reason: "non-data product" } }
+          : await fulfillOrder(supabaseUrl, serviceKey, orderId, item.network_id ?? item.network, item.phone, bundleSizeGb);
         fulfillments.push({ orderId, ...fulfillment });
         console.log("Paystack order fulfillment result:", JSON.stringify({ orderId, fulfillment }));
       }
