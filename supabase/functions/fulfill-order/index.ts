@@ -15,7 +15,21 @@ const NETWORK_KEYS: Record<string, string[]> = {
   mtn: ["MTN", "mtn"],
   telecel: ["TELECEL", "telecel"],
   "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
-  "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE", "premium", "PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
+  "at-premium": [
+    "AT_PREMIUM",
+    "AT-PREMIUM",
+    "AIRTELTIGO_PREMIUM",
+    "AIRTELTIGOPREMIUM",
+    "AT_PREMIUM_BUNDLE",
+    "AIRTELTIGO_PREMIUM_BUNDLE",
+    "premium",
+    "PREMIUM",
+    "atpremium",
+    "at_premium",
+    "at-premium",
+    "airteltigo_premium",
+    "airteltigopremium",
+  ],
 };
 
 const ENDPOINT = "/v1/purchaseBundle";
@@ -29,11 +43,12 @@ function isNetworkValidationError(result: any, status: number): boolean {
   const networkErrors = Array.isArray(result?.errors?.network)
     ? result.errors.network.join(" ").toLowerCase()
     : String(result?.errors?.network ?? "").toLowerCase();
-  return status === 422 && (
-    message.includes("validation") ||
-    networkErrors.includes("network") ||
-    networkErrors.includes("invalid") ||
-    networkErrors.includes("selected")
+  return (
+    status === 422 &&
+    (message.includes("validation") ||
+      networkErrors.includes("network") ||
+      networkErrors.includes("invalid") ||
+      networkErrors.includes("selected"))
   );
 }
 
@@ -51,35 +66,45 @@ serve(async (req) => {
     const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
     if (!GH_API_KEY) throw new Error("GHDATACONNECT_API_KEY is not configured");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ success: false, message: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const token = authHeader.replace("Bearer ", "");
     const isServiceRequest = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const { data: { user }, error: authError } = isServiceRequest
-      ? { data: { user: null }, error: null }
-      : await supabase.auth.getUser(token);
+
+    let user = null;
+    let authError = null;
+
+    if (!isServiceRequest) {
+      const result = await supabase.auth.getUser(token);
+      user = result.data.user;
+      authError = result.error;
+    }
+
     if (!isServiceRequest && (authError || !user)) {
       return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const body = await req.json();
     const parsed = RequestSchema.safeParse(body);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ success: false, message: "Invalid request", errors: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ success: false, message: "Invalid request", errors: parsed.error.flatten().fieldErrors }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
@@ -88,7 +113,8 @@ serve(async (req) => {
     const candidateKeys = NETWORK_KEYS[networkKey];
     if (!candidateKeys) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -101,19 +127,24 @@ serve(async (req) => {
 
     if (!orderRow) {
       return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: roles } = user ? await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id) : { data: [] };
-    const isAdmin = isServiceRequest || (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    // FIXED: Safely get user ID and check admin status
+    const userId = user?.id || null;
+    let isAdmin = isServiceRequest;
 
-    if (!isAdmin && orderRow.user_id !== user?.id) {
+    if (!isAdmin && userId) {
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    }
+
+    if (!isAdmin && orderRow.user_id !== userId) {
       return new Response(JSON.stringify({ success: false, message: "Forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -129,7 +160,10 @@ serve(async (req) => {
 
     for (const key of candidateKeys) {
       const requestBody = { network: key, reference, msisdn: phone, capacity: bundle_size_gb };
-      console.log("GH request:", JSON.stringify({ order_id, networkKey, key, reference, msisdn: phone, capacity: bundle_size_gb }));
+      console.log(
+        "GH request:",
+        JSON.stringify({ order_id, networkKey, key, reference, msisdn: phone, capacity: bundle_size_gb }),
+      );
       const response = await fetch(`${GH_API_BASE}${ENDPOINT}`, {
         method: "POST",
         headers: {
@@ -142,7 +176,12 @@ serve(async (req) => {
       lastStatus = response.status;
       lastResult = await response.json().catch(() => ({}));
       console.log(`GH response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult));
-      diagnostics.push({ key, status: response.status, message: String(lastResult?.message ?? ""), errors: lastResult?.errors });
+      diagnostics.push({
+        key,
+        status: response.status,
+        message: String(lastResult?.message ?? ""),
+        errors: lastResult?.errors,
+      });
       if (isNetworkValidationError(lastResult, response.status)) sawNetworkValidationError = true;
 
       if (lastResult?.success) {
@@ -152,45 +191,75 @@ serve(async (req) => {
           .from("orders")
           .update({ gh_reference: String(actualRef), status: nextStatus })
           .eq("id", order_id);
-        return new Response(JSON.stringify({ success: true, data: lastResult.data, reference: actualRef, status: nextStatus }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ success: true, data: lastResult.data, reference: actualRef, status: nextStatus }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
 
       // For AT Premium especially, always try every alternate key before giving up
       const isAtPremium = networkKey === "at-premium";
       const msg = String(lastResult?.message ?? "").toLowerCase();
-      const looksLikeNetworkError = msg.includes("network") || msg.includes("invalid") || msg.includes("not found") || msg.includes("unsupported") || response.status === 404 || response.status === 422 || response.status === 400;
+      const looksLikeNetworkError =
+        msg.includes("network") ||
+        msg.includes("invalid") ||
+        msg.includes("not found") ||
+        msg.includes("unsupported") ||
+        response.status === 404 ||
+        response.status === 422 ||
+        response.status === 400;
       if (!isAtPremium && !looksLikeNetworkError) break;
     }
 
     if (networkKey === "at-premium" && sawNetworkValidationError) {
-      console.error(`AT Premium GHData network validation failed for order ${order_id}; keeping order waiting for manual/provider review:`, JSON.stringify({ lastStatus, lastResult, diagnostics }));
+      console.error(
+        `AT Premium GHData network validation failed for order ${order_id}; keeping order waiting for manual/provider review:`,
+        JSON.stringify({ lastStatus, lastResult, diagnostics }),
+      );
       await supabase.from("orders").update({ status: "waiting", gh_reference: reference }).eq("id", order_id);
-      return new Response(JSON.stringify({
-        success: false,
-        status: "waiting",
-        message: "AT Premium was rejected by GHData network validation, so the order is waiting for manual/provider review instead of being failed/refunded.",
-        provider_status: lastStatus,
-        diagnostics,
-      }), {
-        status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: "waiting",
+          message:
+            "AT Premium was rejected by GHData network validation, so the order is waiting for manual/provider review instead of being failed/refunded.",
+          provider_status: lastStatus,
+          diagnostics,
+        }),
+        {
+          status: 202,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // All attempts failed → mark failed and refund wallet
-    console.error(`All GHDataConnect attempts failed for order ${order_id} [${lastStatus}]:`, JSON.stringify(lastResult));
+    console.error(
+      `All GHDataConnect attempts failed for order ${order_id} [${lastStatus}]:`,
+      JSON.stringify(lastResult),
+    );
     await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
     await supabase.rpc("refund_failed_order", { p_order_id: order_id });
 
-    return new Response(JSON.stringify({ success: false, message: lastResult?.message || "Order failed on provider", provider_status: lastStatus }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: lastResult?.message || "Order failed on provider",
+        provider_status: lastStatus,
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Fulfill order error:", errorMessage);
     return new Response(JSON.stringify({ success: false, message: errorMessage }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
