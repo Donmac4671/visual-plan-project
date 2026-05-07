@@ -18,8 +18,13 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
   const [processing, setProcessing] = useState(false);
 
-  const paystackFee = calculatePaystackFee(total);
-  const paystackTotal = total + paystackFee;
+  const mashupSubtotal = items
+    .filter((i) => i.networkId === "mashup")
+    .reduce((sum, i) => sum + i.effectivePrice, 0);
+  const mashupFee = calculateMashupFee(mashupSubtotal);
+  const grandTotal = total + mashupFee;
+  const paystackFee = calculatePaystackFee(grandTotal);
+  const paystackTotal = grandTotal + paystackFee;
 
   const checkPendingOrders = async (phoneNumbers: string[]): Promise<string[]> => {
     const uniquePhones = [...new Set(phoneNumbers)];
