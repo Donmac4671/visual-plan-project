@@ -28,7 +28,7 @@ export default function MashupAirtime() {
   const { toast } = useToast();
   const { mashupEnabled, airtimeEnabled } = useProductToggles();
 
-  if (!mashupEnabled && !airtimeEnabled) return null;
+  const isValidPhone = (phone: string) => /^\d{10}$/.test(phone);
 
   const closeMashup = () => {
     setPkg(null);
