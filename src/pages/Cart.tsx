@@ -9,6 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { initPaystack } from "@/lib/paystack";
+import mtnLogo from "@/assets/networks/mtn.png";
+import telecelLogo from "@/assets/networks/telecel.png";
+import airteltigoLogo from "@/assets/networks/airteltigo.png";
+import { Smartphone, Phone as PhoneIcon } from "lucide-react";
+
+function getNetworkVisual(networkId: string) {
+  const id = networkId?.toLowerCase() || "";
+  if (id === "mtn") return { logo: mtnLogo, bg: "bg-yellow-400" };
+  if (id === "telecel") return { logo: telecelLogo, bg: "bg-red-500" };
+  if (id.startsWith("at-") || id === "airteltigo") return { logo: airteltigoLogo, bg: "bg-sky-600" };
+  return { logo: null, bg: "bg-muted" };
+}
 
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
