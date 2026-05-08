@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { MASHUP_PACKAGES, MashupPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrency } from "@/lib/data";
+import { useProductToggles } from "@/hooks/useProductToggles";
 
 type Mode = null | "mashup" | "airtime";
 
