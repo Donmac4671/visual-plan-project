@@ -124,6 +124,19 @@ export default function Orders() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search phone" value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} className="pl-8 w-[160px] h-9" />
             </div>
+            <select
+              value={networkFilter}
+              onChange={(e) => setNetworkFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="all">All Networks</option>
+              <option value="MTN">MTN</option>
+              <option value="TELECEL">Telecel</option>
+              <option value="AT BIG TIME">AT Big Time</option>
+              <option value="AT PREMIUM">AT Premium</option>
+              <option value="MashUp">MashUp</option>
+              <option value="Airtime">Airtime</option>
+            </select>
             {selectedDate && (
               <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear</Button>
             )}
