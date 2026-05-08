@@ -524,7 +524,7 @@ export default function Admin() {
               />
             </div>
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -532,6 +532,18 @@ export default function Admin() {
                 <SelectItem value="waiting">Waiting</SelectItem>
                 <SelectItem value="completed">Delivered</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={orderNetworkFilter} onValueChange={setOrderNetworkFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by network" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Networks</SelectItem>
+                <SelectItem value="MTN">MTN</SelectItem>
+                <SelectItem value="TELECEL">Telecel</SelectItem>
+                <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
+                <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
+                <SelectItem value="MashUp">MashUp</SelectItem>
+                <SelectItem value="Airtime">Airtime</SelectItem>
               </SelectContent>
             </Select>
             <Popover>
