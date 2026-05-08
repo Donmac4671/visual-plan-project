@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useDeferredValue } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,6 +80,8 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPhoneSearch, setOrderPhoneSearch] = useState("");
+  const deferredOrderPhoneSearch = useDeferredValue(orderPhoneSearch);
+  const [orderNetworkFilter, setOrderNetworkFilter] = useState("all");
   const today = new Date();
   const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
   const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
@@ -158,13 +160,14 @@ export default function Admin() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
-    // When searching by phone, show ALL orders for that number (bypass other filters)
-    if (orderPhoneSearch.trim()) {
-      return result.filter(o => o.phone_number?.includes(orderPhoneSearch.trim()));
+    const phoneQ = deferredOrderPhoneSearch.trim();
+    if (phoneQ) {
+      return result.filter(o => o.phone_number?.includes(phoneQ));
     }
     if (orderStatusFilter !== "all") result = result.filter(o => o.status === orderStatusFilter);
+    if (orderNetworkFilter !== "all") result = result.filter(o => (o.network || "").toLowerCase() === orderNetworkFilter.toLowerCase());
     return filterByDate(result, orderDateFrom, orderDateTo);
-  }, [orders, orderStatusFilter, orderPhoneSearch, orderDateFrom, orderDateTo]);
+  }, [orders, orderStatusFilter, orderNetworkFilter, deferredOrderPhoneSearch, orderDateFrom, orderDateTo]);
 
   const filteredComplaints = useMemo(() => {
     let result = complaints;
@@ -521,7 +524,7 @@ export default function Admin() {
               />
             </div>
             <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -529,6 +532,18 @@ export default function Admin() {
                 <SelectItem value="waiting">Waiting</SelectItem>
                 <SelectItem value="completed">Delivered</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={orderNetworkFilter} onValueChange={setOrderNetworkFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by network" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Networks</SelectItem>
+                <SelectItem value="MTN">MTN</SelectItem>
+                <SelectItem value="TELECEL">Telecel</SelectItem>
+                <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
+                <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
+                <SelectItem value="MashUp">MashUp</SelectItem>
+                <SelectItem value="Airtime">Airtime</SelectItem>
               </SelectContent>
             </Select>
             <Popover>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { formatCurrency } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +22,8 @@ export default function Orders() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all");
   const [phoneSearch, setPhoneSearch] = useState("");
+  const deferredPhoneSearch = useDeferredValue(phoneSearch);
+  const [networkFilter, setNetworkFilter] = useState<string>("all");
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -60,18 +62,21 @@ export default function Orders() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
-    // When searching by phone, show ALL orders for that number (bypass other filters)
-    if (phoneSearch.trim()) {
-      return result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
+    const phoneQ = deferredPhoneSearch.trim();
+    if (phoneQ) {
+      return result.filter((o) => o.phone_number?.includes(phoneQ));
     }
     if (statusFilter !== "all") {
       result = result.filter((o) => o.status === statusFilter);
+    }
+    if (networkFilter !== "all") {
+      result = result.filter((o) => (o.network || "").toLowerCase() === networkFilter.toLowerCase());
     }
     if (selectedDate) {
       result = result.filter((o) => isSameDay(parseISO(o.created_at), selectedDate));
     }
     return result;
-  }, [orders, statusFilter, phoneSearch, selectedDate]);
+  }, [orders, statusFilter, networkFilter, deferredPhoneSearch, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -119,6 +124,19 @@ export default function Orders() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search phone" value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} className="pl-8 w-[160px] h-9" />
             </div>
+            <select
+              value={networkFilter}
+              onChange={(e) => setNetworkFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="all">All Networks</option>
+              <option value="MTN">MTN</option>
+              <option value="TELECEL">Telecel</option>
+              <option value="AT BIG TIME">AT Big Time</option>
+              <option value="AT PREMIUM">AT Premium</option>
+              <option value="MashUp">MashUp</option>
+              <option value="Airtime">Airtime</option>
+            </select>
             {selectedDate && (
               <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear</Button>
             )}
