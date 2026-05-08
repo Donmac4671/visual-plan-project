@@ -124,6 +124,8 @@ export default function MashupAirtime() {
     closeAirtime();
   };
 
+  if (!mashupEnabled && !airtimeEnabled) return null;
+
   return (
     <div className="space-y-3">
       {/* MashUp section */}
