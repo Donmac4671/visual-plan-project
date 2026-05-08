@@ -23,6 +23,8 @@ import AdminSiteMessage from "@/components/admin/AdminSiteMessage";
 import AdminBroadcast from "@/components/admin/AdminBroadcast";
 import AdminLiveChat from "@/components/admin/AdminLiveChat";
 import AdminMonthlyRankings from "@/components/admin/AdminMonthlyRankings";
+import { Switch } from "@/components/ui/switch";
+import { useProductToggles } from "@/hooks/useProductToggles";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -30,6 +32,17 @@ import { cn } from "@/lib/utils";
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const { mashupEnabled, airtimeEnabled, refresh: refreshToggles } = useProductToggles();
+
+  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled", value: boolean) => {
+    const { error } = await supabase.from("app_settings").upsert({ key, value: value as any }, { onConflict: "key" });
+    if (error) {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Updated", description: `${key === "mashup_enabled" ? "MashUp" : "Airtime"} ${value ? "enabled" : "disabled"}` });
+    refreshToggles();
+  };
 
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
@@ -480,6 +493,22 @@ export default function Admin() {
                 <SelectItem value="60">60 minutes</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="mb-4 rounded-xl border border-border bg-card p-3 flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
+              <Switch checked={mashupEnabled} onCheckedChange={(v) => handleToggleProduct("mashup_enabled", v)} />
+              <div>
+                <p className="text-sm font-semibold text-foreground">MashUp</p>
+                <p className="text-xs text-muted-foreground">{mashupEnabled ? "Visible to users" : "Hidden from users"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={airtimeEnabled} onCheckedChange={(v) => handleToggleProduct("airtime_enabled", v)} />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Airtime</p>
+                <p className="text-xs text-muted-foreground">{airtimeEnabled ? "Visible to users" : "Hidden from users"}</p>
+              </div>
+            </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
             <div className="relative flex-1 min-w-[220px]">

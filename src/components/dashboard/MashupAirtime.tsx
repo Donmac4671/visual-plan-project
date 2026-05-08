@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { MASHUP_PACKAGES, MashupPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrency } from "@/lib/data";
+import { useProductToggles } from "@/hooks/useProductToggles";
 
 type Mode = null | "mashup" | "airtime";
 
@@ -25,6 +26,7 @@ export default function MashupAirtime() {
   const [airtimeAmount, setAirtimeAmount] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const { mashupEnabled, airtimeEnabled } = useProductToggles();
 
   const isValidPhone = (phone: string) => /^\d{10}$/.test(phone);
 
@@ -122,9 +124,12 @@ export default function MashupAirtime() {
     closeAirtime();
   };
 
+  if (!mashupEnabled && !airtimeEnabled) return null;
+
   return (
     <div className="space-y-3">
       {/* MashUp section */}
+      {mashupEnabled && (
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <button
           onClick={() => setExpanded(expanded === "mashup" ? null : "mashup")}
@@ -161,8 +166,10 @@ export default function MashupAirtime() {
           </div>
         )}
       </div>
+      )}
 
       {/* Airtime section */}
+      {airtimeEnabled && (
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <button
           onClick={() => setExpanded(expanded === "airtime" ? null : "airtime")}
@@ -193,6 +200,7 @@ export default function MashupAirtime() {
           </div>
         )}
       </div>
+      )}
 
       {/* MashUp dialog */}
       <Dialog

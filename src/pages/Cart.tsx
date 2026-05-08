@@ -9,6 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { initPaystack } from "@/lib/paystack";
+import mtnLogo from "@/assets/networks/mtn.png";
+import telecelLogo from "@/assets/networks/telecel.png";
+import airteltigoLogo from "@/assets/networks/airteltigo.png";
+import { Smartphone, Phone as PhoneIcon } from "lucide-react";
+
+function getNetworkVisual(networkId: string) {
+  const id = networkId?.toLowerCase() || "";
+  if (id === "mtn") return { logo: mtnLogo, bg: "bg-yellow-400" };
+  if (id === "telecel") return { logo: telecelLogo, bg: "bg-red-500" };
+  if (id.startsWith("at-") || id === "airteltigo") return { logo: airteltigoLogo, bg: "bg-sky-600" };
+  return { logo: null, bg: "bg-muted" };
+}
 
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCart();
@@ -227,12 +239,30 @@ export default function Cart() {
         ) : (
           <>
             <div className="divide-y divide-border">
-              {items.map((item) => (
+              {items.map((item) => {
+                const visual = getNetworkVisual(item.networkId);
+                const isMashup = item.networkId === "mashup";
+                const isAirtime = item.networkId === "airtime";
+                return (
                 <div key={item.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center">
-                      <span className="text-xs font-bold">{item.network.slice(0, 3)}</span>
-                    </div>
+                    {isMashup ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-white" />
+                      </div>
+                    ) : isAirtime ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                        <PhoneIcon className="w-5 h-5 text-white" />
+                      </div>
+                    ) : visual.logo ? (
+                      <div className={`w-10 h-10 rounded-full ${visual.bg} flex items-center justify-center overflow-hidden`}>
+                        <img src={visual.logo} alt={item.network} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-xs font-bold">{item.network.slice(0, 3)}</span>
+                      </div>
+                    )}
                     <div>
                       <p className="font-semibold text-foreground">
                         {item.network} — {item.bundle.size}
@@ -247,7 +277,8 @@ export default function Cart() {
                     </Button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="p-4 border-t border-border space-y-4">
