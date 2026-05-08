@@ -26,8 +26,9 @@ export default function MashupAirtime() {
   const [airtimeAmount, setAirtimeAmount] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const { mashupEnabled, airtimeEnabled } = useProductToggles();
 
-  const isValidPhone = (phone: string) => /^\d{10}$/.test(phone);
+  if (!mashupEnabled && !airtimeEnabled) return null;
 
   const closeMashup = () => {
     setPkg(null);
