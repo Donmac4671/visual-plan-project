@@ -32,6 +32,17 @@ import { cn } from "@/lib/utils";
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const { mashupEnabled, airtimeEnabled, refresh: refreshToggles } = useProductToggles();
+
+  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled", value: boolean) => {
+    const { error } = await supabase.from("app_settings").upsert({ key, value: value as any }, { onConflict: "key" });
+    if (error) {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Updated", description: `${key === "mashup_enabled" ? "MashUp" : "Airtime"} ${value ? "enabled" : "disabled"}` });
+    refreshToggles();
+  };
 
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
