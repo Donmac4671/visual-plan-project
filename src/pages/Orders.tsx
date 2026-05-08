@@ -62,18 +62,21 @@ export default function Orders() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
-    // When searching by phone, show ALL orders for that number (bypass other filters)
-    if (phoneSearch.trim()) {
-      return result.filter((o) => o.phone_number?.includes(phoneSearch.trim()));
+    const phoneQ = deferredPhoneSearch.trim();
+    if (phoneQ) {
+      return result.filter((o) => o.phone_number?.includes(phoneQ));
     }
     if (statusFilter !== "all") {
       result = result.filter((o) => o.status === statusFilter);
+    }
+    if (networkFilter !== "all") {
+      result = result.filter((o) => (o.network || "").toLowerCase() === networkFilter.toLowerCase());
     }
     if (selectedDate) {
       result = result.filter((o) => isSameDay(parseISO(o.created_at), selectedDate));
     }
     return result;
-  }, [orders, statusFilter, phoneSearch, selectedDate]);
+  }, [orders, statusFilter, networkFilter, deferredPhoneSearch, selectedDate]);
 
   const statusColor = (status: string) => {
     switch (status) {
