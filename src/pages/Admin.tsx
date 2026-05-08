@@ -80,6 +80,8 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPhoneSearch, setOrderPhoneSearch] = useState("");
+  const deferredOrderPhoneSearch = useDeferredValue(orderPhoneSearch);
+  const [orderNetworkFilter, setOrderNetworkFilter] = useState("all");
   const today = new Date();
   const [orderDateFrom, setOrderDateFrom] = useState<Date | undefined>(today);
   const [orderDateTo, setOrderDateTo] = useState<Date | undefined>(today);
