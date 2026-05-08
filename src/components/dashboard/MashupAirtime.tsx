@@ -129,6 +129,7 @@ export default function MashupAirtime() {
   return (
     <div className="space-y-3">
       {/* MashUp section */}
+      {mashupEnabled && (
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <button
           onClick={() => setExpanded(expanded === "mashup" ? null : "mashup")}
@@ -165,6 +166,7 @@ export default function MashupAirtime() {
           </div>
         )}
       </div>
+      )}
 
       {/* Airtime section */}
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
