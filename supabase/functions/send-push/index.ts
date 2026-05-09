@@ -26,9 +26,19 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
 
-    // Public-key endpoint for the client to subscribe
+    // Public-key endpoint for the client to subscribe (no auth needed)
     if (body.action === "get_public_key") {
       return new Response(JSON.stringify({ publicKey: VAPID_PUBLIC_KEY }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // All other actions require service-role authentication
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
+    if (authHeader !== `Bearer ${serviceKey}`) {
+      return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
