@@ -55,9 +55,19 @@ serve(async (req) => {
     const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
     if (!GH_API_KEY) throw new Error("GHDATACONNECT_API_KEY is not configured");
 
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Service-role-only authentication
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
+    if (authHeader !== `Bearer ${serviceKey}`) {
+      return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      serviceKey,
     );
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
