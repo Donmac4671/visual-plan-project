@@ -13,9 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    // Shared-secret verification
+    // Shared-secret verification (fail-closed)
     const expectedSecret = Deno.env.get("GHCONNECT_WEBHOOK_SECRET");
-    if (expectedSecret) {
+    if (!expectedSecret) {
+      console.error("ghconnect-webhook: GHCONNECT_WEBHOOK_SECRET is not configured");
+      return new Response(JSON.stringify({ success: false, message: "Server misconfiguration" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    {
       const url = new URL(req.url);
       const providedSecret =
         req.headers.get("x-webhook-secret") ||
