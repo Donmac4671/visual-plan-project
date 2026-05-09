@@ -61,12 +61,27 @@ async function buildOrderMessage(o: any, status: "placed" | "pending" | "failed"
 }
 
 async function handle(payload: any) {
-  const { type, table, record, old_record } = payload as {
+  const { type, table, record: rawRecord, old_record } = payload as {
     type: "INSERT" | "UPDATE" | "DELETE";
     table: string;
     record: any;
     old_record?: any;
   };
+
+  // Re-fetch the actual row from DB to prevent forged payloads (the public
+  // endpoint accepts unauthenticated calls because pg_net trigger uses anon).
+  // For INSERT/UPDATE we trust only DB-confirmed values.
+  let record = rawRecord;
+  const allowedTables = new Set(["orders", "wallet_topups", "complaints", "chat_messages", "referrals", "agent_applications"]);
+  if (!allowedTables.has(table)) return;
+  if (type !== "DELETE" && rawRecord?.id) {
+    const { data: fresh } = await supabase.from(table).select("*").eq("id", rawRecord.id).maybeSingle();
+    if (!fresh) {
+      console.warn(`dispatcher: record ${table}/${rawRecord.id} not found, ignoring`);
+      return;
+    }
+    record = fresh;
+  }
   const tasks: Promise<void>[] = [];
 
   // ─── ORDERS ───
