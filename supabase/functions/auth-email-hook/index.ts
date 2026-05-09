@@ -41,6 +41,31 @@ const SENDER_DOMAIN = "notify.donmacdatahub.com"
 const ROOT_DOMAIN = "donmacdatahub.com"
 const FROM_DOMAIN = "notify.donmacdatahub.com" // Domain shown in From address (may be root or sender subdomain)
 
+function flushEmailQueueSoon() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+  if (!supabaseUrl || !serviceRoleKey) return Promise.resolve()
+
+  return fetch(`${supabaseUrl}/functions/v1/process-email-queue`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${serviceRoleKey}`,
+    },
+    body: '{}',
+  }).then(async (response) => {
+    if (!response.ok) {
+      console.error('Immediate email queue processing failed', {
+        status: response.status,
+        body: await response.text().catch(() => ''),
+      })
+    }
+  }).catch((error) => {
+    console.error('Immediate email queue processing failed', { error })
+  })
+}
+
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
 // The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
@@ -288,6 +313,16 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   console.log('Auth email enqueued', { emailType, email: payload.data.email, run_id })
+
+  const queueFlush = flushEmailQueueSoon()
+  const runtime = globalThis as typeof globalThis & {
+    EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void }
+  }
+  if (runtime.EdgeRuntime?.waitUntil) {
+    runtime.EdgeRuntime.waitUntil(queueFlush)
+  } else {
+    await queueFlush
+  }
 
   return new Response(
     JSON.stringify({ success: true, queued: true }),
