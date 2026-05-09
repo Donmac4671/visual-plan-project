@@ -212,9 +212,16 @@ Deno.serve(async (req) => {
 
   console.log(`sms-webhook invoked: method=${req.method}, contentType=${req.headers.get("content-type") ?? "none"}`);
 
-  // Shared-secret verification
+  // Shared-secret verification (fail-closed)
   const expectedSecret = Deno.env.get("SMS_WEBHOOK_SECRET");
-  if (expectedSecret) {
+  if (!expectedSecret) {
+    console.error("sms-webhook: SMS_WEBHOOK_SECRET is not configured");
+    return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+  {
     const url = new URL(req.url);
     const providedSecret =
       url.searchParams.get("key") ||
