@@ -32,15 +32,16 @@ import { cn } from "@/lib/utils";
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const { mashupEnabled, airtimeEnabled, refresh: refreshToggles } = useProductToggles();
+  const { mashupEnabled, airtimeEnabled, vsEnabled, refresh: refreshToggles } = useProductToggles();
 
-  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled", value: boolean) => {
+  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled" | "vs_enabled", value: boolean) => {
     const { error } = await supabase.from("app_settings").upsert({ key, value: value as any }, { onConflict: "key" });
     if (error) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Updated", description: `${key === "mashup_enabled" ? "MashUp" : "Airtime"} ${value ? "enabled" : "disabled"}` });
+    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V&S" };
+    toast({ title: "Updated", description: `${labels[key]} ${value ? "enabled" : "disabled"}` });
     refreshToggles();
   };
 
@@ -204,6 +205,17 @@ export default function Admin() {
     const { error } = await supabase.rpc("admin_toggle_admin_role", { target_user_id: userId, make_admin: makeAdmin });
     if (error) { toast({ title: "Role Update Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: makeAdmin ? "User is now Admin" : "Admin role removed" });
+    fetchData();
+  };
+
+  const handleDeleteUser = async (userId: string, name: string) => {
+    if (!confirm(`Permanently delete account for ${name}? This removes all their orders, transactions and data. This cannot be undone.`)) return;
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", { body: { target_user_id: userId } });
+    if (error || (data as any)?.error) {
+      toast({ title: "Delete Failed", description: (data as any)?.error || error?.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "User Deleted", description: `${name}'s account has been removed.` });
     fetchData();
   };
 
@@ -415,6 +427,9 @@ export default function Admin() {
                         <Button size="sm" variant={u.is_blocked ? "default" : "destructive"} onClick={() => handleToggleBlock(u.user_id, !u.is_blocked)}>
                           {u.is_blocked ? "Unblock" : "Block"}
                         </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(u.user_id, u.full_name || u.email)} title="Permanently delete account">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -512,6 +527,13 @@ export default function Admin() {
                 <p className="text-xs text-muted-foreground">{airtimeEnabled ? "Visible to users" : "Hidden from users"}</p>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={vsEnabled} onCheckedChange={(v) => handleToggleProduct("vs_enabled", v)} />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Telecel V&S</p>
+                <p className="text-xs text-muted-foreground">{vsEnabled ? "Visible to users" : "Hidden from users"}</p>
+              </div>
+            </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
             <div className="relative flex-1 min-w-[220px]">
@@ -543,6 +565,7 @@ export default function Admin() {
                 <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
                 <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
                 <SelectItem value="MashUp">MashUp</SelectItem>
+                <SelectItem value="Telecel V&S">Telecel V&S</SelectItem>
                 <SelectItem value="Airtime">Airtime</SelectItem>
               </SelectContent>
             </Select>

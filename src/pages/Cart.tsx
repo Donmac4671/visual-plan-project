@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatCurrency, calculatePaystackFee, calculateMashupFee } from "@/lib/data";
+import { formatCurrency, calculatePaystackFee, calculateMashupFee, calculateTelecelVSFee } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingCart, Wallet, CreditCard, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -12,12 +12,12 @@ import { initPaystack } from "@/lib/paystack";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
-import { Smartphone, Phone as PhoneIcon } from "lucide-react";
+import { Smartphone, Phone as PhoneIcon, MessageSquare } from "lucide-react";
 
 function getNetworkVisual(networkId: string) {
   const id = networkId?.toLowerCase() || "";
   if (id === "mtn") return { logo: mtnLogo, bg: "bg-yellow-400" };
-  if (id === "telecel") return { logo: telecelLogo, bg: "bg-red-500" };
+  if (id === "telecel" || id === "vs") return { logo: telecelLogo, bg: "bg-red-500" };
   if (id.startsWith("at-") || id === "airteltigo") return { logo: airteltigoLogo, bg: "bg-sky-600" };
   return { logo: null, bg: "bg-muted" };
 }
@@ -32,7 +32,9 @@ export default function Cart() {
 
   const mashupSubtotal = items.filter((i) => i.networkId === "mashup").reduce((sum, i) => sum + i.effectivePrice, 0);
   const mashupFee = calculateMashupFee(mashupSubtotal);
-  const grandTotal = total + mashupFee;
+  const vsSubtotal = items.filter((i) => i.networkId === "vs").reduce((sum, i) => sum + i.effectivePrice, 0);
+  const vsFee = calculateTelecelVSFee(vsSubtotal);
+  const grandTotal = total + mashupFee + vsFee;
   const paystackFee = calculatePaystackFee(grandTotal);
   const paystackTotal = grandTotal + paystackFee;
 
@@ -65,16 +67,17 @@ export default function Cart() {
       return;
     }
 
-    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
 
     setProcessing(true);
 
     try {
-      // Handle Airtime & Mashup
-      for (const item of airtimeMashupItems) {
-        const amount =
-          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice;
+      // Handle Airtime, Mashup & Telecel V&S (manual delivery)
+      for (const item of manualItems) {
+        let amount = item.effectivePrice;
+        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
+        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
 
         const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
@@ -137,7 +140,7 @@ export default function Cart() {
       }
 
       await refreshProfile();
-      toast({ title: "Success!", description: `${airtimeMashupItems.length + dataItems.length} order(s) placed.` });
+      toast({ title: "Success!", description: `${manualItems.length + dataItems.length} order(s) placed.` });
       clearCart();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -150,8 +153,8 @@ export default function Cart() {
     if (!profile) return;
     setProcessing(true);
 
-    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
 
     const dataPhones = dataItems.map((i) => i.phoneNumber);
     const pendingPhones = await checkPendingOrders(dataPhones);
@@ -178,15 +181,19 @@ export default function Cart() {
         bundle_size_gb: getBundleSizeGB(item.bundle.size),
         amount: item.effectivePrice,
       })),
-      ...airtimeMashupItems.map((item) => ({
-        network: item.network,
-        network_id: item.networkId,
-        phone: item.phoneNumber,
-        bundle: item.bundle.size,
-        bundle_size_gb: 0,
-        amount:
-          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice,
-      })),
+      ...manualItems.map((item) => {
+        let amount = item.effectivePrice;
+        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
+        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
+        return {
+          network: item.network,
+          network_id: item.networkId,
+          phone: item.phoneNumber,
+          bundle: item.bundle.size,
+          bundle_size_gb: 0,
+          amount,
+        };
+      }),
     ];
 
     await initPaystack({
@@ -243,12 +250,17 @@ export default function Cart() {
                 const visual = getNetworkVisual(item.networkId);
                 const isMashup = item.networkId === "mashup";
                 const isAirtime = item.networkId === "airtime";
+                const isVs = item.networkId === "vs";
                 return (
                 <div key={item.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {isMashup ? (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Smartphone className="w-5 h-5 text-white" />
+                      </div>
+                    ) : isVs ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-white" />
                       </div>
                     ) : isAirtime ? (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
@@ -287,10 +299,10 @@ export default function Cart() {
                   <span>Subtotal</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
-                {mashupFee > 0 && (
+                {(mashupFee + vsFee) > 0 && (
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Fee </span>
-                    <span>{formatCurrency(mashupFee)}</span>
+                    <span>{formatCurrency(mashupFee + vsFee)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-1">

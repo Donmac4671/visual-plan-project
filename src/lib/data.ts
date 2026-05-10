@@ -169,6 +169,39 @@ export function calculateMashupFee(amount: number): number {
   return Math.round(amount * MASHUP_FEE_PERCENT * 100) / 100;
 }
 
+export interface TelecelVSPackage {
+  price: number;
+  minutes: string;
+  sms: string;
+  validity?: string; // optional, e.g., "7 days"
+  allNetworks?: boolean; // can call all networks
+  label: string;
+}
+
+export const TELECEL_VS_PACKAGES: TelecelVSPackage[] = [
+  { price: 1, minutes: "21 Minutes", sms: "5 SMS", label: "₵1 — 21 Minutes + 5 SMS" },
+  { price: 2, minutes: "43 Minutes", sms: "5 SMS", label: "₵2 — 43 Minutes + 5 SMS" },
+  { price: 3, minutes: "64 Minutes", sms: "5 SMS", label: "₵3 — 64 Minutes + 5 SMS" },
+  { price: 4, minutes: "84 Minutes", sms: "5 SMS", label: "₵4 — 84 Minutes + 5 SMS" },
+  { price: 5, minutes: "114 Minutes", sms: "10 SMS", label: "₵5 — 114 Minutes + 10 SMS" },
+  { price: 6, minutes: "137 Minutes", sms: "10 SMS", label: "₵6 — 137 Minutes + 10 SMS" },
+  { price: 7, minutes: "160 Minutes", sms: "10 SMS", label: "₵7 — 160 Minutes + 10 SMS" },
+  { price: 8, minutes: "183 Minutes", sms: "10 SMS", label: "₵8 — 183 Minutes + 10 SMS" },
+  { price: 9, minutes: "206 Minutes", sms: "10 SMS", label: "₵9 — 206 Minutes + 10 SMS" },
+  { price: 10, minutes: "236 Minutes", sms: "50 SMS", label: "₵10 — 236 Minutes + 50 SMS" },
+  { price: 15, minutes: "354 Minutes", sms: "50 SMS", label: "₵15 — 354 Minutes + 50 SMS" },
+  { price: 20, minutes: "486 Minutes", sms: "50 SMS", label: "₵20 — 486 Minutes + 50 SMS" },
+  { price: 25, minutes: "607 Minutes", sms: "50 SMS", label: "₵25 — 607 Minutes + 50 SMS" },
+  { price: 29.99, minutes: "729 Minutes", sms: "50 SMS", label: "₵29.99 — 729 Minutes + 50 SMS" },
+  { price: 7, minutes: "200 Minutes", sms: "All Networks", validity: "7 days", allNetworks: true, label: "Special ₵7 — 200 Minutes (All Networks, 7 days)" },
+];
+
+export const TELECEL_VS_FEE_PERCENT = 0.10; // 10% fee at checkout
+
+export function calculateTelecelVSFee(amount: number): number {
+  return Math.round(amount * TELECEL_VS_FEE_PERCENT * 100) / 100;
+}
+
 export const PAYSTACK_FEE_PERCENT = 0.02; // 2%
 
 export const MIN_TOPUP_AGENT = 20;

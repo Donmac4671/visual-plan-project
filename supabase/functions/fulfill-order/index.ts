@@ -111,7 +111,7 @@ serve(async (req) => {
     // ============================================================
     // 🔥 BLOCK Airtime and Mashup - NEVER go to GHData
     // ============================================================
-    if (network_id === "airtime" || network_id === "mashup") {
+    if (network_id === "airtime" || network_id === "mashup" || network_id === "vs") {
       console.log(`🚫 Blocked ${network_id} order ${order_id} from GHData. Setting to processing (manual delivery).`);
 
       await supabase
