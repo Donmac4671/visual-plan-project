@@ -32,7 +32,9 @@ export default function Cart() {
 
   const mashupSubtotal = items.filter((i) => i.networkId === "mashup").reduce((sum, i) => sum + i.effectivePrice, 0);
   const mashupFee = calculateMashupFee(mashupSubtotal);
-  const grandTotal = total + mashupFee;
+  const vsSubtotal = items.filter((i) => i.networkId === "vs").reduce((sum, i) => sum + i.effectivePrice, 0);
+  const vsFee = calculateTelecelVSFee(vsSubtotal);
+  const grandTotal = total + mashupFee + vsFee;
   const paystackFee = calculatePaystackFee(grandTotal);
   const paystackTotal = grandTotal + paystackFee;
 
