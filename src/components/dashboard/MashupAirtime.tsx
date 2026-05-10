@@ -241,7 +241,84 @@ export default function MashupAirtime() {
       </div>
       )}
 
-      {/* MashUp dialog */}
+      {/* Telecel Voice & SMS section */}
+      {vsEnabled && (
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <button
+          onClick={() => setExpanded(expanded === "vs" ? null : "vs")}
+          className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-foreground">Telecel Voice & SMS</p>
+              <p className="text-xs text-muted-foreground">Minutes + SMS combo packages (Telecel only)</p>
+            </div>
+          </div>
+          {expanded === "vs" ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </button>
+        {expanded === "vs" && (
+          <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {TELECEL_VS_PACKAGES.map((p, idx) => (
+              <button
+                key={`${p.price}-${idx}`}
+                onClick={() => setVsPkg(p)}
+                className={`rounded-2xl p-3 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all ${p.allNetworks ? "bg-gradient-to-br from-amber-500 to-orange-600 ring-2 ring-amber-300" : "bg-gradient-to-br from-red-500 to-rose-600"}`}
+              >
+                {p.allNetworks && <p className="text-[9px] font-bold opacity-90">SPECIAL</p>}
+                <p className="text-2xl font-bold">{formatCurrency(p.price)}</p>
+                <p className="text-[10px] mt-1 opacity-90">{p.minutes}</p>
+                <p className="text-[10px] opacity-90">{p.sms}</p>
+                {p.validity && <p className="text-[9px] opacity-80">{p.validity}</p>}
+                {p.allNetworks && <p className="text-[9px] opacity-90">All Networks</p>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* Telecel V&S dialog */}
+      <Dialog open={!!vsPkg} onOpenChange={(o) => { if (!o) closeVs(); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Telecel V&S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
+          </DialogHeader>
+          {vsPkg && (
+            <div className="space-y-3">
+              <div className="bg-accent rounded-xl p-3 text-center">
+                <p className="text-sm font-semibold">{vsPkg.minutes} + {vsPkg.sms}</p>
+                {vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.validity}</p>}
+                {vsPkg.allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
+                {!vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">No expiry</p>}
+                <p className="text-xs text-muted-foreground mt-1">A small fee will be added at checkout</p>
+                <p className="text-xs text-muted-foreground mt-1">⚠️ Telecel numbers only</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">📞 Telecel Phone Number</label>
+                <Input
+                  placeholder="e.g., 0202345678"
+                  value={vsPhone}
+                  onChange={(e) => setVsPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  maxLength={10}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={closeVs}>Cancel</Button>
+                <Button className="flex-1 gradient-primary border-0" onClick={handleAddVs}>Add to Cart</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={!!pkg}
         onOpenChange={(o) => {
