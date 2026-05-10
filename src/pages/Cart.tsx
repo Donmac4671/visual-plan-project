@@ -140,7 +140,7 @@ export default function Cart() {
       }
 
       await refreshProfile();
-      toast({ title: "Success!", description: `${airtimeMashupItems.length + dataItems.length} order(s) placed.` });
+      toast({ title: "Success!", description: `${manualItems.length + dataItems.length} order(s) placed.` });
       clearCart();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
