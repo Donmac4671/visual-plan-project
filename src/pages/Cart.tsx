@@ -250,12 +250,17 @@ export default function Cart() {
                 const visual = getNetworkVisual(item.networkId);
                 const isMashup = item.networkId === "mashup";
                 const isAirtime = item.networkId === "airtime";
+                const isVs = item.networkId === "vs";
                 return (
                 <div key={item.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {isMashup ? (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Smartphone className="w-5 h-5 text-white" />
+                      </div>
+                    ) : isVs ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-white" />
                       </div>
                     ) : isAirtime ? (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
