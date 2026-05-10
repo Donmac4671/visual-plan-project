@@ -153,8 +153,8 @@ export default function Cart() {
     if (!profile) return;
     setProcessing(true);
 
-    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
 
     const dataPhones = dataItems.map((i) => i.phoneNumber);
     const pendingPhones = await checkPendingOrders(dataPhones);
@@ -181,15 +181,19 @@ export default function Cart() {
         bundle_size_gb: getBundleSizeGB(item.bundle.size),
         amount: item.effectivePrice,
       })),
-      ...airtimeMashupItems.map((item) => ({
-        network: item.network,
-        network_id: item.networkId,
-        phone: item.phoneNumber,
-        bundle: item.bundle.size,
-        bundle_size_gb: 0,
-        amount:
-          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice,
-      })),
+      ...manualItems.map((item) => {
+        let amount = item.effectivePrice;
+        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
+        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
+        return {
+          network: item.network,
+          network_id: item.networkId,
+          phone: item.phoneNumber,
+          bundle: item.bundle.size,
+          bundle_size_gb: 0,
+          amount,
+        };
+      }),
     ];
 
     await initPaystack({
