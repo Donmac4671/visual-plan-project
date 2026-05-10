@@ -513,6 +513,13 @@ export default function Admin() {
                 <p className="text-xs text-muted-foreground">{airtimeEnabled ? "Visible to users" : "Hidden from users"}</p>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={vsEnabled} onCheckedChange={(v) => handleToggleProduct("vs_enabled", v)} />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Telecel V&S</p>
+                <p className="text-xs text-muted-foreground">{vsEnabled ? "Visible to users" : "Hidden from users"}</p>
+              </div>
+            </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
             <div className="relative flex-1 min-w-[220px]">
