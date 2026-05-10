@@ -299,10 +299,10 @@ export default function Cart() {
                   <span>Subtotal</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
-                {mashupFee > 0 && (
+                {(mashupFee + vsFee) > 0 && (
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Fee </span>
-                    <span>{formatCurrency(mashupFee)}</span>
+                    <span>{formatCurrency(mashupFee + vsFee)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-1">
