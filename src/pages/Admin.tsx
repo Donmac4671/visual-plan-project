@@ -32,15 +32,16 @@ import { cn } from "@/lib/utils";
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const { mashupEnabled, airtimeEnabled, refresh: refreshToggles } = useProductToggles();
+  const { mashupEnabled, airtimeEnabled, vsEnabled, refresh: refreshToggles } = useProductToggles();
 
-  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled", value: boolean) => {
+  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled" | "vs_enabled", value: boolean) => {
     const { error } = await supabase.from("app_settings").upsert({ key, value: value as any }, { onConflict: "key" });
     if (error) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Updated", description: `${key === "mashup_enabled" ? "MashUp" : "Airtime"} ${value ? "enabled" : "disabled"}` });
+    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V&S" };
+    toast({ title: "Updated", description: `${labels[key]} ${value ? "enabled" : "disabled"}` });
     refreshToggles();
   };
 
