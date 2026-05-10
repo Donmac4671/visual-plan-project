@@ -427,6 +427,9 @@ export default function Admin() {
                         <Button size="sm" variant={u.is_blocked ? "default" : "destructive"} onClick={() => handleToggleBlock(u.user_id, !u.is_blocked)}>
                           {u.is_blocked ? "Unblock" : "Block"}
                         </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(u.user_id, u.full_name || u.email)} title="Permanently delete account">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
