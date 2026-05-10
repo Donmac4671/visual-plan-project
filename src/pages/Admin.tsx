@@ -208,6 +208,17 @@ export default function Admin() {
     fetchData();
   };
 
+  const handleDeleteUser = async (userId: string, name: string) => {
+    if (!confirm(`Permanently delete account for ${name}? This removes all their orders, transactions and data. This cannot be undone.`)) return;
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", { body: { target_user_id: userId } });
+    if (error || (data as any)?.error) {
+      toast({ title: "Delete Failed", description: (data as any)?.error || error?.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "User Deleted", description: `${name}'s account has been removed.` });
+    fetchData();
+  };
+
   const handleWalletOp = async () => {
     if (!walletDialog || !walletAmount) return;
     const { error } = await supabase.rpc("admin_wallet_operation", {
