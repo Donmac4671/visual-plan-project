@@ -1,20 +1,26 @@
 import { useState } from "react";
-import { Phone, Smartphone, ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
+import { Phone, Smartphone, ShoppingCart, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { MASHUP_PACKAGES, MashupPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrency } from "@/lib/data";
+import { MASHUP_PACKAGES, MashupPackage, TELECEL_VS_PACKAGES, TelecelVSPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrency } from "@/lib/data";
 import { useProductToggles } from "@/hooks/useProductToggles";
 
-type Mode = null | "mashup" | "airtime";
+type Mode = null | "mashup" | "airtime" | "vs";
 
 // MTN prefixes for Mashup validation
 const MTN_PREFIXES = ["024", "054", "055", "059", "050", "0257"];
+// Telecel prefixes for Voice & SMS validation
+const TELECEL_PREFIXES = ["020", "050"];
 
 function isMTNNumber(phone: string): boolean {
   return MTN_PREFIXES.some((prefix) => phone.startsWith(prefix));
+}
+
+function isTelecelNumber(phone: string): boolean {
+  return TELECEL_PREFIXES.some((prefix) => phone.startsWith(prefix));
 }
 
 export default function MashupAirtime() {
