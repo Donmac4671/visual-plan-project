@@ -67,16 +67,17 @@ export default function Cart() {
       return;
     }
 
-    const airtimeMashupItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup");
+    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
+    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
 
     setProcessing(true);
 
     try {
-      // Handle Airtime & Mashup
-      for (const item of airtimeMashupItems) {
-        const amount =
-          item.networkId === "mashup" ? Math.round(item.effectivePrice * (1 + 0.05) * 100) / 100 : item.effectivePrice;
+      // Handle Airtime, Mashup & Telecel V&S (manual delivery)
+      for (const item of manualItems) {
+        let amount = item.effectivePrice;
+        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
+        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
 
         const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
