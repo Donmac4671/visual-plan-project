@@ -26,13 +26,15 @@ function isTelecelNumber(phone: string): boolean {
 export default function MashupAirtime() {
   const [expanded, setExpanded] = useState<Mode>(null);
   const [pkg, setPkg] = useState<MashupPackage | null>(null);
+  const [vsPkg, setVsPkg] = useState<TelecelVSPackage | null>(null);
   const [airtimeOpen, setAirtimeOpen] = useState(false);
   const [mashupPhone, setMashupPhone] = useState("");
+  const [vsPhone, setVsPhone] = useState("");
   const [airtimePhone, setAirtimePhone] = useState("");
   const [airtimeAmount, setAirtimeAmount] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
-  const { mashupEnabled, airtimeEnabled } = useProductToggles();
+  const { mashupEnabled, airtimeEnabled, vsEnabled } = useProductToggles();
 
   const isValidPhone = (phone: string) => /^\d{10}$/.test(phone);
 
@@ -41,10 +43,41 @@ export default function MashupAirtime() {
     setMashupPhone("");
   };
 
+  const closeVs = () => {
+    setVsPkg(null);
+    setVsPhone("");
+  };
+
   const closeAirtime = () => {
     setAirtimeOpen(false);
     setAirtimePhone("");
     setAirtimeAmount("");
+  };
+
+  const handleAddVs = () => {
+    if (!vsPkg) return;
+    if (!isValidPhone(vsPhone)) {
+      toast({ title: "Invalid phone number", description: "Enter a valid 10-digit phone number", variant: "destructive" });
+      return;
+    }
+    if (!isTelecelNumber(vsPhone)) {
+      toast({
+        title: "Telecel Only",
+        description: "Telecel Voice & SMS packages are only available for Telecel numbers (020, 050)",
+        variant: "destructive",
+      });
+      return;
+    }
+    const sizeLabel = `Telecel V&S ${formatCurrency(vsPkg.price)} (${vsPkg.minutes} + ${vsPkg.sms}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
+    addItem(
+      "vs",
+      "Telecel V&S",
+      { size: sizeLabel, sizeGB: 0, price: vsPkg.price, generalPrice: vsPkg.price },
+      vsPhone,
+      vsPkg.price,
+    );
+    toast({ title: "Added to cart", description: `Telecel V&S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
+    closeVs();
   };
 
   const handleAddMashup = () => {
