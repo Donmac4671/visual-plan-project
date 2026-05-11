@@ -286,16 +286,18 @@ export default function MashupAirtime() {
       </div>
       )}
 
-      {/* Telecel V&S dialog */}
+      {/* Telecel V+D+S dialog */}
       <Dialog open={!!vsPkg} onOpenChange={(o) => { if (!o) closeVs(); }}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Telecel V&S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
+            <DialogTitle>Telecel V+D+S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
           </DialogHeader>
           {vsPkg && (
             <div className="space-y-3">
               <div className="bg-accent rounded-xl p-3 text-center">
-                <p className="text-sm font-semibold">{vsPkg.minutes} + {vsPkg.sms}</p>
+                <p className="text-sm font-semibold">
+                  {[vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ")}
+                </p>
                 {vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.validity}</p>}
                 {vsPkg.allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
                 {!vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">No expiry</p>}
