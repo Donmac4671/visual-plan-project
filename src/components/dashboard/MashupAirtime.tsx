@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { MASHUP_PACKAGES, MashupPackage, TELECEL_VS_PACKAGES, TelecelVSPackage, AIRTIME_MIN, AIRTIME_MAX, formatCurrency } from "@/lib/data";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useProductToggles } from "@/hooks/useProductToggles";
 
 type Mode = null | "mashup" | "airtime" | "vs";
@@ -27,6 +29,7 @@ export default function MashupAirtime() {
   const [expanded, setExpanded] = useState<Mode>(null);
   const [pkg, setPkg] = useState<MashupPackage | null>(null);
   const [vsPkg, setVsPkg] = useState<TelecelVSPackage | null>(null);
+  const [vsVariantIdx, setVsVariantIdx] = useState<number>(0);
   const [airtimeOpen, setAirtimeOpen] = useState(false);
   const [mashupPhone, setMashupPhone] = useState("");
   const [vsPhone, setVsPhone] = useState("");
@@ -45,6 +48,7 @@ export default function MashupAirtime() {
 
   const closeVs = () => {
     setVsPkg(null);
+    setVsVariantIdx(0);
     setVsPhone("");
   };
 
@@ -56,6 +60,8 @@ export default function MashupAirtime() {
 
   const handleAddVs = () => {
     if (!vsPkg) return;
+    const variant = vsPkg.variants[vsVariantIdx];
+    if (!variant) return;
     if (!isValidPhone(vsPhone)) {
       toast({ title: "Invalid phone number", description: "Enter a valid 10-digit phone number", variant: "destructive" });
       return;
@@ -63,21 +69,22 @@ export default function MashupAirtime() {
     if (!isTelecelNumber(vsPhone)) {
       toast({
         title: "Telecel Only",
-        description: "Telecel Voice + Data + SMS packages are only available for Telecel numbers (020, 050)",
+        description: "Telecel packages are only available for Telecel numbers (020, 050)",
         variant: "destructive",
       });
       return;
     }
-    const parts = [vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ");
-    const sizeLabel = `Telecel V+D+S ${formatCurrency(vsPkg.price)} (${parts}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
+    const productName = variant.kind === "vds" ? "Telecel V+D+S" : "Telecel V&S";
+    const parts = [variant.minutes, variant.data, variant.sms].filter(Boolean).join(" + ");
+    const sizeLabel = `${productName} ${formatCurrency(vsPkg.price)} (${parts}${variant.validity ? `, ${variant.validity}` : ""}${variant.allNetworks ? ", all networks" : ""})`;
     addItem(
       "vs",
-      "Telecel V+D+S",
+      productName,
       { size: sizeLabel, sizeGB: 0, price: vsPkg.price, generalPrice: vsPkg.price },
       vsPhone,
       vsPkg.price,
     );
-    toast({ title: "Added to cart", description: `Telecel V+D+S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
+    toast({ title: "Added to cart", description: `${productName} ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
     closeVs();
   };
 
@@ -266,21 +273,31 @@ export default function MashupAirtime() {
         </button>
         {expanded === "vs" && (
           <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {TELECEL_VS_PACKAGES.map((p, idx) => (
-              <button
-                key={`${p.price}-${idx}`}
-                onClick={() => setVsPkg(p)}
-                className={`rounded-2xl p-3 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all ${p.allNetworks ? "bg-gradient-to-br from-amber-500 to-orange-600 ring-2 ring-amber-300" : "bg-gradient-to-br from-red-500 to-rose-600"}`}
-              >
-                {p.allNetworks && <p className="text-[9px] font-bold opacity-90">SPECIAL</p>}
-                <p className="text-2xl font-bold">{formatCurrency(p.price)}</p>
-                <p className="text-[10px] mt-1 opacity-90">{p.minutes}</p>
-                {p.data && <p className="text-[10px] opacity-90">{p.data}</p>}
-                <p className="text-[10px] opacity-90">{p.sms}</p>
-                {p.validity && <p className="text-[9px] opacity-80">{p.validity}</p>}
-                {p.allNetworks && <p className="text-[9px] opacity-90">All Networks</p>}
-              </button>
-            ))}
+            {TELECEL_VS_PACKAGES.map((p, idx) => {
+              const hasChoice = p.variants.length > 1;
+              const first = p.variants[0];
+              return (
+                <button
+                  key={`${p.price}-${idx}`}
+                  onClick={() => { setVsPkg(p); setVsVariantIdx(0); }}
+                  className={`rounded-2xl p-3 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all ${p.isSpecial ? "bg-gradient-to-br from-amber-500 to-orange-600 ring-2 ring-amber-300" : "bg-gradient-to-br from-red-500 to-rose-600"}`}
+                >
+                  {p.isSpecial && <p className="text-[9px] font-bold opacity-90">SPECIAL</p>}
+                  <p className="text-2xl font-bold">{formatCurrency(p.price)}</p>
+                  {hasChoice ? (
+                    <p className="text-[10px] mt-1 opacity-90">2 offers — tap to choose</p>
+                  ) : (
+                    <>
+                      <p className="text-[10px] mt-1 opacity-90">{first.minutes}</p>
+                      {first.data && <p className="text-[10px] opacity-90">{first.data}</p>}
+                      <p className="text-[10px] opacity-90">{first.sms}</p>
+                      {first.validity && <p className="text-[9px] opacity-80">{first.validity}</p>}
+                      {first.allNetworks && <p className="text-[9px] opacity-90">All Networks</p>}
+                    </>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -290,19 +307,48 @@ export default function MashupAirtime() {
       <Dialog open={!!vsPkg} onOpenChange={(o) => { if (!o) closeVs(); }}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Telecel V+D+S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
+            <DialogTitle>Telecel {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
           </DialogHeader>
           {vsPkg && (
             <div className="space-y-3">
-              <div className="bg-accent rounded-xl p-3 text-center">
-                <p className="text-sm font-semibold">
-                  {[vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ")}
+              {vsPkg.variants.length > 1 ? (
+                <div>
+                  <p className="text-sm font-medium mb-2">Choose your offer:</p>
+                  <RadioGroup value={String(vsVariantIdx)} onValueChange={(v) => setVsVariantIdx(Number(v))} className="gap-2">
+                    {vsPkg.variants.map((v, i) => {
+                      const desc = [v.minutes, v.data, v.sms].filter(Boolean).join(" + ");
+                      const tag = v.kind === "vds" ? "Voice + Data + SMS" : "Voice + SMS";
+                      return (
+                        <Label
+                          key={i}
+                          htmlFor={`vs-var-${i}`}
+                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${vsVariantIdx === i ? "border-primary bg-accent" : "border-border"}`}
+                        >
+                          <RadioGroupItem value={String(i)} id={`vs-var-${i}`} className="mt-1" />
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-muted-foreground">{tag}</p>
+                            <p className="text-sm font-semibold">{desc}</p>
+                          </div>
+                        </Label>
+                      );
+                    })}
+                  </RadioGroup>
+                </div>
+              ) : (
+                <div className="bg-accent rounded-xl p-3 text-center">
+                  <p className="text-sm font-semibold">
+                    {[vsPkg.variants[0].minutes, vsPkg.variants[0].data, vsPkg.variants[0].sms].filter(Boolean).join(" + ")}
+                  </p>
+                  {vsPkg.variants[0].validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.variants[0].validity}</p>}
+                  {vsPkg.variants[0].allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
+                </div>
+              )}
+              <div className="bg-accent/50 rounded-xl p-2 text-center">
+                <p className="text-xs text-muted-foreground">
+                  {vsPkg.variants[vsVariantIdx]?.validity ? `Validity: ${vsPkg.variants[vsVariantIdx].validity}` : "No expiry"}
                 </p>
-                {vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.validity}</p>}
-                {vsPkg.allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
-                {!vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">No expiry</p>}
-                <p className="text-xs text-muted-foreground mt-1">A small fee will be added at checkout</p>
-                <p className="text-xs text-muted-foreground mt-1">⚠️ Telecel numbers only</p>
+                <p className="text-xs text-muted-foreground">A small fee will be added at checkout</p>
+                <p className="text-xs text-muted-foreground">⚠️ Telecel numbers only</p>
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">📞 Telecel Phone Number</label>
