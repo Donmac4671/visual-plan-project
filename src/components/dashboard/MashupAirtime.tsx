@@ -242,7 +242,7 @@ export default function MashupAirtime() {
       </div>
       )}
 
-      {/* Telecel Voice & SMS section */}
+      {/* Telecel Voice + Data + SMS section */}
       {vsEnabled && (
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <button
@@ -250,12 +250,12 @@ export default function MashupAirtime() {
           className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center overflow-hidden">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-foreground">Telecel Voice & SMS</p>
-              <p className="text-xs text-muted-foreground">Minutes + SMS combo packages (Telecel only)</p>
+              <p className="font-semibold text-foreground">Telecel Voice + Data + SMS</p>
+              <p className="text-xs text-muted-foreground">Minutes + Data + SMS combo packages (Telecel only)</p>
             </div>
           </div>
           {expanded === "vs" ? (
@@ -275,6 +275,7 @@ export default function MashupAirtime() {
                 {p.allNetworks && <p className="text-[9px] font-bold opacity-90">SPECIAL</p>}
                 <p className="text-2xl font-bold">{formatCurrency(p.price)}</p>
                 <p className="text-[10px] mt-1 opacity-90">{p.minutes}</p>
+                {p.data && <p className="text-[10px] opacity-90">{p.data}</p>}
                 <p className="text-[10px] opacity-90">{p.sms}</p>
                 {p.validity && <p className="text-[9px] opacity-80">{p.validity}</p>}
                 {p.allNetworks && <p className="text-[9px] opacity-90">All Networks</p>}
