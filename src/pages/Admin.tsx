@@ -40,7 +40,7 @@ export default function Admin() {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V&S" };
+    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V+D+S" };
     toast({ title: "Updated", description: `${labels[key]} ${value ? "enabled" : "disabled"}` });
     refreshToggles();
   };
@@ -530,7 +530,7 @@ export default function Admin() {
             <div className="flex items-center gap-3">
               <Switch checked={vsEnabled} onCheckedChange={(v) => handleToggleProduct("vs_enabled", v)} />
               <div>
-                <p className="text-sm font-semibold text-foreground">Telecel V&S</p>
+                <p className="text-sm font-semibold text-foreground">Telecel V+D+S</p>
                 <p className="text-xs text-muted-foreground">{vsEnabled ? "Visible to users" : "Hidden from users"}</p>
               </div>
             </div>
@@ -565,7 +565,8 @@ export default function Admin() {
                 <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
                 <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
                 <SelectItem value="MashUp">MashUp</SelectItem>
-                <SelectItem value="Telecel V&S">Telecel V&S</SelectItem>
+                <SelectItem value="Telecel V+D+S">Telecel V+D+S</SelectItem>
+                <SelectItem value="Telecel V&S">Telecel V&S (legacy)</SelectItem>
                 <SelectItem value="Airtime">Airtime</SelectItem>
               </SelectContent>
             </Select>

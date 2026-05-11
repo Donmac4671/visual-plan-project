@@ -63,20 +63,21 @@ export default function MashupAirtime() {
     if (!isTelecelNumber(vsPhone)) {
       toast({
         title: "Telecel Only",
-        description: "Telecel Voice & SMS packages are only available for Telecel numbers (020, 050)",
+        description: "Telecel Voice + Data + SMS packages are only available for Telecel numbers (020, 050)",
         variant: "destructive",
       });
       return;
     }
-    const sizeLabel = `Telecel V&S ${formatCurrency(vsPkg.price)} (${vsPkg.minutes} + ${vsPkg.sms}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
+    const parts = [vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ");
+    const sizeLabel = `Telecel V+D+S ${formatCurrency(vsPkg.price)} (${parts}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
     addItem(
       "vs",
-      "Telecel V&S",
+      "Telecel V+D+S",
       { size: sizeLabel, sizeGB: 0, price: vsPkg.price, generalPrice: vsPkg.price },
       vsPhone,
       vsPkg.price,
     );
-    toast({ title: "Added to cart", description: `Telecel V&S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
+    toast({ title: "Added to cart", description: `Telecel V+D+S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
     closeVs();
   };
 
@@ -175,7 +176,7 @@ export default function MashupAirtime() {
           className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden">
               <Smartphone className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
@@ -241,7 +242,7 @@ export default function MashupAirtime() {
       </div>
       )}
 
-      {/* Telecel Voice & SMS section */}
+      {/* Telecel Voice + Data + SMS section */}
       {vsEnabled && (
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <button
@@ -249,12 +250,12 @@ export default function MashupAirtime() {
           className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center overflow-hidden">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-foreground">Telecel Voice & SMS</p>
-              <p className="text-xs text-muted-foreground">Minutes + SMS combo packages (Telecel only)</p>
+              <p className="font-semibold text-foreground">Telecel Voice + Data + SMS</p>
+              <p className="text-xs text-muted-foreground">Minutes + Data + SMS combo packages (Telecel only)</p>
             </div>
           </div>
           {expanded === "vs" ? (
@@ -274,6 +275,7 @@ export default function MashupAirtime() {
                 {p.allNetworks && <p className="text-[9px] font-bold opacity-90">SPECIAL</p>}
                 <p className="text-2xl font-bold">{formatCurrency(p.price)}</p>
                 <p className="text-[10px] mt-1 opacity-90">{p.minutes}</p>
+                {p.data && <p className="text-[10px] opacity-90">{p.data}</p>}
                 <p className="text-[10px] opacity-90">{p.sms}</p>
                 {p.validity && <p className="text-[9px] opacity-80">{p.validity}</p>}
                 {p.allNetworks && <p className="text-[9px] opacity-90">All Networks</p>}
@@ -284,16 +286,18 @@ export default function MashupAirtime() {
       </div>
       )}
 
-      {/* Telecel V&S dialog */}
+      {/* Telecel V+D+S dialog */}
       <Dialog open={!!vsPkg} onOpenChange={(o) => { if (!o) closeVs(); }}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Telecel V&S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
+            <DialogTitle>Telecel V+D+S {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
           </DialogHeader>
           {vsPkg && (
             <div className="space-y-3">
               <div className="bg-accent rounded-xl p-3 text-center">
-                <p className="text-sm font-semibold">{vsPkg.minutes} + {vsPkg.sms}</p>
+                <p className="text-sm font-semibold">
+                  {[vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ")}
+                </p>
                 {vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.validity}</p>}
                 {vsPkg.allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
                 {!vsPkg.validity && <p className="text-xs text-muted-foreground mt-1">No expiry</p>}

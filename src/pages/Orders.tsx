@@ -136,6 +136,7 @@ export default function Orders() {
               <option value="AT PREMIUM">AT Premium</option>
               <option value="MashUp">MashUp</option>
               <option value="Airtime">Airtime</option>
+              <option value="Telecel V+D+S">Telecel V+D+S</option>
             </select>
             {selectedDate && (
               <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear</Button>

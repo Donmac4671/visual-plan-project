@@ -172,6 +172,7 @@ export function calculateMashupFee(amount: number): number {
 export interface TelecelVSPackage {
   price: number;
   minutes: string;
+  data?: string;     // optional, e.g., "17.83 MB"
   sms: string;
   validity?: string; // optional, e.g., "7 days"
   allNetworks?: boolean; // can call all networks
@@ -179,21 +180,22 @@ export interface TelecelVSPackage {
 }
 
 export const TELECEL_VS_PACKAGES: TelecelVSPackage[] = [
-  { price: 1, minutes: "21 Minutes", sms: "5 SMS", label: "₵1 — 21 Minutes + 5 SMS" },
-  { price: 2, minutes: "43 Minutes", sms: "5 SMS", label: "₵2 — 43 Minutes + 5 SMS" },
-  { price: 3, minutes: "64 Minutes", sms: "5 SMS", label: "₵3 — 64 Minutes + 5 SMS" },
-  { price: 4, minutes: "84 Minutes", sms: "5 SMS", label: "₵4 — 84 Minutes + 5 SMS" },
-  { price: 5, minutes: "114 Minutes", sms: "10 SMS", label: "₵5 — 114 Minutes + 10 SMS" },
-  { price: 6, minutes: "137 Minutes", sms: "10 SMS", label: "₵6 — 137 Minutes + 10 SMS" },
-  { price: 7, minutes: "160 Minutes", sms: "10 SMS", label: "₵7 — 160 Minutes + 10 SMS" },
-  { price: 8, minutes: "183 Minutes", sms: "10 SMS", label: "₵8 — 183 Minutes + 10 SMS" },
-  { price: 9, minutes: "206 Minutes", sms: "10 SMS", label: "₵9 — 206 Minutes + 10 SMS" },
-  { price: 10, minutes: "236 Minutes", sms: "50 SMS", label: "₵10 — 236 Minutes + 50 SMS" },
-  { price: 15, minutes: "354 Minutes", sms: "50 SMS", label: "₵15 — 354 Minutes + 50 SMS" },
-  { price: 20, minutes: "486 Minutes", sms: "50 SMS", label: "₵20 — 486 Minutes + 50 SMS" },
-  { price: 25, minutes: "607 Minutes", sms: "50 SMS", label: "₵25 — 607 Minutes + 50 SMS" },
-  { price: 29.99, minutes: "729 Minutes", sms: "50 SMS", label: "₵29.99 — 729 Minutes + 50 SMS" },
+  // Special offer FIRST
   { price: 7, minutes: "200 Minutes", sms: "All Networks", validity: "7 days", allNetworks: true, label: "Special ₵7 — 200 Minutes (All Networks, 7 days)" },
+  { price: 1, minutes: "16 Minutes", data: "17.83 MB", sms: "5 SMS", label: "₵1 — 16 Minutes + 17.83 MB + 5 SMS" },
+  { price: 2, minutes: "32 Minutes", data: "35.66 MB", sms: "5 SMS", label: "₵2 — 32 Minutes + 35.66 MB + 5 SMS" },
+  { price: 3, minutes: "48 Minutes", data: "53.49 MB", sms: "5 SMS", label: "₵3 — 48 Minutes + 53.49 MB + 5 SMS" },
+  { price: 4, minutes: "64 Minutes", data: "71.32 MB", sms: "5 SMS", label: "₵4 — 64 Minutes + 71.32 MB + 5 SMS" },
+  { price: 5, minutes: "85 Minutes", data: "94.72 MB", sms: "10 SMS", label: "₵5 — 85 Minutes + 94.72 MB + 10 SMS" },
+  { price: 6, minutes: "102 Minutes", data: "113.66 MB", sms: "10 SMS", label: "₵6 — 102 Minutes + 113.66 MB + 10 SMS" },
+  { price: 7, minutes: "119 Minutes", data: "132.6 MB", sms: "10 SMS", label: "₵7 — 119 Minutes + 132.6 MB + 10 SMS" },
+  { price: 8, minutes: "136 Minutes", data: "151.54 MB", sms: "10 SMS", label: "₵8 — 136 Minutes + 151.54 MB + 10 SMS" },
+  { price: 9, minutes: "153 Minutes", data: "170.49 MB", sms: "10 SMS", label: "₵9 — 153 Minutes + 170.49 MB + 10 SMS" },
+  { price: 10, minutes: "175 Minutes", data: "195 MB", sms: "50 SMS", label: "₵10 — 175 Minutes + 195 MB + 50 SMS" },
+  { price: 15, minutes: "262 Minutes", data: "292.5 MB", sms: "50 SMS", label: "₵15 — 262 Minutes + 292.5 MB + 50 SMS" },
+  { price: 20, minutes: "359 Minutes", data: "401.15 MB", sms: "50 SMS", label: "₵20 — 359 Minutes + 401.15 MB + 50 SMS" },
+  { price: 25, minutes: "449 Minutes", data: "501.43 MB", sms: "50 SMS", label: "₵25 — 449 Minutes + 501.43 MB + 50 SMS" },
+  { price: 29.99, minutes: "539 Minutes", data: "601.52 MB", sms: "50 SMS", label: "₵29.99 — 539 Minutes + 601.52 MB + 50 SMS" },
 ];
 
 export const TELECEL_VS_FEE_PERCENT = 0.10; // 10% fee at checkout
