@@ -530,7 +530,7 @@ export default function Admin() {
             <div className="flex items-center gap-3">
               <Switch checked={vsEnabled} onCheckedChange={(v) => handleToggleProduct("vs_enabled", v)} />
               <div>
-                <p className="text-sm font-semibold text-foreground">Telecel V&S</p>
+                <p className="text-sm font-semibold text-foreground">Telecel V+D+S</p>
                 <p className="text-xs text-muted-foreground">{vsEnabled ? "Visible to users" : "Hidden from users"}</p>
               </div>
             </div>
