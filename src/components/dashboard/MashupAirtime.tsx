@@ -48,6 +48,7 @@ export default function MashupAirtime() {
 
   const closeVs = () => {
     setVsPkg(null);
+    setVsVariantIdx(0);
     setVsPhone("");
   };
 
@@ -59,6 +60,8 @@ export default function MashupAirtime() {
 
   const handleAddVs = () => {
     if (!vsPkg) return;
+    const variant = vsPkg.variants[vsVariantIdx];
+    if (!variant) return;
     if (!isValidPhone(vsPhone)) {
       toast({ title: "Invalid phone number", description: "Enter a valid 10-digit phone number", variant: "destructive" });
       return;
@@ -66,21 +69,22 @@ export default function MashupAirtime() {
     if (!isTelecelNumber(vsPhone)) {
       toast({
         title: "Telecel Only",
-        description: "Telecel Voice + Data + SMS packages are only available for Telecel numbers (020, 050)",
+        description: "Telecel packages are only available for Telecel numbers (020, 050)",
         variant: "destructive",
       });
       return;
     }
-    const parts = [vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ");
-    const sizeLabel = `Telecel V+D+S ${formatCurrency(vsPkg.price)} (${parts}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
+    const productName = variant.kind === "vds" ? "Telecel V+D+S" : "Telecel V&S";
+    const parts = [variant.minutes, variant.data, variant.sms].filter(Boolean).join(" + ");
+    const sizeLabel = `${productName} ${formatCurrency(vsPkg.price)} (${parts}${variant.validity ? `, ${variant.validity}` : ""}${variant.allNetworks ? ", all networks" : ""})`;
     addItem(
       "vs",
-      "Telecel V+D+S",
+      productName,
       { size: sizeLabel, sizeGB: 0, price: vsPkg.price, generalPrice: vsPkg.price },
       vsPhone,
       vsPkg.price,
     );
-    toast({ title: "Added to cart", description: `Telecel V+D+S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
+    toast({ title: "Added to cart", description: `${productName} ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
     closeVs();
   };
 
