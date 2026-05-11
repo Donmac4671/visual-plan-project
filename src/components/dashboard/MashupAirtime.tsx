@@ -29,6 +29,7 @@ export default function MashupAirtime() {
   const [expanded, setExpanded] = useState<Mode>(null);
   const [pkg, setPkg] = useState<MashupPackage | null>(null);
   const [vsPkg, setVsPkg] = useState<TelecelVSPackage | null>(null);
+  const [vsVariantIdx, setVsVariantIdx] = useState<number>(0);
   const [airtimeOpen, setAirtimeOpen] = useState(false);
   const [mashupPhone, setMashupPhone] = useState("");
   const [vsPhone, setVsPhone] = useState("");
