@@ -63,20 +63,21 @@ export default function MashupAirtime() {
     if (!isTelecelNumber(vsPhone)) {
       toast({
         title: "Telecel Only",
-        description: "Telecel Voice & SMS packages are only available for Telecel numbers (020, 050)",
+        description: "Telecel Voice + Data + SMS packages are only available for Telecel numbers (020, 050)",
         variant: "destructive",
       });
       return;
     }
-    const sizeLabel = `Telecel V&S ${formatCurrency(vsPkg.price)} (${vsPkg.minutes} + ${vsPkg.sms}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
+    const parts = [vsPkg.minutes, vsPkg.data, vsPkg.sms].filter(Boolean).join(" + ");
+    const sizeLabel = `Telecel V+D+S ${formatCurrency(vsPkg.price)} (${parts}${vsPkg.validity ? `, ${vsPkg.validity}` : ""}${vsPkg.allNetworks ? ", all networks" : ""})`;
     addItem(
       "vs",
-      "Telecel V&S",
+      "Telecel V+D+S",
       { size: sizeLabel, sizeGB: 0, price: vsPkg.price, generalPrice: vsPkg.price },
       vsPhone,
       vsPkg.price,
     );
-    toast({ title: "Added to cart", description: `Telecel V&S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
+    toast({ title: "Added to cart", description: `Telecel V+D+S ${formatCurrency(vsPkg.price)} for ${vsPhone}` });
     closeVs();
   };
 
