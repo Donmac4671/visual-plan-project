@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.claim_verified_topup(text) TO authenticated;
