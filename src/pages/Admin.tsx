@@ -40,7 +40,7 @@ export default function Admin() {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V&S" };
+    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V+D+S" };
     toast({ title: "Updated", description: `${labels[key]} ${value ? "enabled" : "disabled"}` });
     refreshToggles();
   };
