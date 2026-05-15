@@ -122,8 +122,8 @@ function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<
     return 0;
   }
 
-  // Mashup - No profit from fee anymore
-  if (network === "mashup") {
+  // Mashup & Telecel Voice/SMS - No profit from fee anymore
+  if (network === "mashup" || network === "telecel v+d+s" || network === "telecel v&s") {
     return 0;
   }
 
@@ -150,8 +150,8 @@ function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Recor
     return 0;
   }
 
-  // Mashup - cost is the amount
-  if (network === "mashup") {
+  // Mashup & Telecel Voice/SMS - cost is the amount
+  if (network === "mashup" || network === "telecel v+d+s" || network === "telecel v&s") {
     return Number(order.amount);
   }
 
