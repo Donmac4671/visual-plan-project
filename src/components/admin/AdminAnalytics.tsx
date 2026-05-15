@@ -122,12 +122,9 @@ function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<
     return 0;
   }
 
-  // Mashup - Profit is ONLY the 5% fee
+  // Mashup - No profit from fee anymore
   if (network === "mashup") {
-    // The amount includes the 5% fee, so profit = amount * 0.05 / 1.05
-    // Or if fee is added separately, adjust accordingly
-    // Using 5% of the amount as profit (the fee)
-    return amount * 0.05;
+    return 0;
   }
 
   // Data bundles - Profit = selling price - cost price
@@ -153,10 +150,9 @@ function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Recor
     return 0;
   }
 
-  // Mashup - cost is the amount minus the 5% fee
+  // Mashup - cost is the amount
   if (network === "mashup") {
-    const amount = Number(order.amount);
-    return amount - amount * 0.05;
+    return Number(order.amount);
   }
 
   // Data bundles - get actual cost
