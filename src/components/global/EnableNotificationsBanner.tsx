@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, X, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { registerServiceWorker, subscribeToPush } from "@/lib/notifications";
+import { registerServiceWorker, subscribeToPush, requestNotificationPermission } from "@/lib/notifications";
 import { toast } from "@/hooks/use-toast";
 
 const DISMISS_KEY = "dmh_notif_banner_dismissed_until";
@@ -54,19 +54,41 @@ export default function EnableNotificationsBanner() {
   const iosNeedsInstall = isIOS() && !isStandalone();
 
   const handleEnable = async () => {
+    if (busy) return;
     setBusy(true);
+
     try {
+      // 1. Request permission first to ensure it's tied to a user gesture
+      const granted = await requestNotificationPermission();
+
+      if (!granted) {
+        toast({
+          title: "Permission Denied",
+          description: "Please enable notifications in your browser settings for this site.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 2. If granted, proceed to subscribe
       const ok = await subscribeToPush(user?.id ?? null);
       if (ok) {
         toast({ title: "Notifications enabled", description: "You'll now get updates and announcements." });
         setNeedsEnable(false);
       } else {
         toast({
-          title: "Couldn't enable",
-          description: "Please allow notifications in your browser settings.",
+          title: "Registration Failed",
+          description: "We couldn't register your browser for push notifications. Try refreshing the page.",
           variant: "destructive",
         });
       }
+    } catch (err) {
+      console.error("Failed to enable notifications:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while enabling notifications.",
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }

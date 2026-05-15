@@ -21,9 +21,18 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
-  if (Notification.permission === "denied") return false;
-  const result = await Notification.requestPermission();
-  return result === "granted";
+
+  try {
+    // Some older browsers use callback-based requestPermission
+    const result = await new Promise<NotificationPermission>((resolve) => {
+      const promise = Notification.requestPermission(resolve);
+      if (promise) promise.then(resolve);
+    });
+    return result === "granted";
+  } catch (err) {
+    console.error("Error requesting notification permission:", err);
+    return false;
+  }
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -42,7 +51,10 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export async function subscribeToPush(userId: string | null): Promise<boolean> {
   try {
     const reg = await registerServiceWorker();
-    if (!reg) return false;
+    if (!reg || !reg.pushManager) {
+      console.error("Service Worker or Push Manager not available");
+      return false;
+    }
 
     const granted = await requestNotificationPermission();
     if (!granted) return false;
@@ -51,16 +63,17 @@ export async function subscribeToPush(userId: string | null): Promise<boolean> {
     const { data: keyData, error: keyErr } = await supabase.functions.invoke("send-push", {
       body: { action: "get_public_key" },
     });
-    if (keyErr || !keyData?.publicKey) return false;
+    if (keyErr || !keyData?.publicKey) {
+      console.error("Failed to fetch VAPID key:", keyErr);
+      return false;
+    }
 
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       const keyBytes = urlBase64ToUint8Array(keyData.publicKey);
-      const ab = new ArrayBuffer(keyBytes.byteLength);
-      new Uint8Array(ab).set(keyBytes);
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: ab,
+        applicationServerKey: keyBytes,
       });
     }
 
