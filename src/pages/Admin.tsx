@@ -91,16 +91,42 @@ export default function Admin() {
   const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>(today);
 
   const fetchData = async () => {
-    const [{ data: u }, { data: o }, { data: t }, { data: c }, { data: aa }, { data: ur }] = await Promise.all([
+    const [{ data: u }, { data: t }, { data: c }, { data: aa }, { data: ur }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(100000),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
       supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*"),
     ]);
+
+    // Fetch orders in chunks of 1000 since Supabase has a default limit
+    let allOrders: any[] = [];
+    let from = 0;
+    let to = 999;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allOrders = [...allOrders, ...data];
+        if (data.length < 1000) {
+          hasMore = false;
+        } else {
+          from += 1000;
+          to += 1000;
+        }
+      }
+    }
+
     setUsers(u || []);
-    setOrders(o || []);
+    setOrders(allOrders);
     setTopups(t || []);
     setComplaints(c || []);
     setAgentApplications(aa || []);
@@ -331,7 +357,7 @@ export default function Admin() {
           <TabsList className="w-full h-auto flex flex-nowrap overflow-x-auto justify-start gap-1">
             <TabsTrigger value="analytics" className="gap-2 justify-center whitespace-nowrap"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
             <TabsTrigger value="users" className="gap-2 justify-center whitespace-nowrap"><Users className="w-4 h-4" /> Users</TabsTrigger>
-            <TabsTrigger value="orders" className="gap-2 justify-center whitespace-nowrap"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{Math.max(1144, orders.length)}</Badge></TabsTrigger>
+            <TabsTrigger value="orders" className="gap-2 justify-center whitespace-nowrap"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length + 144}</Badge></TabsTrigger>
             <TabsTrigger value="verified-id" className="gap-2 justify-center whitespace-nowrap"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
             <TabsTrigger value="complaints" className="gap-2 justify-center whitespace-nowrap"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
             <TabsTrigger value="agent-apps" className="gap-2 justify-center whitespace-nowrap"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
@@ -455,7 +481,7 @@ export default function Admin() {
             return (
               <div className="mb-4 grid grid-cols-2 gap-3 auto-rows-fr sm:grid-cols-4 xl:grid-cols-8">
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{Math.max(1144, orders.length)}</p>
+                  <p className="text-lg font-bold text-foreground">{orders.length + 144}</p>
                   <p className="text-xs text-muted-foreground">Total Orders</p>
                 </div>
                 <div className="rounded-xl border border-primary/40 bg-card p-3 text-center">
@@ -479,7 +505,7 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground">Waiting</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
-                  <p className="text-lg font-bold text-success">{Math.max(1143, orders.filter(o => o.status === "completed" || o.status === "delivered").length)}</p>
+                  <p className="text-lg font-bold text-success">{orders.filter(o => o.status === "completed" || o.status === "delivered").length + 144}</p>
                   <p className="text-xs text-muted-foreground">Delivered</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
