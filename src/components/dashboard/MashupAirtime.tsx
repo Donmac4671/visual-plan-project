@@ -347,7 +347,6 @@ export default function MashupAirtime() {
                 <p className="text-xs text-muted-foreground">
                   {vsPkg.variants[vsVariantIdx]?.validity ? `Validity: ${vsPkg.variants[vsVariantIdx].validity}` : "No expiry"}
                 </p>
-                <p className="text-xs text-muted-foreground">A small fee will be added at checkout</p>
                 <p className="text-xs text-muted-foreground">⚠️ Telecel numbers only</p>
               </div>
               <div>
@@ -385,7 +384,6 @@ export default function MashupAirtime() {
                 <p className="text-sm font-semibold">
                   {pkg.data} + {pkg.minutes}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">A small fee will be added at checkout</p>
                 <p className="text-xs text-muted-foreground mt-1">⚠️ MTN numbers only</p>
               </div>
               <div>

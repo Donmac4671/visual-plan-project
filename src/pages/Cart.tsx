@@ -76,8 +76,8 @@ export default function Cart() {
       // Handle Airtime, Mashup & Telecel V&S (manual delivery)
       for (const item of manualItems) {
         let amount = item.effectivePrice;
-        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
-        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
+        if (item.networkId === "mashup") amount = item.effectivePrice + calculateMashupFee(item.effectivePrice);
+        else if (item.networkId === "vs") amount = item.effectivePrice + calculateTelecelVSFee(item.effectivePrice);
 
         const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
           p_network: item.network,
@@ -183,8 +183,8 @@ export default function Cart() {
       })),
       ...manualItems.map((item) => {
         let amount = item.effectivePrice;
-        if (item.networkId === "mashup") amount = Math.round(item.effectivePrice * 1.05 * 100) / 100;
-        else if (item.networkId === "vs") amount = Math.round(item.effectivePrice * 1.10 * 100) / 100;
+        if (item.networkId === "mashup") amount = item.effectivePrice + calculateMashupFee(item.effectivePrice);
+        else if (item.networkId === "vs") amount = item.effectivePrice + calculateTelecelVSFee(item.effectivePrice);
         return {
           network: item.network,
           network_id: item.networkId,

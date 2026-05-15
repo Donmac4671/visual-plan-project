@@ -161,9 +161,9 @@ export const MASHUP_PACKAGES: MashupPackage[] = [
   { price: 29.99, data: "541.97 MB", minutes: "520 Minutes", label: "₵29.99 — 541.97 MB & 520 Minutes" },
 ];
 
-export const MASHUP_FEE_PERCENT = 0.05; // 5% fee added on top of the package price
-export const AIRTIME_MIN = 0.5;
-export const AIRTIME_MAX = 100;
+export const MASHUP_FEE_PERCENT = 0; // 0% fee added on top of the package price
+export const AIRTIME_MIN = 0;
+export const AIRTIME_MAX = 50;
 
 export function calculateMashupFee(amount: number): number {
   return Math.round(amount * MASHUP_FEE_PERCENT * 100) / 100;
@@ -188,9 +188,9 @@ export interface TelecelVSPackage {
 export const TELECEL_VS_PACKAGES: TelecelVSPackage[] = [
   // Special offer FIRST
   {
-    price: 7,
+    price: 6,
     isSpecial: true,
-    label: "Special ₵7 — 200 Minutes (All Networks, 7 days)",
+    label: "Special ₵6 — 200 Minutes (All Networks, 7 days)",
     variants: [
       { kind: "vs", minutes: "200 Minutes", sms: "All Networks", validity: "7 days", allNetworks: true },
     ],
@@ -295,7 +295,7 @@ export const TELECEL_VS_PACKAGES: TelecelVSPackage[] = [
   },
 ];
 
-export const TELECEL_VS_FEE_PERCENT = 0.10; // 10% fee at checkout
+export const TELECEL_VS_FEE_PERCENT = 0; // 0% fee at checkout
 
 export function calculateTelecelVSFee(amount: number): number {
   return Math.round(amount * TELECEL_VS_FEE_PERCENT * 100) / 100;
