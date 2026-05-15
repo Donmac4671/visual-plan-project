@@ -338,7 +338,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       totalUsers: users.length,
       totalRevenue,
       totalTopups,
-      totalOrders: Math.max(1144, filteredOrders.length),
+      totalOrders: filteredOrders.length,
       pendingOrders,
       completedOrders,
       failedOrders,
