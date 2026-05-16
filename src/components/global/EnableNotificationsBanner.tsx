@@ -18,13 +18,16 @@ function isStandalone() {
 }
 
 export default function EnableNotificationsBanner() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [needsEnable, setNeedsEnable] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const dismissedUntil = Number(localStorage.getItem(DISMISS_KEY) ?? 0);
-    if (Date.now() < dismissedUntil) return;
+    // If not admin, respect snooze. If admin, always show if not enabled.
+    if (!isAdmin) {
+      const dismissedUntil = Number(localStorage.getItem(DISMISS_KEY) ?? 0);
+      if (Date.now() < dismissedUntil) return;
+    }
 
     const supported = "Notification" in window && "serviceWorker" in navigator;
     if (!supported) return;
@@ -62,9 +65,14 @@ export default function EnableNotificationsBanner() {
       const granted = await requestNotificationPermission();
 
       if (!granted) {
+        const status = Notification.permission;
+        let desc = "Please enable notifications in your browser settings.";
+        if (status === "denied") {
+          desc = "Notifications are blocked. Please click the lock icon in your URL bar and allow notifications.";
+        }
         toast({
-          title: "Permission Denied",
-          description: "Please enable notifications in your browser settings for this site.",
+          title: `Permission ${status === "denied" ? "Blocked" : "Required"}`,
+          description: desc,
           variant: "destructive",
         });
         return;

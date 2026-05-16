@@ -78,9 +78,12 @@ export async function subscribeToPush(userId: string | null): Promise<boolean> {
     }
 
     const json = sub.toJSON();
-    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false;
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+      console.error("Subscription JSON missing required fields:", json);
+      return false;
+    }
 
-    await supabase.from("push_subscriptions").upsert(
+    const { error: upsertErr } = await supabase.from("push_subscriptions").upsert(
       {
         user_id: userId ?? null,
         endpoint: json.endpoint,
@@ -90,6 +93,11 @@ export async function subscribeToPush(userId: string | null): Promise<boolean> {
       },
       { onConflict: "endpoint" }
     );
+
+    if (upsertErr) {
+      console.error("Failed to persist push subscription to DB:", upsertErr);
+      return false;
+    }
 
     return true;
   } catch {
