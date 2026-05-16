@@ -1,7 +1,7 @@
 project_id = "nkzakwfdaiexpwogezgq"
 
 [auth.email]
-  enable_confirmations = true
+  enable_confirmations = false
   otp_length = 8
   otp_expiry = 3600
   max_frequency = "10s"
