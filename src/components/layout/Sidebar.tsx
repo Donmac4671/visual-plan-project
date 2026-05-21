@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare, Crown, Share2 } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -8,9 +8,7 @@ const navItems = [
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Top Ups", icon: CreditCard, path: "/topups" },
   { label: "Complaints", icon: MessageSquare, path: "/complaints" },
-  { label: "Referrals", icon: Share2, path: "/referrals" },
   { label: "Profile", icon: User, path: "/profile" },
-  { label: "Become an Agent", icon: Crown, path: "/become-agent", hideForAgents: true },
 ];
 
 export default function Sidebar() {

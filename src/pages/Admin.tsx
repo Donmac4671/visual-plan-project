@@ -15,7 +15,6 @@ import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw, RefreshCw } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
-import AdminAgentApplications from "@/components/admin/AdminAgentApplications";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
 import AdminPromoManager from "@/components/admin/AdminPromoManager";
 import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
@@ -47,7 +46,7 @@ export default function Admin() {
 
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
-    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "agent-apps", "bundles", "promos", "site-message", "broadcast", "live-chat", "rankings"];
+    const validTabs = ["analytics", "users", "orders", "verified-id", "complaints", "bundles", "promos", "site-message", "broadcast", "live-chat", "rankings"];
     return validTabs.includes(hash) ? hash : "analytics";
   };
 
@@ -73,7 +72,6 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [agentApplications, setAgentApplications] = useState<any[]>([]);
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
   const [autoDeliverMinutes, setAutoDeliverMinutes] = useState<string>("manual");
 
@@ -91,11 +89,10 @@ export default function Admin() {
   const [complaintDateTo, setComplaintDateTo] = useState<Date | undefined>(today);
 
   const fetchData = async () => {
-    const [{ data: u }, { data: t }, { data: c }, { data: aa }, { data: ur }] = await Promise.all([
+    const [{ data: u }, { data: t }, { data: c }, { data: ur }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
-      supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*"),
     ]);
 
@@ -129,7 +126,6 @@ export default function Admin() {
     setOrders(allOrders);
     setTopups(t || []);
     setComplaints(c || []);
-    setAgentApplications(aa || []);
     if (ur) {
       const admins = new Set<string>();
       (ur as any[]).forEach((r) => { if (r.role === "admin") admins.add(r.user_id); });
@@ -360,7 +356,6 @@ export default function Admin() {
             <TabsTrigger value="orders" className="gap-2 justify-center whitespace-nowrap"><ShoppingBag className="w-4 h-4" /> Orders <Badge variant="secondary" className="ml-1 text-xs">{orders.length}</Badge></TabsTrigger>
             <TabsTrigger value="verified-id" className="gap-2 justify-center whitespace-nowrap"><Hash className="w-4 h-4" /> Verified ID</TabsTrigger>
             <TabsTrigger value="complaints" className="gap-2 justify-center whitespace-nowrap"><MessageSquare className="w-4 h-4" /> Complaints</TabsTrigger>
-            <TabsTrigger value="agent-apps" className="gap-2 justify-center whitespace-nowrap"><Crown className="w-4 h-4" /> Agent Apps</TabsTrigger>
           </TabsList>
           <TabsList className="w-full h-auto flex flex-nowrap overflow-x-auto justify-start gap-1">
             <TabsTrigger value="bundles" className="gap-2 justify-center whitespace-nowrap"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
@@ -795,11 +790,6 @@ export default function Admin() {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
-
-        {/* AGENT APPLICATIONS TAB */}
-        <TabsContent value="agent-apps">
-          <AdminAgentApplications applications={agentApplications} onRefresh={fetchData} />
         </TabsContent>
 
         {/* BUNDLES TAB */}
