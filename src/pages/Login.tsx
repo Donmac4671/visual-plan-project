@@ -20,11 +20,8 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
   const [resetCode, setResetCode] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
-  const [showVerificationCodeInput, setShowVerificationCodeInput] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -42,63 +39,13 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      const isUnconfirmed = /confirm/i.test(error.message) || /not confirmed/i.test(error.message);
       toast({
         title: "Login Failed",
-        description: isUnconfirmed
-          ? "Your email is not verified yet. Click 'Resend verification code' below."
-          : error.message,
+        description: error.message,
         variant: "destructive",
       });
     } else {
       navigate("/dashboard");
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!email) {
-      toast({ title: "Email required", description: "Enter your email above first.", variant: "destructive" });
-      return;
-    }
-    setResendLoading(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-    });
-    setResendLoading(false);
-    if (error) {
-      toast({ title: "Could not resend", description: error.message, variant: "destructive" });
-    } else {
-      setShowVerificationCodeInput(true);
-      toast({ title: "Verification code sent", description: "Check your email for the verification code." });
-    }
-  };
-
-  const verifyEmailCode = async () => {
-    if (!verificationCode || verificationCode.length !== 8) {
-      toast({
-        title: "Invalid Code",
-        description: "Please enter the 8-digit code from your email.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: email,
-      token: verificationCode,
-      type: "signup",
-    });
-    setLoading(false);
-
-    if (error) {
-      toast({ title: "Invalid Code", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Email Verified!", description: "Your email has been verified. You can now sign in." });
-      setShowVerificationCodeInput(false);
-      setVerificationCode("");
     }
   };
 
@@ -279,42 +226,6 @@ export default function Login() {
                 </Button>
               </form>
 
-              {!showVerificationCodeInput ? (
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={resendLoading}
-                  className="w-full text-center text-sm text-primary hover:underline mt-3 disabled:opacity-60"
-                >
-                  {resendLoading ? "Sending..." : "Resend verification code"}
-                </button>
-              ) : (
-                <div className="mt-4 p-4 border border-border rounded-lg space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Verification Code</label>
-                    <input
-                      type="text"
-                      placeholder="Enter verification code from email"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                      maxLength={8}
-                      autoFocus
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">Enter the 8-digit code sent to {email}</p>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={verifyEmailCode}
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading || verificationCode.length !== 8}
-                  >
-                    {loading ? "Verifying..." : "Verify Email Code"}
-                  </Button>
-                </div>
-              )}
-
               <p className="text-center text-sm text-muted-foreground mt-3">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary font-medium hover:underline">
@@ -325,9 +236,8 @@ export default function Login() {
           )}
         </div>
         <div className="mt-4 rounded-xl border border-border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground mb-2">Having trouble signing in or signing up?</p>
           <a
-            href="https://wa.me/233549358359"
+            href="https://whatsapp.com/channel/0029VbBdxs77oQhkjJiqqO1y"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity shadow-sm"
@@ -336,7 +246,7 @@ export default function Login() {
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
             </svg>
-            Contact Support
+            Join Channel
           </a>
         </div>
         <p className="text-center text-xs text-muted-foreground mt-4">© 2026 Donmac Data Hub. All rights reserved.</p>
