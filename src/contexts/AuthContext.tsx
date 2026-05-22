@@ -12,7 +12,6 @@ interface Profile {
   wallet_balance: number;
   is_blocked: boolean;
   tier: string;
-  referral_code: string;
 }
 
 interface AuthContextType {
@@ -21,7 +20,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, phone: string, referralCode?: string) => Promise<{ error: any; data?: any }>;
+  signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -56,26 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return provider === "anonymous" || (authUser as User & { is_anonymous?: boolean }).is_anonymous === true;
   };
 
-  const processPendingReferral = async (authUser: User) => {
-    try {
-      const storedCode = localStorage.getItem("pending_referral_code")?.trim().toUpperCase();
-      const metadataCode = typeof authUser.user_metadata?.referral_code === "string"
-        ? authUser.user_metadata.referral_code.trim().toUpperCase()
-        : "";
-      const code = storedCode || metadataCode;
-      if (!code) return;
-
-      // SECURITY DEFINER RPC: bypasses RLS to look up referrer by code and create the link
-      const { error } = await supabase.rpc("register_referral", { p_code: code });
-      if (error) {
-        console.error("register_referral error:", error.message);
-        return;
-      }
-      localStorage.removeItem("pending_referral_code");
-    } catch (err) {
-      console.error("Referral processing error:", err);
-    }
-  };
 
   const fetchProfile = async (authUser: User) => {
     try {
@@ -109,9 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setProfile((profileData as Profile) ?? null);
-
-      // Process any pending referral from registration
-      void processPendingReferral(authUser);
 
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
@@ -222,12 +198,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, phone: string, referralCode?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, phone: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, phone, ...(referralCode ? { referral_code: referralCode } : {}) },
+        data: { full_name: fullName, phone },
         emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });

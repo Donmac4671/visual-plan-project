@@ -35,10 +35,6 @@ const faqs = [
     q: "How fast is the data delivery?",
     a: "Data bundles are typically delivered within 3–30 minutes after payment confirmation. Delivery times may vary slightly depending on the network.",
   },
-  {
-    q: "Can I become a data reseller/agent?",
-    a: "Yes! Donmac Data Hub offers an agent program where you can buy data at even cheaper wholesale prices and resell for profit. Apply through your dashboard.",
-  },
 ];
 
 export default function Landing() {
