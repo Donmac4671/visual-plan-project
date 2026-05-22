@@ -105,7 +105,7 @@ function AiChatTab() {
             <Bot className="w-10 h-10 mx-auto text-primary/60" />
             <p className="text-muted-foreground text-xs">Hi! I'm Donmac AI Assistant. Ask me anything about our services!</p>
             <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-              {["How do I buy data?", "How to deposit via MoMo?", "How to become an agent?"].map((q) => (
+              {["How do I buy data?", "How to deposit via MoMo?"].map((q) => (
                 <button key={q} onClick={() => { setInput(q); }} className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                   {q}
                 </button>

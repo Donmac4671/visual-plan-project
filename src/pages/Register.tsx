@@ -11,8 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Register() {
   useCanonical("/register");
   const [searchParams] = useSearchParams();
-  const refFromUrl = searchParams.get("ref") || "";
-  const [referralCode, setReferralCode] = useState(refFromUrl);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -26,7 +24,6 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedReferralCode = referralCode.trim().toUpperCase();
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     const trimmedPhone = phone.trim();
@@ -61,7 +58,7 @@ export default function Register() {
       return;
     }
 
-    const { error, data } = await signUp(email, password, name, phone, normalizedReferralCode || undefined);
+    const { error, data } = await signUp(email, password, name, phone);
     setLoading(false);
     if (error) {
       const msg = /phone/i.test(error.message) || /unique/i.test(error.message)
@@ -69,10 +66,6 @@ export default function Register() {
         : error.message;
       toast({ title: "Registration Failed", description: msg, variant: "destructive" });
     } else {
-      // Store referral code for processing after first login (user isn't authenticated yet)
-      if (normalizedReferralCode) {
-        localStorage.setItem("pending_referral_code", normalizedReferralCode);
-      }
       toast({ title: "Account Created!", description: "You can now sign in." });
       navigate("/login");
     }
@@ -136,13 +129,6 @@ export default function Register() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Referral Code (optional)</label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="e.g., DMH1081ED" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="pl-10" />
               </div>
             </div>
             <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
