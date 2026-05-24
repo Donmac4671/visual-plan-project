@@ -61,16 +61,18 @@ export default function Register() {
     const { error, data } = await signUp(email, password, name, phone);
     setLoading(false);
     if (error) {
+      console.error("Registration error:", error);
       const msg = /phone/i.test(error.message) || /unique/i.test(error.message)
         ? "This phone number is already registered to another account."
         : error.message;
       toast({ title: "Registration Failed", description: msg, variant: "destructive" });
     } else {
+      console.log("Registration success:", { hasSession: !!data?.session });
       if (data?.session) {
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
-        toast({ title: "Account Created!", description: "You can now sign in." });
+        toast({ title: "Account Created!", description: "Redirecting to login..." });
         navigate("/login");
       }
     }
