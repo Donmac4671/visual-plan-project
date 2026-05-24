@@ -238,6 +238,15 @@ async function handleWebhook(req: Request): Promise<Response> {
   const emailType = payload.data.action_type
   console.log('Received auth event', { emailType, email: payload.data.email, run_id })
 
+  // Skip sending confirmation emails for signups as requested by the user
+  if (emailType === 'signup') {
+    console.log('Skipping signup confirmation email as requested', { run_id })
+    return new Response(
+      JSON.stringify({ success: true, message: 'Signup email skipped' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   const EmailTemplate = EMAIL_TEMPLATES[emailType]
   if (!EmailTemplate) {
     console.error('Unknown email type', { emailType, run_id })
