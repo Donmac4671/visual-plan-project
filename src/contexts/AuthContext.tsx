@@ -204,7 +204,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { full_name: fullName, phone },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
     return { error, data };

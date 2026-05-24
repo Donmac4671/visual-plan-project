@@ -66,8 +66,13 @@ export default function Register() {
         : error.message;
       toast({ title: "Registration Failed", description: msg, variant: "destructive" });
     } else {
-      toast({ title: "Account Created!", description: "You can now sign in." });
-      navigate("/login");
+      if (data?.session) {
+        toast({ title: "Welcome!", description: "Account created and signed in successfully." });
+        navigate("/dashboard");
+      } else {
+        toast({ title: "Account Created!", description: "You can now sign in." });
+        navigate("/login");
+      }
     }
   };
 
