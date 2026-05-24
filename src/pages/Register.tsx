@@ -42,13 +42,15 @@ export default function Register() {
     }
     setLoading(true);
 
-    // Pre-check: phone number must be unique
-    const { data: existingPhone } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("phone", trimmedPhone)
-      .maybeSingle();
-    if (existingPhone) {
+    // Pre-check: phone number must be unique. Use RPC to bypass RLS.
+    const { data: phoneExists, error: phoneCheckError } = await supabase
+      .rpc("check_phone_exists", { p_phone: trimmedPhone });
+
+    if (phoneCheckError) {
+      console.error("Phone check error:", phoneCheckError);
+    }
+
+    if (phoneExists) {
       setLoading(false);
       toast({
         title: "Phone Already Registered",
@@ -61,18 +63,16 @@ export default function Register() {
     const { error, data } = await signUp(email, password, name, phone);
     setLoading(false);
     if (error) {
-      console.error("Registration error:", error);
       const msg = /phone/i.test(error.message) || /unique/i.test(error.message)
         ? "This phone number is already registered to another account."
         : error.message;
       toast({ title: "Registration Failed", description: msg, variant: "destructive" });
     } else {
-      console.log("Registration success:", { hasSession: !!data?.session });
       if (data?.session) {
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
-        toast({ title: "Account Created!", description: "Redirecting to login..." });
+        toast({ title: "Account Created!", description: "You can now sign in." });
         navigate("/login");
       }
     }
