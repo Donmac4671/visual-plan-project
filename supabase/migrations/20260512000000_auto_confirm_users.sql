@@ -1,44 +1,33 @@
--- Consolidated migration to auto-confirm users and harden profile creation.
--- This ensures users can log in immediately and prevents profile errors from blocking signups.
+-- Ultra-resilient migration to fix "Database error" during signup and enable direct login.
+-- This approach uses a single AFTER INSERT trigger with granular error handling.
 
--- 1. Clean up ALL existing triggers on auth.users to ensure a clean slate
+-- 1. Remove all competing triggers to avoid transaction conflicts
 DROP TRIGGER IF EXISTS a_trig_auto_confirm_user ON auth.users;
 DROP TRIGGER IF EXISTS trig_auto_confirm_user ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
--- 2. Define the auto-confirm function (Runs BEFORE INSERT)
-CREATE OR REPLACE FUNCTION public.auto_confirm_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = auth, public
-AS $$
-BEGIN
-  BEGIN
-    NEW.email_confirmed_at = now();
-    NEW.confirmed_at = now();
-    -- Ensure the user has the email provider metadata set
-    NEW.raw_app_meta_data = COALESCE(NEW.raw_app_meta_data, '{}'::jsonb) || '{"provider": "email", "providers": ["email"]}'::jsonb;
-  EXCEPTION WHEN OTHERS THEN
-    -- Fallback: log and let auth handle it normally if the modification fails
-    RAISE WARNING 'auto_confirm_user failed: %', SQLERRM;
-  END;
-  RETURN NEW;
-END;
-$$;
-
--- 3. Define the hardened profile creation function (Runs AFTER INSERT)
--- This replaces the original handle_new_user to include error isolation.
+-- 2. Define a robust handler for user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
 AS $$
 BEGIN
-  -- We wrap the entire logic in an exception block so that if profile creation fails
-  -- (e.g. because of a duplicate phone number that bypassed the frontend check),
-  -- the user is still created in auth.users and registration doesn't crash.
+  -- ACTION A: Auto-confirm the user account in auth.users
+  -- This allows login immediately if the app doesn't get a session right away.
+  BEGIN
+    UPDATE auth.users
+    SET
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      confirmed_at = COALESCE(confirmed_at, now()),
+      raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"provider": "email", "providers": ["email"]}'::jsonb
+    WHERE id = NEW.id;
+  EXCEPTION WHEN OTHERS THEN
+    -- If auto-confirm fails, we log and proceed. User registration MUST not fail.
+    RAISE WARNING 'Registration confirmation failed for %: %', NEW.id, SQLERRM;
+  END;
+
+  -- ACTION B: Create the user profile
   BEGIN
     INSERT INTO public.profiles (user_id, full_name, email, phone, agent_code, tier)
     VALUES (
@@ -49,36 +38,37 @@ BEGIN
       '',
       'general'
     );
+  EXCEPTION WHEN OTHERS THEN
+    -- Profile creation failures (e.g. unique phone) shouldn't crash the auth transaction.
+    RAISE WARNING 'Profile creation failed for %: %', NEW.id, SQLERRM;
+  END;
 
-    INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'user');
+  -- ACTION C: Assign default user role
+  BEGIN
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, 'user');
 
-    -- Preserve existing admin assignment logic
+    -- Auto-assign admin if email matches
     IF NEW.email = 'donmacdatahub@gmail.com' THEN
-      INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'admin');
+      INSERT INTO public.user_roles (user_id, role)
+      VALUES (NEW.id, 'admin')
+      ON CONFLICT DO NOTHING;
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    -- Log the error but allow the transaction to complete.
-    -- The user will exist but might need manual profile fixing by admin.
-    RAISE WARNING 'handle_new_user failed for user %: %', NEW.id, SQLERRM;
+    RAISE WARNING 'Role assignment failed for %: %', NEW.id, SQLERRM;
   END;
 
   RETURN NEW;
 END;
 $$;
 
--- 4. Re-create the triggers
--- We use alphabetical naming to control order if needed, but BEFORE vs AFTER is key here.
-CREATE TRIGGER a_trig_auto_confirm_user
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.auto_confirm_user();
-
+-- 3. Re-create the single, clean trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- 5. Provide an RPC for reliable phone uniqueness checks that bypasses RLS
+-- 4. Keep the helper RPC for phone checks
 CREATE OR REPLACE FUNCTION public.check_phone_exists(p_phone text)
 RETURNS boolean
 LANGUAGE plpgsql
