@@ -63,10 +63,18 @@ export default function Register() {
     const { error, data } = await signUp(email, password, name, phone);
     setLoading(false);
     if (error) {
-      const msg = /phone/i.test(error.message) || /unique/i.test(error.message)
-        ? "This phone number is already registered to another account."
-        : error.message;
-      toast({ title: "Registration Failed", description: msg, variant: "destructive" });
+      const isDatabaseError = /database/i.test(error.message);
+      const msg = isDatabaseError
+        ? "A connection error occurred. If you've tried this email/phone before, try logging in. Otherwise, please try again in a moment."
+        : (/phone/i.test(error.message) || /unique/i.test(error.message))
+          ? "This phone number is already registered to another account."
+          : error.message;
+
+      toast({
+        title: isDatabaseError ? "Connection Error" : "Registration Failed",
+        description: msg,
+        variant: "destructive"
+      });
     } else {
       if (data?.session) {
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
