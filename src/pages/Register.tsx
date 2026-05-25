@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Tag } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Tag, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCanonical } from "@/hooks/useCanonical";
 import { supabase } from "@/integrations/supabase/client";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Register() {
   useCanonical("/register");
@@ -18,6 +19,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verificationMode, setVerificationMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -77,9 +80,46 @@ export default function Register() {
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
-        toast({ title: "Account Created!", description: "You can now sign in." });
-        navigate("/login");
+        setVerificationMode(true);
+        toast({ title: "Account Created!", description: "Please check your email for a verification code." });
       }
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length < 6) {
+      toast({ title: "Invalid Code", description: "Please enter the full 6-digit or 8-digit code.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: "signup",
+    });
+
+    setLoading(false);
+    if (error) {
+      toast({ title: "Verification Failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email Verified!", description: "You can now sign in to your account." });
+      navigate("/login");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Code Resent", description: "Please check your email for the new code." });
     }
   };
 
@@ -94,63 +134,119 @@ export default function Register() {
           <p className="text-muted-foreground mt-1">Create your account</p>
         </div>
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)} className="pl-10" required />
+          {!verificationMode ? (
+            <>
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="0549358359"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      maxLength={10}
+                      pattern="\d{10}"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type={showPassword ? "text" : "password"} placeholder="Create password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10" required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
+                  {loading ? "Creating Account..." : "Create Account"}
+                </Button>
+              </form>
+              <p className="text-center text-sm text-muted-foreground mt-3">
+                Already have an account?{" "}
+                <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>
+              </p>
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold mb-2">Verify your email</h2>
+                <p className="text-sm text-muted-foreground">
+                  We've sent a verification code to <span className="font-medium text-foreground">{email}</span>
+                </p>
               </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Phone Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="0549358359"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  maxLength={10}
-                  pattern="\d{10}"
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input type={showPassword ? "text" : "password"} placeholder="Create password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10" required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={8}
+                    value={otpCode}
+                    onChange={(val) => setOtpCode(val)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                      <InputOTPSlot index={6} />
+                      <InputOTPSlot index={7} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading || otpCode.length < 6}>
+                  {loading ? "Verifying..." : "Verify & Complete"}
+                </Button>
+              </form>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="w-full text-sm text-primary font-medium hover:underline"
+                >
+                  Resend verification code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerificationMode(false)}
+                  className="w-full text-sm text-muted-foreground flex items-center justify-center gap-1 hover:text-foreground"
+                >
+                  <ArrowLeft className="w-3 h-3" /> Back to registration
                 </button>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
-              </div>
-            </div>
-            <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
-              {loading ? "Creating Account..." : "Create Account"}
-            </Button>
-          </form>
-          <p className="text-center text-sm text-muted-foreground mt-3">
-            Already have an account?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>
-          </p>
+          )}
         </div>
         <div className="mt-4 rounded-xl border border-border bg-card p-3 text-center">
           <a
