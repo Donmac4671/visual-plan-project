@@ -1,32 +1,12 @@
--- Ultimate safety migration for user registration.
--- 1. Auto-confirms users BEFORE they are saved.
--- 2. Creates profiles AFTER they are saved, but NEVER blocks the process.
+-- Resilient registration migration.
+-- Profile creation is AFTER INSERT, and NEVER blocks the signup process.
 
--- Clean up ALL existing registration triggers
+-- 1. Clean up ALL previous registration triggers on auth.users
 DROP TRIGGER IF EXISTS a_trig_auto_confirm_user ON auth.users;
 DROP TRIGGER IF EXISTS trig_auto_confirm_user ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
--- Function for auto-confirmation (BEFORE INSERT)
-CREATE OR REPLACE FUNCTION public.auto_confirm_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = auth, public
-AS $$
-BEGIN
-  -- Direct modification of the NEW record is the safest way to auto-confirm.
-  NEW.email_confirmed_at = now();
-  NEW.confirmed_at = now();
-  NEW.raw_app_meta_data = COALESCE(NEW.raw_app_meta_data, '{}'::jsonb) || '{"provider": "email", "providers": ["email"]}'::jsonb;
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  -- Never crash registration
-  RETURN NEW;
-END;
-$$;
-
--- Function for profile/role setup (AFTER INSERT)
+-- 2. Define a resilient profile creation function (Runs AFTER INSERT)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -64,18 +44,16 @@ BEGIN
 END;
 $$;
 
--- Re-attach triggers
-CREATE TRIGGER a_trig_auto_confirm_user
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.auto_confirm_user();
-
+-- 3. Re-create the profile trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- Ensure RPC is available
+-- 4. Set permissions
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, service_role, authenticated, anon;
+
+-- 5. Helper RPC for phone check
 CREATE OR REPLACE FUNCTION public.check_phone_exists(p_phone text)
 RETURNS boolean
 LANGUAGE plpgsql

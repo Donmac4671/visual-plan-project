@@ -3,11 +3,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCanonical } from "@/hooks/useCanonical";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Login() {
   useCanonical("/login");
@@ -22,6 +23,8 @@ export default function Login() {
   const [resetSent, setResetSent] = useState(false);
   const [resetCode, setResetCode] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
+  const [verificationMode, setVerificationMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -39,13 +42,56 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.toLowerCase().includes("confirmed")) {
+        setVerificationMode(true);
+        toast({ title: "Email Not Verified", description: "Please enter the verification code sent to your email." });
+      } else {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } else {
       navigate("/dashboard");
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length < 6) {
+      toast({ title: "Invalid Code", description: "Please enter the full code.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: "signup",
+    });
+
+    setLoading(false);
+    if (error) {
+      toast({ title: "Verification Failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email Verified!", description: "You can now sign in." });
+      setVerificationMode(false);
+      setOtpCode("");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Code Resent", description: "Please check your email for the new code." });
     }
   };
 
@@ -105,7 +151,59 @@ export default function Login() {
           <p className="text-muted-foreground mt-1">{forgotMode ? "Reset your password" : "Sign in to your account"}</p>
         </div>
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-          {forgotMode ? (
+          {verificationMode ? (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold mb-2">Verify your email</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enter the code sent to <span className="font-medium text-foreground">{email}</span>
+                </p>
+              </div>
+
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={8}
+                    value={otpCode}
+                    onChange={(val) => setOtpCode(val)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                      <InputOTPSlot index={6} />
+                      <InputOTPSlot index={7} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading || otpCode.length < 6}>
+                  {loading ? "Verifying..." : "Verify & Sign In"}
+                </Button>
+              </form>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="w-full text-sm text-primary font-medium hover:underline"
+                >
+                  Resend verification code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerificationMode(false)}
+                  className="w-full text-sm text-muted-foreground flex items-center justify-center gap-1 hover:text-foreground"
+                >
+                  <ArrowLeft className="w-3 h-3" /> Back to Sign In
+                </button>
+              </div>
+            </div>
+          ) : forgotMode ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               {!showCodeInput ? (
                 <>
