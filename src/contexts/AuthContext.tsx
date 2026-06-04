@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           new Promise<{ data: { user: null }; error: Error }>((resolve) => {
             setTimeout(() => {
               resolve({ data: { user: null }, error: new Error("User validation timed out") });
-            }, 3000);
+            }, 10000);
           }),
         ]);
 
