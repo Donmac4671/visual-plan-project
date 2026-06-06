@@ -130,8 +130,9 @@ export default function DataBundles() {
       toast({ title: "Unknown Number", description: "This phone number prefix is not recognized. Please check the number.", variant: "destructive" });
       return;
     }
-    let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
-    if (promo) {
+    const resellerOverride = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
+    let effectivePrice = resellerOverride ?? getBundlePrice(selectedBundle.bundle, userTier);
+    if (promo && !isResellerCustomer) {
       effectivePrice = applyDiscount(effectivePrice);
     }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
