@@ -226,8 +226,9 @@ export default function DataBundles() {
               <p className="text-xs text-muted-foreground mb-1">💰 Price</p>
               {(() => {
                 if (!selectedBundle) return null;
-                const base = getBundlePrice(selectedBundle.bundle, userTier);
-                const final = promo ? applyDiscount(base) : base;
+                const reseller = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
+                const base = reseller ?? getBundlePrice(selectedBundle.bundle, userTier);
+                const final = promo && !isResellerCustomer ? applyDiscount(base) : base;
                 const hasDiscount = final < base;
                 return (
                   <>
