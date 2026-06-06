@@ -27,7 +27,9 @@ import Admin from "./pages/Admin";
 import Complaints from "./pages/Complaints";
 import ResetPassword from "./pages/ResetPassword";
 import Flyer from "./pages/Flyer";
+import Reseller from "./pages/Reseller";
 import NotFound from "./pages/NotFound";
+import { useCaptureResellerRef } from "@/hooks/useResellerRef";
 
 const queryClient = new QueryClient();
 
