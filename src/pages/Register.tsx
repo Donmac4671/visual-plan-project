@@ -78,6 +78,7 @@ export default function Register() {
       });
     } else {
       if (data?.session) {
+        await bindStoredResellerRef();
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
