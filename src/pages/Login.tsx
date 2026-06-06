@@ -54,6 +54,7 @@ export default function Login() {
         });
       }
     } else {
+      await bindStoredResellerRef();
       navigate("/dashboard");
     }
   };
