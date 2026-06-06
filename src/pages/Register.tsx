@@ -46,7 +46,7 @@ export default function Register() {
     setLoading(true);
 
     // Pre-check: phone number must be unique. Use RPC to bypass RLS.
-    const { data: phoneExists, error: phoneCheckError } = await supabase
+    const { data: phoneExists, error: phoneCheckError } = await (supabase as any)
       .rpc("check_phone_exists", { p_phone: trimmedPhone });
 
     if (phoneCheckError) {
