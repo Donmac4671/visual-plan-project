@@ -1,86 +1,66 @@
-I checked the latest failed AT Premium order and the backend logs. The failure is real and the cause is clear:
+## Goal
 
-- Order `DMH822` was sent to GHData at `2026-04-28 21:19 UTC`.
-- The fulfillment function tried every current AT Premium network key:
-  - `AT_PREMIUM`
-  - `AT-PREMIUM`
-  - `AIRTELTIGO_PREMIUM`
-  - `AIRTELTIGOPREMIUM`
-  - `atpremium`
-  - `at_premium`
-  - `at-premium`
-  - `airteltigo_premium`
-  - `airteltigopremium`
-- GHData rejected all of them with: `Validation failed: The selected network is invalid.`
+Right now the app only has General + Agent tiers. You're asking for a **reseller storefront** layer on top of that — same dashboard, but each reseller has their own customer base and their own retail prices. Nothing of this exists yet, so we're building it from scratch.
 
-So this is not a frontend issue. The app is sending the request, but the provider no longer accepts the AT Premium network values currently coded.
+## What we'll build
 
-## Plan to fix properly
+### 1. Reseller identity
+- New tier value `reseller` added to profiles (sits next to `general` / `agent`).
+- Each reseller gets a **sequential code** (`R001`, `R002`, …) stored in `profiles.agent_code`, generated the same way agent codes are today.
+- Admin → Users gets a "Make Reseller" action (next to existing Make Agent), which calls a new `admin_set_reseller` RPC that assigns the next free reseller code.
 
-### 1. Stop marking AT Premium as permanently failed on provider network validation
-For AT Premium only, if GHData returns `The selected network is invalid`, the order should not be marked `failed` and refunded immediately.
+### 2. Customer ↔ reseller link
+- New column `profiles.reseller_id uuid` (nullable, references the reseller's user_id).
+- When someone opens `https://donmacdatahub.com/?ref=R001` (or `/register?ref=R001`), the code is stored in `localStorage` and used during signup. After signup, an RPC `bind_reseller(p_code)` sets `reseller_id` on their profile.
+- On login, if a `?ref=...` is in the URL, the same binding runs (covers "customer searches the main URL and signs in" — they still end up tagged to the right reseller and land on `/dashboard`).
+- Already-bound customers are never re-bound (first reseller wins).
 
-Instead, it should be marked `waiting` with its local reference saved. This prevents the app from wrongly treating a customer order as failed when it may need manual/provider-side action.
+### 3. Per-reseller custom prices
+- New table `reseller_prices` (`reseller_id`, `network_id`, `bundle_size`, `price`). Reseller sets one price per bundle.
+- New page `/reseller` (visible only to tier=reseller) where they edit their prices in a table per network. Defaults pre-filled with current general prices.
+- Dashboard pricing logic: when the logged-in user has `reseller_id`, fetch that reseller's prices and use those instead of general/agent prices. Falls back to general price if reseller hasn't set one.
 
-Result:
-- Customer payment stays recorded.
-- Order remains visible as needing attention.
-- No accidental refund while you manually fulfill.
-- Admin can later mark it completed/delivered.
+### 4. Profit calculation
+- Wholesale cost map already exists in the codebase (used by Admin profit analytics). We extend it so reseller orders compute:
+  `profit = order.amount − wholesale_cost(network, bundle)`
+- Admin Analytics gets a new **"Reseller profit"** view: per reseller, total customer orders, revenue, wholesale cost, profit.
+- The reseller's own dashboard shows their lifetime + today's profit.
 
-### 2. Add stronger diagnostics to `fulfill-order`
-Update `supabase/functions/fulfill-order/index.ts` so failed provider attempts return/store clearer information in logs:
+### 5. Admin visibility fixes
+- Admin → Users already lists every row in `profiles`, so any customer (including those bound to a reseller) will appear — we just add a "Reseller" column showing the reseller's code/name when `reseller_id` is set, plus a filter "Show customers of [reseller]".
+- Admin → Resellers tab lists all resellers with: code, name, # customers, total profit, edit prices.
 
-- network attempted
-- payload shape used
-- GHData HTTP status
-- GHData validation errors
-- final decision: `waiting` vs `failed`
+### 6. Signup/login routing
+- `?ref=R001` is captured anywhere on the site, persisted, and redirects to `/dashboard` post-auth (today new users land on `/dashboard` already; we just make sure the ref is bound before the redirect).
 
-This makes the next provider issue traceable immediately instead of guessing.
+## Technical details
 
-### 3. Test AT Premium with the real deployed backend using the known failed order
-After changing the function, deploy it and call it against a safe test path/order flow where possible.
+**Migrations (one migration file):**
+- `ALTER TABLE profiles ADD COLUMN reseller_id uuid;` + index.
+- `CREATE TABLE reseller_prices (id, reseller_id, network_id, bundle_size, price, created_at, updated_at)` + GRANTs + RLS:
+  - Reseller can CRUD their own rows.
+  - Authenticated users can SELECT rows where `reseller_id = profiles.reseller_id` of `auth.uid()` (so the dashboard can read their reseller's prices). Admin full access.
+- `CREATE TABLE reseller_code_assignments` (mirrors `agent_code_assignments`) for sequential `R001…` codes.
+- RPCs (all SECURITY DEFINER):
+  - `admin_make_reseller(target_user_id)` — assigns next R-code, sets tier=reseller.
+  - `bind_reseller(p_code text)` — sets `reseller_id` on caller's profile if unset.
+  - `reseller_set_price(p_network, p_bundle, p_price)` — upsert into reseller_prices.
+- Update `protect_profile_fields` trigger to also lock `reseller_id` from being changed by the user directly (only via RPC).
 
-For the recent order `DMH822`, since you already manually fulfilled and changed it to completed, I will not re-send that exact order to GHData. I will use it only for log verification and avoid duplicate fulfillment.
+**Frontend:**
+- `src/hooks/useRef.ts` — captures `?ref=` and writes to localStorage.
+- `Login.tsx` / `Register.tsx` — call `bind_reseller` after auth if a ref is stored.
+- `src/hooks/usePricing.ts` — central pricing hook used by `DataBundles.tsx`; returns reseller's prices when applicable.
+- `src/pages/Reseller.tsx` — price editor.
+- `src/components/admin/AdminResellers.tsx` — admin tab listing resellers, their customers, and profit.
+- `src/components/admin/AdminUsers.tsx` — add Reseller column + "Make Reseller" action.
+- Sidebar entry "My Storefront" for tier=reseller.
 
-### 4. Try to discover the correct GHData AT Premium key without risking user orders
-Add a small admin-only diagnostic mode to the fulfillment function or a separate admin diagnostic function that can test candidate network keys without changing the order status unless GHData accepts one.
+## What this plan does NOT include (flag if you want them)
 
-Candidate additions to test/include will cover likely provider labels such as:
+- Custom subdomain per reseller (e.g. `r001.donmacdatahub.com`). Customers will use the main URL with `?ref=R001`.
+- Reseller-branded storefront (logo/colors per reseller). All customers see the standard Donmac UI, just at the reseller's prices.
+- Automatic payout of profit to the reseller's wallet on each order. Profit is reported in the dashboard; payouts stay manual unless you ask for auto-credit.
+- Reseller fulfilling orders themselves — fulfillment stays via the existing GHDataConnect pipeline.
 
-```text
-at
-AT
-airteltigo
-AIRTELTIGO
-bigtime
-premium
-AT_PREMIUM_BUNDLE
-AIRTELTIGO_PREMIUM_BUNDLE
-```
-
-If GHData only validates network names during a real purchase, the safe fallback from step 1 still prevents customer damage.
-
-### 5. Update Telegram ordering too
-The Telegram bot has its own GHData network-key list for AT Premium. I will update it with the same safer behavior and network mapping logic so AT Premium does not fail in one channel while the web checkout is fixed in another.
-
-Files involved:
-- `supabase/functions/fulfill-order/index.ts`
-- `supabase/functions/telegram-momo/index.ts`
-- optionally `supabase/functions/process-pending-orders/index.ts` if its retry behavior needs to respect the new waiting state
-
-### 6. Add admin-visible handling for `waiting`
-The admin orders table already supports status changes and has a status value `waiting` in backend functions. I will confirm the UI clearly shows `waiting` orders so you can see AT Premium orders that need manual attention instead of hunting for failed/completed edits.
-
-### 7. Deploy and verify logs
-After implementation, I will deploy the changed backend functions and check the live logs. The target result is:
-
-```text
-AT Premium provider network validation error -> order status waiting, not failed/refunded
-Valid provider success -> order status completed for AT Premium
-Other genuine provider failures -> failed/refunded only when appropriate
-```
-
-## Important note
-The current evidence shows GHData rejected the AT Premium network names, not that the customer order creation failed. I will fix the app so this cannot keep causing false failed/refunded orders, and I will make the provider mapping easier to correct once the accepted GHData AT Premium key is confirmed.
+Reply "go" to build it, or tell me what to change (e.g. "add auto-payout", "add subdomains", "skip the reseller profit page").
