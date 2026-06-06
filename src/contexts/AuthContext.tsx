@@ -101,6 +101,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+
+      // If a reseller referral code is pending and this user has no reseller yet, bind now.
+      if (profileData && !(profileData as any).reseller_id && getStoredResellerRef()) {
+        const bound = await bindStoredResellerRef();
+        if (bound) {
+          const { data: refreshed } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+          if (refreshed) setProfile(refreshed as Profile);
+        }
+      }
     } catch (error) {
       console.error("Auth profile load failed:", error);
       setProfile(null);
