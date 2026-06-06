@@ -64,10 +64,10 @@ export default function Reseller() {
     })();
 
     (async () => {
-      const { data: custs } = await supabase
+      const { data: custs } = await (supabase as any)
         .from("profiles")
         .select("user_id, full_name, email, phone, created_at")
-        .eq("reseller_id" as any, user.id)
+        .eq("reseller_id", user.id)
         .order("created_at", { ascending: false });
       setCustomers(custs || []);
 
