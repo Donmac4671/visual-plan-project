@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
+import { useResellerPrices } from "@/hooks/useResellerPrices";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
