@@ -400,6 +400,7 @@ export default function Admin() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Balance</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead>Reseller</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -407,9 +408,10 @@ export default function Admin() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No users found</TableCell></TableRow>
                 ) : filteredUsers.map((u) => {
                   const isUserAdmin = adminUserIds.has(u.user_id);
+                  const resellerOf = u.reseller_id ? users.find((x) => x.user_id === u.reseller_id) : null;
                   return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.agent_code || "—"}</TableCell>
@@ -418,13 +420,17 @@ export default function Admin() {
                     <TableCell>{u.phone}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(u.wallet_balance)}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={u.tier === "agent" ? "bg-primary/10 text-primary cursor-pointer" : "bg-muted text-muted-foreground cursor-pointer"}
-                        onClick={() => handleSetTier(u.user_id, u.tier === "agent" ? "general" : "agent")}
-                      >
-                        {u.tier === "agent" ? "Agent" : "General"}
-                      </Badge>
+                      <Select value={u.tier || "general"} onValueChange={(v) => handleSetTier(u.user_id, v)}>
+                        <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="agent">Agent</SelectItem>
+                          <SelectItem value="reseller">Reseller</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {resellerOf ? `${resellerOf.agent_code || ""} ${resellerOf.full_name || ""}`.trim() : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge

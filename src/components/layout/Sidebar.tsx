@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Receipt, CreditCard, LogOut, User, Shield, MessageSquare, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -62,6 +62,17 @@ export default function Sidebar() {
             </Link>
           );
         })}
+        {profile?.tier === "reseller" && (
+          <Link
+            to="/reseller"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              location.pathname === "/reseller" ? "gradient-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            My Storefront
+          </Link>
+        )}
         {isAdmin && (
           <Link
             to="/admin"

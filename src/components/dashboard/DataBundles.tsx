@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
+import { useResellerPrices } from "@/hooks/useResellerPrices";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
@@ -33,9 +34,9 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
-function BundleCard({ bundle, network, tier, onSelect, applyDiscount }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number }) {
+function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPrice }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number; resellerPrice?: number }) {
   const gradientClass = network.gradient;
-  const basePrice = getBundlePrice(bundle, tier);
+  const basePrice = resellerPrice ?? getBundlePrice(bundle, tier);
   const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
 
@@ -73,6 +74,7 @@ export default function DataBundles() {
   const { networks: mergedNetworks } = useCustomBundles();
   const userTier = profile?.tier || "general";
   const { promo, applyDiscount } = useActivePromo(userTier);
+  const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
@@ -128,8 +130,9 @@ export default function DataBundles() {
       toast({ title: "Unknown Number", description: "This phone number prefix is not recognized. Please check the number.", variant: "destructive" });
       return;
     }
-    let effectivePrice = getBundlePrice(selectedBundle.bundle, userTier);
-    if (promo) {
+    const resellerOverride = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
+    let effectivePrice = resellerOverride ?? getBundlePrice(selectedBundle.bundle, userTier);
+    if (promo && !isResellerCustomer) {
       effectivePrice = applyDiscount(effectivePrice);
     }
     addItem(selectedBundle.network.id, selectedBundle.network.name, selectedBundle.bundle, phoneNumber, effectivePrice);
@@ -193,7 +196,8 @@ export default function DataBundles() {
                       network={network}
                       tier={userTier}
                       onSelect={() => setSelectedBundle({ network, bundle })}
-                      applyDiscount={promo ? applyDiscount : undefined}
+                      applyDiscount={promo && !isResellerCustomer ? applyDiscount : undefined}
+                      resellerPrice={getResellerPrice(network.id, bundle.size)}
                     />
                   ))}
                 </div>
@@ -222,8 +226,9 @@ export default function DataBundles() {
               <p className="text-xs text-muted-foreground mb-1">💰 Price</p>
               {(() => {
                 if (!selectedBundle) return null;
-                const base = getBundlePrice(selectedBundle.bundle, userTier);
-                const final = promo ? applyDiscount(base) : base;
+                const reseller = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
+                const base = reseller ?? getBundlePrice(selectedBundle.bundle, userTier);
+                const final = promo && !isResellerCustomer ? applyDiscount(base) : base;
                 const hasDiscount = final < base;
                 return (
                   <>

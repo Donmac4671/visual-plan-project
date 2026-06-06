@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { bindStoredResellerRef, getStoredResellerRef } from "@/hooks/useResellerRef";
 
 interface Profile {
   id: string;
@@ -12,6 +13,7 @@ interface Profile {
   wallet_balance: number;
   is_blocked: boolean;
   tier: string;
+  reseller_id?: string | null;
 }
 
 interface AuthContextType {
@@ -99,6 +101,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+
+      // If a reseller referral code is pending and this user has no reseller yet, bind now.
+      if (profileData && !(profileData as any).reseller_id && getStoredResellerRef()) {
+        const bound = await bindStoredResellerRef();
+        if (bound) {
+          const { data: refreshed } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+          if (refreshed) setProfile(refreshed as Profile);
+        }
+      }
     } catch (error) {
       console.error("Auth profile load failed:", error);
       setProfile(null);

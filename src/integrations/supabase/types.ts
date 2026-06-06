@@ -401,6 +401,7 @@ export type Database = {
           is_blocked: boolean
           phone: string
           referral_code: string
+          reseller_id: string | null
           tier: string
           topup_reference_code: string
           updated_at: string
@@ -416,6 +417,7 @@ export type Database = {
           is_blocked?: boolean
           phone?: string
           referral_code?: string
+          reseller_id?: string | null
           tier?: string
           topup_reference_code?: string
           updated_at?: string
@@ -431,6 +433,7 @@ export type Database = {
           is_blocked?: boolean
           phone?: string
           referral_code?: string
+          reseller_id?: string | null
           tier?: string
           topup_reference_code?: string
           updated_at?: string
@@ -532,6 +535,57 @@ export type Database = {
           referrer_id?: string
           reward_amount?: number
           reward_paid?: boolean
+        }
+        Relationships: []
+      }
+      reseller_code_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          reseller_code: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reseller_code: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reseller_code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reseller_prices: {
+        Row: {
+          bundle_size: string
+          created_at: string
+          id: string
+          network_id: string
+          price: number
+          reseller_id: string
+          updated_at: string
+        }
+        Insert: {
+          bundle_size: string
+          created_at?: string
+          id?: string
+          network_id: string
+          price: number
+          reseller_id: string
+          updated_at?: string
+        }
+        Update: {
+          bundle_size?: string
+          created_at?: string
+          id?: string
+          network_id?: string
+          price?: number
+          reseller_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -818,6 +872,7 @@ export type Database = {
         }
         Returns: string
       }
+      bind_reseller: { Args: { p_code: string }; Returns: boolean }
       claim_verified_topup: {
         Args: { p_transaction_id: string }
         Returns: undefined

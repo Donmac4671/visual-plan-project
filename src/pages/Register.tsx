@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCanonical } from "@/hooks/useCanonical";
 import { supabase } from "@/integrations/supabase/client";
+import { bindStoredResellerRef } from "@/hooks/useResellerRef";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Register() {
@@ -46,7 +47,7 @@ export default function Register() {
     setLoading(true);
 
     // Pre-check: phone number must be unique. Use RPC to bypass RLS.
-    const { data: phoneExists, error: phoneCheckError } = await supabase
+    const { data: phoneExists, error: phoneCheckError } = await (supabase as any)
       .rpc("check_phone_exists", { p_phone: trimmedPhone });
 
     if (phoneCheckError) {
@@ -77,6 +78,7 @@ export default function Register() {
       });
     } else {
       if (data?.session) {
+        await bindStoredResellerRef();
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
