@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { bindStoredResellerRef, getStoredResellerRef } from "@/hooks/useResellerRef";
 
 interface Profile {
   id: string;
@@ -12,6 +13,7 @@ interface Profile {
   wallet_balance: number;
   is_blocked: boolean;
   tier: string;
+  reseller_id?: string | null;
 }
 
 interface AuthContextType {
