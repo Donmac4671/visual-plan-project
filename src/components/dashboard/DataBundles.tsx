@@ -34,9 +34,9 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
-function BundleCard({ bundle, network, tier, onSelect, applyDiscount }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number }) {
+function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPrice }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number; resellerPrice?: number }) {
   const gradientClass = network.gradient;
-  const basePrice = getBundlePrice(bundle, tier);
+  const basePrice = resellerPrice ?? getBundlePrice(bundle, tier);
   const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
 
