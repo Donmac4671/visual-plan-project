@@ -74,6 +74,7 @@ export default function DataBundles() {
   const { networks: mergedNetworks } = useCustomBundles();
   const userTier = profile?.tier || "general";
   const { promo, applyDiscount } = useActivePromo(userTier);
+  const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
