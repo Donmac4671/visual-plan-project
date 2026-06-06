@@ -74,6 +74,11 @@ function RecoveryRedirect() {
   return null;
 }
 
+function ResellerRefCapture() {
+  useCaptureResellerRef();
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -82,6 +87,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ResellerRefCapture />
             <RecoveryRedirect />
             <RealtimeNotifications />
             <EnableNotificationsBanner />
