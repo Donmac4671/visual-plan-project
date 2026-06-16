@@ -8,6 +8,7 @@ import MtnMashupPackages from "@/components/dashboard/MtnMashupPackages";
 import PromoCountdown from "@/components/dashboard/PromoCountdown";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
 import SiteMessageBanner from "@/components/global/SiteMessageBanner";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import { useCanonical } from "@/hooks/useCanonical";
 
@@ -16,17 +17,15 @@ export default function Index() {
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
-        <WelcomeBanner />
-        <SiteMessageBanner />
-        <PromoCountdown />
-        <StatsCards />
-        <WalletTopUp />
-        <ClaimPayment />
-        <MtnMashupPackages />
-        <DataBundles />
-        <MashupAirtime />
-
-        
+        <ErrorBoundary label="WelcomeBanner"><WelcomeBanner /></ErrorBoundary>
+        <ErrorBoundary label="SiteMessageBanner"><SiteMessageBanner /></ErrorBoundary>
+        <ErrorBoundary label="PromoCountdown"><PromoCountdown /></ErrorBoundary>
+        <ErrorBoundary label="StatsCards"><StatsCards /></ErrorBoundary>
+        <ErrorBoundary label="WalletTopUp"><WalletTopUp /></ErrorBoundary>
+        <ErrorBoundary label="ClaimPayment"><ClaimPayment /></ErrorBoundary>
+        <ErrorBoundary label="MtnMashupPackages"><MtnMashupPackages /></ErrorBoundary>
+        <ErrorBoundary label="DataBundles"><DataBundles /></ErrorBoundary>
+        <ErrorBoundary label="MashupAirtime"><MashupAirtime /></ErrorBoundary>
       </div>
     </DashboardLayout>
   );
