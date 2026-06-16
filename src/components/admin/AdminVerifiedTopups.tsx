@@ -41,6 +41,7 @@ interface Props {
 export default function AdminVerifiedTopups({ users }: Props) {
   const { toast } = useToast();
   const [topups, setTopups] = useState<VerifiedTopup[]>([]);
+  const [paystackTopups, setPaystackTopups] = useState<PaystackTopup[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingTopup, setEditingTopup] = useState<VerifiedTopup | null>(null);
   const [txnId, setTxnId] = useState("");
