@@ -63,8 +63,10 @@ export default function AdminBundleManager() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const allNetworks = useMemo(() => [...networks, ...mashupNetworks], []);
+
   const getMergedBundles = (networkId: string) => {
-    const network = networks.find((n) => n.id === networkId);
+    const network = allNetworks.find((n) => n.id === networkId);
     if (!network) return [];
 
     const bundleMap = new Map<string, { size: string; sizeGB: number; agentPrice: number; generalPrice: number; isCustom: boolean }>();
