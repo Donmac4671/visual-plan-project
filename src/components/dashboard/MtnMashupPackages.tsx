@@ -6,19 +6,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 
 
 const MTN_PREFIXES = ["024", "054", "055", "059", "025", "053"];
 const isMTNNumber = (phone: string) => MTN_PREFIXES.some((p) => phone.startsWith(p));
 
 export interface MashupDataPkg {
-  size: string;       // "1.7GB"
-  sizeGB: number;     // 1.7
-  price: number;      // selling price
+  size: string;
+  sizeGB: number;
+  price: number;
 }
 export interface MashupComboPkg {
-  size: string;       // "350m+870MB"
-  label: string;      // "350 Minutes + 870MB"
+  size: string;
+  label: string;
   minutes: number;
   data: string;
   price: number;
@@ -47,12 +48,22 @@ type Selected =
   | { kind: "combo"; pkg: MashupComboPkg }
   | null;
 
+const OnlineBadge = () => (
+  <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
+  </span>
+);
+
 export default function MtnMashupPackages() {
   const [expanded, setExpanded] = useState<null | "data" | "combo">(null);
   const [selected, setSelected] = useState<Selected>(null);
   const [phone, setPhone] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const { isHidden } = useHiddenBundles();
+
+  const visibleData = MTN_MASHUP_DATA_PACKAGES.filter((p) => !isHidden("mashup-data", p.size));
+  const visibleCombo = MTN_MASHUP_COMBO_PACKAGES.filter((p) => !isHidden("mashup-combo", p.size));
 
   const close = () => {
     setSelected(null);
@@ -96,72 +107,76 @@ export default function MtnMashupPackages() {
 
   return (
     <div className="space-y-3">
-      {/* MTN Mashup Data */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        <button
-          onClick={() => setExpanded(expanded === "data" ? null : "data")}
-          className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-white" />
+      {visibleData.length > 0 && (
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <button
+            onClick={() => setExpanded(expanded === "data" ? null : "data")}
+            className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">MTN Mashup Data</p>
+                <p className="text-xs text-muted-foreground">Discounted MTN data bundles (MTN only)</p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="font-semibold text-foreground">MTN Mashup Data</p>
-              <p className="text-xs text-muted-foreground">Discounted MTN data bundles (MTN only)</p>
+            {expanded === "data" ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          {expanded === "data" && (
+            <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {visibleData.map((p) => (
+                <button
+                  key={p.size}
+                  onClick={() => setSelected({ kind: "data", pkg: p })}
+                  className="relative bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
+                >
+                  <OnlineBadge />
+                  <p className="text-2xl font-bold">{p.size}</p>
+                  <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
+                </button>
+              ))}
             </div>
-          </div>
-          {expanded === "data" ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
-        {expanded === "data" && (
-          <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {MTN_MASHUP_DATA_PACKAGES.map((p) => (
-              <button
-                key={p.size}
-                onClick={() => setSelected({ kind: "data", pkg: p })}
-                className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-3 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-              >
-                <p className="text-2xl font-bold">{p.size}</p>
-                <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
-      {/* MTN Mashup Minutes + Data */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        <button
-          onClick={() => setExpanded(expanded === "combo" ? null : "combo")}
-          className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-white" />
+      {visibleCombo.length > 0 && (
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <button
+            onClick={() => setExpanded(expanded === "combo" ? null : "combo")}
+            className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <Phone className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground">MTN Mashup Minutes + Data</p>
+                <p className="text-xs text-muted-foreground">Minutes + data combo packages (MTN only)</p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="font-semibold text-foreground">MTN Mashup Minutes + Data</p>
-              <p className="text-xs text-muted-foreground">Minutes + data combo packages (MTN only)</p>
+            {expanded === "combo" ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          {expanded === "combo" && (
+            <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {visibleCombo.map((p) => (
+                <button
+                  key={p.size}
+                  onClick={() => setSelected({ kind: "combo", pkg: p })}
+                  className="relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
+                >
+                  <OnlineBadge />
+                  <p className="text-lg font-bold">{p.minutes} mins</p>
+                  <p className="text-xs opacity-90">+ {p.data}</p>
+                  <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
+                </button>
+              ))}
             </div>
-          </div>
-          {expanded === "combo" ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
-        {expanded === "combo" && (
-          <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {MTN_MASHUP_COMBO_PACKAGES.map((p) => (
-              <button
-                key={p.size}
-                onClick={() => setSelected({ kind: "combo", pkg: p })}
-                className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-3 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-              >
-                <p className="text-lg font-bold">{p.minutes} mins</p>
-                <p className="text-xs opacity-90">+ {p.data}</p>
-                <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <Dialog open={!!selected} onOpenChange={(o) => { if (!o) close(); }}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
