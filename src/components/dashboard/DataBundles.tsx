@@ -43,6 +43,9 @@ function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPr
   return (
     <div className="flex flex-col items-center">
       <div className={`${gradientClass} rounded-2xl p-4 w-full aspect-square flex flex-col items-center justify-center text-white relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-105`}>
+        <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
+        </span>
         <span className="text-3xl lg:text-4xl font-bold">{bundle.sizeGB}</span>
         <span className="text-xs font-medium uppercase">Gigabytes</span>
       </div>
