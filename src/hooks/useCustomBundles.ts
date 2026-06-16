@@ -50,9 +50,8 @@ export function useCustomBundles() {
         });
       }
 
-      // Sort by sizeGB and filter hidden
+      // Sort by sizeGB (offline bundles remain visible — handled at render)
       const bundles = Array.from(bundleMap.values())
-        .filter((b) => !isHidden(network.id, b.size))
         .sort((a, b) => a.sizeGB - b.sizeGB);
 
       return { ...network, bundles };
