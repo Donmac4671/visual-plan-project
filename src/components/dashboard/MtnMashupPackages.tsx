@@ -151,7 +151,7 @@ export default function MtnMashupPackages() {
         </div>
       )}
 
-      {visibleCombo.length > 0 && (
+      {(
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "combo" ? null : "combo")}
@@ -170,18 +170,21 @@ export default function MtnMashupPackages() {
           </button>
           {expanded === "combo" && (
             <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {visibleCombo.map((p) => (
-                <button
-                  key={p.size}
-                  onClick={() => setSelected({ kind: "combo", pkg: p })}
-                  className="relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-                >
-                  <OnlineBadge />
-                  <p className="text-lg font-bold">{p.minutes} mins</p>
-                  <p className="text-xs opacity-90">+ {p.data}</p>
-                  <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
-                </button>
-              ))}
+              {MTN_MASHUP_COMBO_PACKAGES.map((p) => {
+                const offline = isHidden("mashup-combo", p.size);
+                return (
+                  <button
+                    key={p.size}
+                    onClick={() => offline ? showOfflineToast(`MTN Mashup ${p.label}`) : setSelected({ kind: "combo", pkg: p })}
+                    className={`relative rounded-2xl p-3 pt-5 text-white text-center transition-all ${offline ? "bg-gradient-to-br from-gray-400 to-gray-500 opacity-70 cursor-not-allowed" : "bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-lg hover:-translate-y-1"}`}
+                  >
+                    <OnlineBadge offline={offline} />
+                    <p className="text-lg font-bold">{p.minutes} mins</p>
+                    <p className="text-xs opacity-90">+ {p.data}</p>
+                    <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
