@@ -277,6 +277,45 @@ export default function AdminVerifiedTopups({ users }: Props) {
         </Table>
       </div>
 
+      <div className="space-y-2 pt-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Paystack Top-Ups</h3>
+          <span className="text-sm text-muted-foreground">
+            {filteredPaystack.length} • {formatCurrency(paystackTotal)}
+          </span>
+        </div>
+        <div className="bg-card rounded-xl border border-border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Reference</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPaystack.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No Paystack top-ups found</TableCell></TableRow>
+              ) : filteredPaystack.map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell className="font-mono text-xs">{t.paystack_reference}</TableCell>
+                  <TableCell className="font-semibold">{formatCurrency(t.amount)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={t.status === "completed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}>
+                      {t.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{getUserName(t.user_id)}</TableCell>
+                  <TableCell className="text-sm">{format(parseISO(t.created_at), "MMM dd, yyyy • HH:mm")}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
       <Dialog open={showAddDialog} onOpenChange={() => resetForm()}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md">
           <DialogHeader>
