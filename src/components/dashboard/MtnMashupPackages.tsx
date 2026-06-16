@@ -48,11 +48,16 @@ type Selected =
   | { kind: "combo"; pkg: MashupComboPkg }
   | null;
 
-const OnlineBadge = () => (
-  <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
-    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
-  </span>
-);
+const OnlineBadge = ({ offline }: { offline?: boolean }) =>
+  offline ? (
+    <span className="absolute top-1 right-1 flex items-center gap-1 bg-gray-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+      <span className="w-1.5 h-1.5 rounded-full bg-white" /> Offline
+    </span>
+  ) : (
+    <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
+    </span>
+  );
 
 export default function MtnMashupPackages() {
   const [expanded, setExpanded] = useState<null | "data" | "combo">(null);
