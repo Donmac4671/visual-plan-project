@@ -67,8 +67,9 @@ export default function MtnMashupPackages() {
   const { toast } = useToast();
   const { isHidden } = useHiddenBundles();
 
-  const visibleData = MTN_MASHUP_DATA_PACKAGES.filter((p) => !isHidden("mashup-data", p.size));
-  const visibleCombo = MTN_MASHUP_COMBO_PACKAGES.filter((p) => !isHidden("mashup-combo", p.size));
+  const showOfflineToast = (label: string) =>
+    toast({ title: "Offline", description: `${label} is currently offline. Please check back later.`, variant: "destructive" });
+
 
   const close = () => {
     setSelected(null);
