@@ -56,6 +56,15 @@ export default function AdminVerifiedTopups({ users }: Props) {
       .select("*")
       .order("created_at", { ascending: false });
     if (data) setTopups(data as any);
+
+    const { data: ps } = await supabase
+      .from("wallet_topups")
+      .select("id,user_id,amount,status,paystack_reference,created_at")
+      .eq("method", "paystack")
+      .not("paystack_reference", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (ps) setPaystackTopups(ps as any);
   };
 
   useEffect(() => { fetchTopups(); }, []);
