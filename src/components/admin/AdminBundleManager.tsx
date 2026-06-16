@@ -174,15 +174,18 @@ export default function AdminBundleManager() {
       <p className="text-sm text-muted-foreground">
         Manage bundles: toggle visibility, add new packages, edit prices, or delete bundles.
       </p>
-      {networks.map((network) => {
+      {allNetworks.map((network) => {
         const bundles = getMergedBundles(network.id);
+        const readOnly = (network as any).readOnly === true;
         return (
           <div key={network.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <div className={`${network.gradient} py-3 px-4 flex items-center justify-between`}>
               <h3 className="text-lg font-bold text-white">{network.name}</h3>
-              <Button size="sm" variant="secondary" onClick={() => openAddDialog(network.id)} className="gap-1">
-                <Plus className="w-4 h-4" /> Add Bundle
-              </Button>
+              {!readOnly && (
+                <Button size="sm" variant="secondary" onClick={() => openAddDialog(network.id)} className="gap-1">
+                  <Plus className="w-4 h-4" /> Add Bundle
+                </Button>
+              )}
             </div>
             <div className="divide-y divide-border">
               {bundles.map((bundle) => {
@@ -194,18 +197,26 @@ export default function AdminBundleManager() {
                     <div className="flex items-center gap-3">
                       <span className="font-semibold text-foreground w-16">{bundle.size}</span>
                       <span className="text-sm text-muted-foreground">
-                        Agent: {formatCurrency(bundle.agentPrice)} · General: {formatCurrency(bundle.generalPrice)}
+                        {readOnly ? formatCurrency(bundle.generalPrice) : `Agent: ${formatCurrency(bundle.agentPrice)} · General: ${formatCurrency(bundle.generalPrice)}`}
                       </span>
-                      {isHidden && <Badge variant="outline" className="bg-destructive/10 text-destructive text-xs">Hidden</Badge>}
+                      {isHidden ? (
+                        <Badge variant="outline" className="bg-destructive/10 text-destructive text-xs">Offline</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-600 text-xs">Online</Badge>
+                      )}
                       {bundle.isCustom && <Badge variant="outline" className="bg-primary/10 text-primary text-xs">Custom</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => openEditDialog(network.id, bundle)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteBundle(network.id, bundle.size)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {!readOnly && (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => openEditDialog(network.id, bundle)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteBundle(network.id, bundle.size)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                       <Switch checked={!isHidden} onCheckedChange={() => toggleBundle(network.id, bundle.size)} disabled={isLoading} />
                     </div>
                   </div>
