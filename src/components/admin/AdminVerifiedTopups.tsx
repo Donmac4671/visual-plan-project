@@ -25,6 +25,15 @@ interface VerifiedTopup {
   created_at: string;
 }
 
+interface PaystackTopup {
+  id: string;
+  user_id: string;
+  amount: number;
+  status: string;
+  paystack_reference: string;
+  created_at: string;
+}
+
 interface Props {
   users: any[];
 }
