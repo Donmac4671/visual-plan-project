@@ -22,8 +22,10 @@ export default function Index() {
         <StatsCards />
         <WalletTopUp />
         <ClaimPayment />
+        <MtnMashupPackages />
         <DataBundles />
         <MashupAirtime />
+
         
       </div>
     </DashboardLayout>
