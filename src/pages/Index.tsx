@@ -19,7 +19,7 @@ export default function Index() {
         <WelcomeBanner />
         <SiteMessageBanner />
         <PromoCountdown />
-        <MtnMashupPackages />
+
         <StatsCards />
         <WalletTopUp />
         <ClaimPayment />
