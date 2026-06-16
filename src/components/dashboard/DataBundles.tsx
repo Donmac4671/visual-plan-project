@@ -215,6 +215,8 @@ export default function DataBundles() {
                       onSelect={() => setSelectedBundle({ network, bundle })}
                       applyDiscount={promo && !isResellerCustomer ? applyDiscount : undefined}
                       resellerPrice={getResellerPrice(network.id, bundle.size)}
+                      offline={isHidden(network.id, bundle.size)}
+                      onOfflineClick={() => toast({ title: "Offline", description: `${network.name} ${bundle.size} is currently offline. Please check back later.`, variant: "destructive" })}
                     />
                   ))}
                 </div>
