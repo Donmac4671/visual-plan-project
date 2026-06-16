@@ -24,7 +24,7 @@ export function useProductToggles() {
   useEffect(() => {
     fetchToggles();
     const ch = supabase
-      .channel("app-settings-toggles")
+      .channel(`app-settings-toggles-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "app_settings" },
