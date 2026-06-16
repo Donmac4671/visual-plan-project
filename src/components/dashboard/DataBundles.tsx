@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import { useResellerPrices } from "@/hooks/useResellerPrices";
+import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 import MtnMashupPackages from "@/components/dashboard/MtnMashupPackages";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
@@ -35,18 +36,24 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
-function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPrice }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number; resellerPrice?: number }) {
-  const gradientClass = network.gradient;
+function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPrice, offline, onOfflineClick }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number; resellerPrice?: number; offline?: boolean; onOfflineClick?: () => void }) {
+  const gradientClass = offline ? "bg-gradient-to-br from-gray-400 to-gray-500" : network.gradient;
   const basePrice = resellerPrice ?? getBundlePrice(bundle, tier);
   const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
 
   return (
     <div className="flex flex-col items-center">
-      <div className={`${gradientClass} rounded-2xl p-4 w-full aspect-square flex flex-col items-center justify-center text-white relative transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-105`}>
-        <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
-        </span>
+      <div className={`${gradientClass} rounded-2xl p-4 w-full aspect-square flex flex-col items-center justify-center text-white relative transition-all duration-200 ${offline ? "opacity-70" : "hover:shadow-lg hover:-translate-y-1 hover:scale-105"}`}>
+        {offline ? (
+          <span className="absolute top-1 right-1 flex items-center gap-1 bg-gray-600 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+            <span className="w-1.5 h-1.5 rounded-full bg-white" /> Offline
+          </span>
+        ) : (
+          <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
+          </span>
+        )}
         <span className="text-3xl lg:text-4xl font-bold">{bundle.sizeGB}</span>
         <span className="text-xs font-medium uppercase">Gigabytes</span>
       </div>
@@ -60,9 +67,9 @@ function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPr
       <Button
         size="sm"
         className="mt-2 gradient-primary border-0 text-xs w-full"
-        onClick={onSelect}
+        onClick={offline ? onOfflineClick : onSelect}
       >
-        <ShoppingCart className="w-3 h-3 mr-1" /> Select Bundle
+        <ShoppingCart className="w-3 h-3 mr-1" /> {offline ? "Offline" : "Select Bundle"}
       </Button>
     </div>
   );
@@ -79,6 +86,7 @@ export default function DataBundles() {
   const userTier = profile?.tier || "general";
   const { promo, applyDiscount } = useActivePromo(userTier);
   const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
+  const { isHidden } = useHiddenBundles();
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
@@ -207,6 +215,8 @@ export default function DataBundles() {
                       onSelect={() => setSelectedBundle({ network, bundle })}
                       applyDiscount={promo && !isResellerCustomer ? applyDiscount : undefined}
                       resellerPrice={getResellerPrice(network.id, bundle.size)}
+                      offline={isHidden(network.id, bundle.size)}
+                      onOfflineClick={() => toast({ title: "Offline", description: `${network.name} ${bundle.size} is currently offline. Please check back later.`, variant: "destructive" })}
                     />
                   ))}
                 </div>

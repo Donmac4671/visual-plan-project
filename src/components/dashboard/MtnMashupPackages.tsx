@@ -48,11 +48,16 @@ type Selected =
   | { kind: "combo"; pkg: MashupComboPkg }
   | null;
 
-const OnlineBadge = () => (
-  <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
-    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
-  </span>
-);
+const OnlineBadge = ({ offline }: { offline?: boolean }) =>
+  offline ? (
+    <span className="absolute top-1 right-1 flex items-center gap-1 bg-gray-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+      <span className="w-1.5 h-1.5 rounded-full bg-white" /> Offline
+    </span>
+  ) : (
+    <span className="absolute top-1 right-1 flex items-center gap-1 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
+    </span>
+  );
 
 export default function MtnMashupPackages() {
   const [expanded, setExpanded] = useState<null | "data" | "combo">(null);
@@ -62,8 +67,9 @@ export default function MtnMashupPackages() {
   const { toast } = useToast();
   const { isHidden } = useHiddenBundles();
 
-  const visibleData = MTN_MASHUP_DATA_PACKAGES.filter((p) => !isHidden("mashup-data", p.size));
-  const visibleCombo = MTN_MASHUP_COMBO_PACKAGES.filter((p) => !isHidden("mashup-combo", p.size));
+  const showOfflineToast = (label: string) =>
+    toast({ title: "Offline", description: `${label} is currently offline. Please check back later.`, variant: "destructive" });
+
 
   const close = () => {
     setSelected(null);
@@ -107,7 +113,7 @@ export default function MtnMashupPackages() {
 
   return (
     <div className="space-y-3">
-      {visibleData.length > 0 && (
+      {(
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "data" ? null : "data")}
@@ -126,23 +132,26 @@ export default function MtnMashupPackages() {
           </button>
           {expanded === "data" && (
             <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {visibleData.map((p) => (
-                <button
-                  key={p.size}
-                  onClick={() => setSelected({ kind: "data", pkg: p })}
-                  className="relative bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-                >
-                  <OnlineBadge />
-                  <p className="text-2xl font-bold">{p.size}</p>
-                  <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
-                </button>
-              ))}
+              {MTN_MASHUP_DATA_PACKAGES.map((p) => {
+                const offline = isHidden("mashup-data", p.size);
+                return (
+                  <button
+                    key={p.size}
+                    onClick={() => offline ? showOfflineToast(`MTN Mashup Data ${p.size}`) : setSelected({ kind: "data", pkg: p })}
+                    className={`relative rounded-2xl p-3 pt-5 text-white text-center transition-all ${offline ? "bg-gradient-to-br from-gray-400 to-gray-500 opacity-70 cursor-not-allowed" : "bg-gradient-to-br from-yellow-400 to-amber-500 hover:shadow-lg hover:-translate-y-1"}`}
+                  >
+                    <OnlineBadge offline={offline} />
+                    <p className="text-2xl font-bold">{p.size}</p>
+                    <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {visibleCombo.length > 0 && (
+      {(
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "combo" ? null : "combo")}
@@ -161,18 +170,21 @@ export default function MtnMashupPackages() {
           </button>
           {expanded === "combo" && (
             <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {visibleCombo.map((p) => (
-                <button
-                  key={p.size}
-                  onClick={() => setSelected({ kind: "combo", pkg: p })}
-                  className="relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-                >
-                  <OnlineBadge />
-                  <p className="text-lg font-bold">{p.minutes} mins</p>
-                  <p className="text-xs opacity-90">+ {p.data}</p>
-                  <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
-                </button>
-              ))}
+              {MTN_MASHUP_COMBO_PACKAGES.map((p) => {
+                const offline = isHidden("mashup-combo", p.size);
+                return (
+                  <button
+                    key={p.size}
+                    onClick={() => offline ? showOfflineToast(`MTN Mashup ${p.label}`) : setSelected({ kind: "combo", pkg: p })}
+                    className={`relative rounded-2xl p-3 pt-5 text-white text-center transition-all ${offline ? "bg-gradient-to-br from-gray-400 to-gray-500 opacity-70 cursor-not-allowed" : "bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-lg hover:-translate-y-1"}`}
+                  >
+                    <OnlineBadge offline={offline} />
+                    <p className="text-lg font-bold">{p.minutes} mins</p>
+                    <p className="text-xs opacity-90">+ {p.data}</p>
+                    <p className="text-sm font-semibold mt-1">{formatCurrency(p.price)}</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
