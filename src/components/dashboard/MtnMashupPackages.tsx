@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
-import { useProductToggles } from "@/hooks/useProductToggles";
+
 
 const MTN_PREFIXES = ["024", "054", "055", "059", "025", "053"];
 const isMTNNumber = (phone: string) => MTN_PREFIXES.some((p) => phone.startsWith(p));
@@ -53,9 +53,6 @@ export default function MtnMashupPackages() {
   const [phone, setPhone] = useState("");
   const { addItem } = useCart();
   const { toast } = useToast();
-  const { mashupEnabled } = useProductToggles();
-
-  if (!mashupEnabled) return null;
 
   const close = () => {
     setSelected(null);
