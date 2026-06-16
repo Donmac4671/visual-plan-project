@@ -113,7 +113,7 @@ export default function MtnMashupPackages() {
 
   return (
     <div className="space-y-3">
-      {visibleData.length > 0 && (
+      {(
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "data" ? null : "data")}
@@ -132,17 +132,20 @@ export default function MtnMashupPackages() {
           </button>
           {expanded === "data" && (
             <div className="p-4 pt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {visibleData.map((p) => (
-                <button
-                  key={p.size}
-                  onClick={() => setSelected({ kind: "data", pkg: p })}
-                  className="relative bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-3 pt-5 text-white text-center hover:shadow-lg hover:-translate-y-1 transition-all"
-                >
-                  <OnlineBadge />
-                  <p className="text-2xl font-bold">{p.size}</p>
-                  <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
-                </button>
-              ))}
+              {MTN_MASHUP_DATA_PACKAGES.map((p) => {
+                const offline = isHidden("mashup-data", p.size);
+                return (
+                  <button
+                    key={p.size}
+                    onClick={() => offline ? showOfflineToast(`MTN Mashup Data ${p.size}`) : setSelected({ kind: "data", pkg: p })}
+                    className={`relative rounded-2xl p-3 pt-5 text-white text-center transition-all ${offline ? "bg-gradient-to-br from-gray-400 to-gray-500 opacity-70 cursor-not-allowed" : "bg-gradient-to-br from-yellow-400 to-amber-500 hover:shadow-lg hover:-translate-y-1"}`}
+                  >
+                    <OnlineBadge offline={offline} />
+                    <p className="text-2xl font-bold">{p.size}</p>
+                    <p className="text-xs mt-1 opacity-90">{formatCurrency(p.price)}</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
