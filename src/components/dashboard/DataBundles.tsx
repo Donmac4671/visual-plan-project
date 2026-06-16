@@ -86,6 +86,7 @@ export default function DataBundles() {
   const userTier = profile?.tier || "general";
   const { promo, applyDiscount } = useActivePromo(userTier);
   const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
+  const { isHidden } = useHiddenBundles();
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
