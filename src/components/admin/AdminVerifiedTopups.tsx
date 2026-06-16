@@ -101,6 +101,20 @@ export default function AdminVerifiedTopups({ users }: Props) {
     });
   }, [topups, dateFrom, dateTo]);
 
+  const filteredPaystack = useMemo(() => {
+    return paystackTopups.filter((t) => {
+      const created = parseISO(t.created_at);
+      if (dateFrom && created < startOfDay(dateFrom)) return false;
+      if (dateTo && created > endOfDay(dateTo)) return false;
+      return true;
+    });
+  }, [paystackTopups, dateFrom, dateTo]);
+
+  const paystackTotal = useMemo(
+    () => filteredPaystack.reduce((s, t) => s + Number(t.amount || 0), 0),
+    [filteredPaystack]
+  );
+
   const handleAdd = async () => {
     if (!txnId || txnId.length !== 11 || !amount || !network) {
       toast({ title: "Error", description: "Please fill all fields. Transaction ID must be 11 digits.", variant: "destructive" });
