@@ -592,6 +592,8 @@ export default function Admin() {
                 <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
                 <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
                 <SelectItem value="MashUp">MashUp</SelectItem>
+                <SelectItem value="MTN Mashup Data">MTN Mashup Data</SelectItem>
+                <SelectItem value="MTN Mashup Combo">MTN Mashup Minutes + Data</SelectItem>
                 <SelectItem value="Telecel V+D+S">Telecel V+D+S</SelectItem>
                 <SelectItem value="Telecel V&S">Telecel V&S (legacy)</SelectItem>
                 <SelectItem value="Airtime">Airtime</SelectItem>
