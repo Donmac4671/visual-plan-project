@@ -1,0 +1,1 @@
+ALTER VIEW public.custom_bundles_public SET (security_invoker = false);
