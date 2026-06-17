@@ -135,6 +135,8 @@ export default function Orders() {
               <option value="AT BIG TIME">AT Big Time</option>
               <option value="AT PREMIUM">AT Premium</option>
               <option value="MashUp">MashUp</option>
+              <option value="MTN Mashup Data">MTN Mashup Data</option>
+              <option value="MTN Mashup Combo">MTN Mashup Minutes + Data</option>
               <option value="Airtime">Airtime</option>
               <option value="Telecel V+D+S">Telecel V+D+S</option>
             </select>
