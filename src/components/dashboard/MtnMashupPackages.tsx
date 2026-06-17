@@ -30,8 +30,11 @@ export const MTN_MASHUP_DATA_PACKAGES: MashupDataPkg[] = [
   { size: "3.4GB",  sizeGB: 3.4,  price: 12 },
   { size: "5.1GB",  sizeGB: 5.1,  price: 18 },
   { size: "6.8GB",  sizeGB: 6.8,  price: 24 },
+  { size: "8.2GB",  sizeGB: 8.2,  price: 27 },
   { size: "8.5GB",  sizeGB: 8.5,  price: 30 },
   { size: "10.2GB", sizeGB: 10.2, price: 36 },
+  { size: "12GB",   sizeGB: 12,   price: 40 },
+  { size: "15GB",   sizeGB: 15,   price: 50 },
   { size: "15.3GB", sizeGB: 15.3, price: 54 },
   { size: "20.4GB", sizeGB: 20.4, price: 72 },
 ];
