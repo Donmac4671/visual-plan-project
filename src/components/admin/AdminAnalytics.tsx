@@ -261,6 +261,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
   const [showProfit, setShowProfit] = useState(false);
   const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
+  const [dbCostMap, setDbCostMap] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
     const fetchCustomCosts = async () => {
@@ -274,7 +275,18 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       }
       setCustomCostMap(map);
     };
+    const fetchDbCosts = async () => {
+      const { data } = await supabase.from("admin_cost_prices").select("network, bundle_size, cost");
+      if (!data) return;
+      const map: Record<string, Record<string, number>> = {};
+      for (const row of data) {
+        if (!map[row.network]) map[row.network] = {};
+        map[row.network][row.bundle_size] = Number(row.cost);
+      }
+      setDbCostMap(map);
+    };
     fetchCustomCosts();
+    fetchDbCosts();
   }, []);
 
   const fetchGhBalance = async () => {
