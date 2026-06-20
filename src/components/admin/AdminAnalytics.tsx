@@ -291,6 +291,23 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     fetchGhBalance();
   }, []);
 
+  // Merge cost sources: DB (admin-editable) overrides hardcoded, then custom_bundles as fallback.
+  const mergedCostMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    const apply = (src: Record<string, Record<string, number>>) => {
+      for (const net of Object.keys(src)) {
+        if (!map[net]) map[net] = {};
+        for (const size of Object.keys(src[net])) {
+          map[net][size] = src[net][size];
+        }
+      }
+    };
+    apply(ORIGINAL_PRICES);
+    apply(customCostMap);
+    apply(dbCostMap);
+    return map;
+  }, [customCostMap, dbCostMap]);
+
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
       const d = parseISO(o.created_at);
