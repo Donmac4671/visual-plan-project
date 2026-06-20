@@ -132,7 +132,7 @@ const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
 // ============================================================
 // 🔥 FIXED: Calculate profit correctly for each order type
 // ============================================================
-function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+function calculateOrderProfit(order: any, costMap: Record<string, Record<string, number>>): number {
   const network = order.network?.toLowerCase();
   const amount = Number(order.amount);
 
@@ -146,22 +146,12 @@ function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<
     return 0;
   }
 
-  // Data bundles - Profit = selling price - cost price
-  let cost = 0;
-  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
-  if (typeof originalCost === "number") {
-    cost = originalCost;
-  } else {
-    const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
-    if (typeof fallbackCost === "number") {
-      cost = fallbackCost;
-    }
-  }
-
+  const cost = costMap[order.network]?.[order.bundle_size];
+  if (typeof cost !== "number") return amount;
   return amount - cost;
 }
 
-function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+function getOrderCostForDisplay(order: any, costMap: Record<string, Record<string, number>>): number {
   const network = order.network?.toLowerCase();
 
   // Airtime has no cost
@@ -174,16 +164,8 @@ function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Recor
     return Number(order.amount);
   }
 
-  // Data bundles - get actual cost
-  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
-  if (typeof originalCost === "number") {
-    return originalCost;
-  }
-  const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
-  if (typeof fallbackCost === "number") {
-    return fallbackCost;
-  }
-  return 0;
+  const cost = costMap[order.network]?.[order.bundle_size];
+  return typeof cost === "number" ? cost : 0;
 }
 
 const NETWORK_ID_TO_NAME: Record<string, string> = {
