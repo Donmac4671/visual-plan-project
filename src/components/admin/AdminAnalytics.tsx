@@ -132,7 +132,7 @@ const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
 // ============================================================
 // 🔥 FIXED: Calculate profit correctly for each order type
 // ============================================================
-function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+function calculateOrderProfit(order: any, costMap: Record<string, Record<string, number>>): number {
   const network = order.network?.toLowerCase();
   const amount = Number(order.amount);
 
@@ -146,22 +146,12 @@ function calculateOrderProfit(order: any, customCostMap?: Record<string, Record<
     return 0;
   }
 
-  // Data bundles - Profit = selling price - cost price
-  let cost = 0;
-  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
-  if (typeof originalCost === "number") {
-    cost = originalCost;
-  } else {
-    const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
-    if (typeof fallbackCost === "number") {
-      cost = fallbackCost;
-    }
-  }
-
+  const cost = costMap[order.network]?.[order.bundle_size];
+  if (typeof cost !== "number") return amount;
   return amount - cost;
 }
 
-function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Record<string, number>>): number {
+function getOrderCostForDisplay(order: any, costMap: Record<string, Record<string, number>>): number {
   const network = order.network?.toLowerCase();
 
   // Airtime has no cost
@@ -174,16 +164,8 @@ function getOrderCostForDisplay(order: any, customCostMap?: Record<string, Recor
     return Number(order.amount);
   }
 
-  // Data bundles - get actual cost
-  const originalCost = ORIGINAL_PRICES[order.network]?.[order.bundle_size];
-  if (typeof originalCost === "number") {
-    return originalCost;
-  }
-  const fallbackCost = customCostMap?.[order.network]?.[order.bundle_size];
-  if (typeof fallbackCost === "number") {
-    return fallbackCost;
-  }
-  return 0;
+  const cost = costMap[order.network]?.[order.bundle_size];
+  return typeof cost === "number" ? cost : 0;
 }
 
 const NETWORK_ID_TO_NAME: Record<string, string> = {
@@ -261,6 +243,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [ghBalanceLoading, setGhBalanceLoading] = useState(false);
   const [showProfit, setShowProfit] = useState(false);
   const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
+  const [dbCostMap, setDbCostMap] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
     const fetchCustomCosts = async () => {
@@ -274,7 +257,18 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       }
       setCustomCostMap(map);
     };
+    const fetchDbCosts = async () => {
+      const { data } = await supabase.from("admin_cost_prices").select("network, bundle_size, cost");
+      if (!data) return;
+      const map: Record<string, Record<string, number>> = {};
+      for (const row of data) {
+        if (!map[row.network]) map[row.network] = {};
+        map[row.network][row.bundle_size] = Number(row.cost);
+      }
+      setDbCostMap(map);
+    };
     fetchCustomCosts();
+    fetchDbCosts();
   }, []);
 
   const fetchGhBalance = async () => {
@@ -296,6 +290,23 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   useEffect(() => {
     fetchGhBalance();
   }, []);
+
+  // Merge cost sources: DB (admin-editable) overrides hardcoded, then custom_bundles as fallback.
+  const mergedCostMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    const apply = (src: Record<string, Record<string, number>>) => {
+      for (const net of Object.keys(src)) {
+        if (!map[net]) map[net] = {};
+        for (const size of Object.keys(src[net])) {
+          map[net][size] = src[net][size];
+        }
+      }
+    };
+    apply(ORIGINAL_PRICES);
+    apply(customCostMap);
+    apply(dbCostMap);
+    return map;
+  }, [customCostMap, dbCostMap]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
@@ -338,8 +349,8 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const pendingTopups = filteredTopups.filter((t) => t.status === "pending").length;
 
     // 🔥 FIXED: Calculate cost and profit using the new functions
-    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCostForDisplay(o, customCostMap), 0);
-    const totalProfit = filteredOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCostForDisplay(o, mergedCostMap), 0);
+    const totalProfit = filteredOrders.reduce((sum, o) => sum + calculateOrderProfit(o, mergedCostMap), 0);
 
     const totalCapacityGB = filteredOrders.reduce((sum, o) => {
       // Skip Airtime and Mashup for capacity calculation
@@ -370,7 +381,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       totalProfit,
       totalCapacityGB,
     };
-  }, [users, filteredOrders, filteredTopups, filteredComplaints, customCostMap]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap]);
 
   // Profit per day (last 7 days)
   const profitPerDay = useMemo(() => {
@@ -381,10 +392,10 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
     return days.map(({ date, label }) => {
       const dayOrders = filteredOrders.filter((o) => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
-      const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
+      const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, mergedCostMap), 0);
       return { day: label, profit: Math.round(profit * 100) / 100 };
     });
-  }, [filteredOrders, dateTo, customCostMap]);
+  }, [filteredOrders, dateTo, mergedCostMap]);
 
   // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {

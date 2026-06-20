@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_cost_prices: {
+        Row: {
+          bundle_size: string
+          cost: number
+          created_at: string
+          id: string
+          network: string
+          updated_at: string
+        }
+        Insert: {
+          bundle_size: string
+          cost: number
+          created_at?: string
+          id?: string
+          network: string
+          updated_at?: string
+        }
+        Update: {
+          bundle_size?: string
+          cost?: number
+          created_at?: string
+          id?: string
+          network?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_applications: {
         Row: {
           admin_notes: string | null

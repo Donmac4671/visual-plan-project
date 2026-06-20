@@ -13,9 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw, RefreshCw } from "lucide-react";
+import { Users, ShoppingBag, Ban, DollarSign, Trash2, MessageSquare, MessageCircle, Search, CalendarIcon, BarChart3, Crown, Wifi, Percent, Shield, Hash, Megaphone, Copy, RotateCcw, RefreshCw, Coins } from "lucide-react";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminBundleManager from "@/components/admin/AdminBundleManager";
+import AdminCostPrices from "@/components/admin/AdminCostPrices";
 import AdminPromoManager from "@/components/admin/AdminPromoManager";
 import AdminVerifiedTopups from "@/components/admin/AdminVerifiedTopups";
 import AdminSiteMessage from "@/components/admin/AdminSiteMessage";
@@ -359,6 +360,7 @@ export default function Admin() {
           </TabsList>
           <TabsList className="w-full h-auto flex flex-nowrap overflow-x-auto justify-start gap-1">
             <TabsTrigger value="bundles" className="gap-2 justify-center whitespace-nowrap"><Wifi className="w-4 h-4" /> Bundles</TabsTrigger>
+            <TabsTrigger value="cost-prices" className="gap-2 justify-center whitespace-nowrap"><Coins className="w-4 h-4" /> Cost Prices</TabsTrigger>
             <TabsTrigger value="promos" className="gap-2 justify-center whitespace-nowrap"><Percent className="w-4 h-4" /> Promos</TabsTrigger>
             <TabsTrigger value="site-message" className="gap-2 justify-center whitespace-nowrap"><Megaphone className="w-4 h-4" /> Message</TabsTrigger>
             <TabsTrigger value="broadcast" className="gap-2 justify-center whitespace-nowrap"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
@@ -803,6 +805,11 @@ export default function Admin() {
         {/* BUNDLES TAB */}
         <TabsContent value="bundles">
           <AdminBundleManager />
+        </TabsContent>
+
+        {/* COST PRICES TAB */}
+        <TabsContent value="cost-prices">
+          <AdminCostPrices />
         </TabsContent>
 
         {/* PROMOS TAB */}
