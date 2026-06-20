@@ -349,8 +349,8 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const pendingTopups = filteredTopups.filter((t) => t.status === "pending").length;
 
     // 🔥 FIXED: Calculate cost and profit using the new functions
-    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCostForDisplay(o, customCostMap), 0);
-    const totalProfit = filteredOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
+    const totalCost = filteredOrders.reduce((sum, o) => sum + getOrderCostForDisplay(o, mergedCostMap), 0);
+    const totalProfit = filteredOrders.reduce((sum, o) => sum + calculateOrderProfit(o, mergedCostMap), 0);
 
     const totalCapacityGB = filteredOrders.reduce((sum, o) => {
       // Skip Airtime and Mashup for capacity calculation
@@ -392,7 +392,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
     return days.map(({ date, label }) => {
       const dayOrders = filteredOrders.filter((o) => startOfDay(parseISO(o.created_at)).getTime() === date.getTime());
-      const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, customCostMap), 0);
+      const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, mergedCostMap), 0);
       return { day: label, profit: Math.round(profit * 100) / 100 };
     });
   }, [filteredOrders, dateTo, customCostMap]);
