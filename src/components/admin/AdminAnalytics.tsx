@@ -381,7 +381,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       totalProfit,
       totalCapacityGB,
     };
-  }, [users, filteredOrders, filteredTopups, filteredComplaints, customCostMap]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap]);
 
   // Profit per day (last 7 days)
   const profitPerDay = useMemo(() => {
@@ -395,7 +395,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       const profit = dayOrders.reduce((sum, o) => sum + calculateOrderProfit(o, mergedCostMap), 0);
       return { day: label, profit: Math.round(profit * 100) / 100 };
     });
-  }, [filteredOrders, dateTo, customCostMap]);
+  }, [filteredOrders, dateTo, mergedCostMap]);
 
   // Orders per day (last 7 days or within date range)
   const ordersPerDay = useMemo(() => {
