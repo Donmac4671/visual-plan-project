@@ -27,7 +27,7 @@ export const networks: Network[] = [
       { size: "5GB", sizeGB: 5, price: 20.50, generalPrice: 20.50 },
       { size: "6GB", sizeGB: 6, price: 24.60, generalPrice: 24.60 },
       { size: "7GB", sizeGB: 7, price: 28.700, generalPrice: 28.70 },
-      { size: "8GB", sizeGB: 8, price: 32.80, generalPrice: 32.80 }
+      { size: "8GB", sizeGB: 8, price: 32.80, generalPrice: 32.80 },
       { size: "10GB", sizeGB: 10, price: 41.00, generalPrice: 41.00 },
       { size: "15GB", sizeGB: 15, price: 61.50, generalPrice: 61.50 },
       { size: "20GB", sizeGB: 20, price: 82.00, generalPrice: 82.00 },
