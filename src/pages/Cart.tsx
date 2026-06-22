@@ -26,12 +26,50 @@ function getNetworkVisual(networkId: string) {
 }
 
 export default function Cart() {
-  const { items, removeItem, clearCart, total } = useCart();
+  const { items, removeItem, clearCart, total, updateItemPrice } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
   const [processing, setProcessing] = useState(false);
+
+  // Re-price cart items against live prices so admin price changes always take effect at checkout
+  const { networks: mergedNetworks } = useCustomBundles();
+  const userTier = profile?.tier || "general";
+  const { applyDiscount } = useActivePromo(userTier);
+  const { getPrice: getResellerPrice } = useResellerPrices();
+  const repricedRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!mergedNetworks || mergedNetworks.length === 0 || items.length === 0) return;
+    const sig = items.map((i) => i.id).join("|") + ":" + mergedNetworks.length;
+    if (repricedRef.current === sig) return;
+    repricedRef.current = sig;
+
+    let changedCount = 0;
+    for (const item of items) {
+      // Skip non-data manual products (airtime/mashup/vs) — their pricing isn't from custom_bundles
+      if (["airtime", "mashup", "vs"].includes(item.networkId)) continue;
+      const net = mergedNetworks.find((n) => n.id === item.networkId);
+      const liveBundle = net?.bundles.find((b) => b.size === item.bundle.size);
+      if (!liveBundle) continue;
+      const reseller = getResellerPrice(item.networkId, item.bundle.size);
+      const base = reseller ?? getBundlePrice(liveBundle, userTier);
+      const live = applyDiscount ? applyDiscount(base) : base;
+      if (Math.abs(live - item.effectivePrice) > 0.001) {
+        updateItemPrice(item.id, live);
+        changedCount++;
+      }
+    }
+    if (changedCount > 0) {
+      toast({
+        title: "Cart prices updated",
+        description: `${changedCount} item(s) updated to current prices.`,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergedNetworks, items.length, userTier]);
+
 
   const mashupSubtotal = items.filter((i) => i.networkId === "mashup").reduce((sum, i) => sum + i.effectivePrice, 0);
   const mashupFee = calculateMashupFee(mashupSubtotal);
