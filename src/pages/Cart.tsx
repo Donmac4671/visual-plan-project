@@ -242,12 +242,40 @@ export default function Cart() {
       amount: paystackTotal,
       onSuccess: async (reference) => {
         try {
-          await supabase.functions.invoke("paystack-verify-order", { body: { reference, items: itemsForBackend } });
+          const { data, error } = await supabase.functions.invoke("paystack-verify-order", {
+            body: { reference, items: itemsForBackend },
+          });
+          const backendError = (data && (data as any).error) || error?.message;
+          if (backendError) {
+            // Payment succeeded but order creation failed — credit the wallet so funds aren't lost
+            try {
+              await supabase.functions.invoke("paystack-verify-topup", {
+                body: { reference, amount: paystackTotal, fallback: true },
+              });
+              await refreshProfile();
+              toast({
+                title: "Order failed — wallet credited",
+                description: `We couldn't place your order (${backendError}). Your payment of ${formatCurrency(paystackTotal)} was credited to your wallet. Please retry from wallet or contact support with reference ${reference}.`,
+                variant: "destructive",
+              });
+            } catch {
+              toast({
+                title: "Order failed",
+                description: `Payment received but order failed: ${backendError}. Contact support with reference ${reference}.`,
+                variant: "destructive",
+              });
+            }
+            return;
+          }
           await refreshProfile();
           toast({ title: "Order Placed!", description: `${items.length} item(s) ordered via Paystack` });
           clearCart();
         } catch (err: any) {
-          toast({ title: "Error", description: err.message, variant: "destructive" });
+          toast({
+            title: "Error",
+            description: `${err.message}. If you were charged, contact support with reference ${reference}.`,
+            variant: "destructive",
+          });
         } finally {
           setProcessing(false);
         }
