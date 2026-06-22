@@ -5,6 +5,7 @@ interface CartContextType {
   items: CartItem[];
   addItem: (networkId: string, networkName: string, bundle: DataBundle, phoneNumber: string, effectivePrice: number) => void;
   removeItem: (id: string) => void;
+  updateItemPrice: (id: string, newPrice: number) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
