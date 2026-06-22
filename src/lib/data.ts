@@ -189,7 +189,7 @@ export interface TelecelVSPackage {
 export const TELECEL_VS_PACKAGES: TelecelVSPackage[] = [
   // Special offer FIRST
   {
-    price: 6,
+    price: 5,
     isSpecial: true,
     label: "Special ₵5 — 200 Minutes (All Networks, 7 days)",
     variants: [
