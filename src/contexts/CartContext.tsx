@@ -47,13 +47,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const updateItemPrice = (id: string, newPrice: number) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, effectivePrice: newPrice } : item)));
+  };
+
   const clearCart = () => setItems([]);
 
   const total = items.reduce((sum, item) => sum + item.effectivePrice, 0);
   const itemCount = items.length;
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, total, itemCount }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateItemPrice, clearCart, total, itemCount }}>
       {children}
     </CartContext.Provider>
   );
