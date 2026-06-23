@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useProductToggles } from "@/hooks/useProductToggles";
 
 
 const MTN_PREFIXES = ["024", "054", "055", "059", "025", "053"];
@@ -69,6 +70,7 @@ export default function MtnMashupPackages() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const { isHidden } = useHiddenBundles();
+  const { mashupDataEnabled, mashupEnabled } = useProductToggles();
 
   const showOfflineToast = (label: string) =>
     toast({ title: "Offline", description: `${label} is currently offline. Please check back later.`, variant: "destructive" });
@@ -116,7 +118,7 @@ export default function MtnMashupPackages() {
 
   return (
     <div className="space-y-3">
-      {(
+      {mashupDataEnabled && (
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "data" ? null : "data")}
@@ -154,7 +156,7 @@ export default function MtnMashupPackages() {
         </div>
       )}
 
-      {(
+      {mashupEnabled && (
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "combo" ? null : "combo")}

@@ -16,6 +16,7 @@ import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import { useResellerPrices } from "@/hooks/useResellerPrices";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useProductToggles } from "@/hooks/useProductToggles";
 import MtnMashupPackages from "@/components/dashboard/MtnMashupPackages";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
@@ -87,6 +88,15 @@ export default function DataBundles() {
   const { promo, applyDiscount } = useActivePromo(userTier);
   const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
   const { isHidden } = useHiddenBundles();
+  const { mtnEnabled, telecelEnabled, atPremiumEnabled, atBigtimeEnabled } = useProductToggles();
+
+  const networkVisibility: Record<string, boolean> = {
+    mtn: mtnEnabled,
+    telecel: telecelEnabled,
+    "at-premium": atPremiumEnabled,
+    "at-bigtime": atBigtimeEnabled,
+  };
+  const visibleNetworks = mergedNetworks.filter((n) => networkVisibility[n.id] !== false);
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
@@ -176,7 +186,7 @@ export default function DataBundles() {
       )}
 
       <div className="space-y-3">
-        {mergedNetworks.map((network) => {
+        {visibleNetworks.map((network) => {
           if (network.bundles.length === 0) return null;
           return (
           <div key={network.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
