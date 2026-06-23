@@ -70,6 +70,7 @@ export default function MtnMashupPackages() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const { isHidden } = useHiddenBundles();
+  const { mashupDataEnabled, mashupEnabled } = useProductToggles();
 
   const showOfflineToast = (label: string) =>
     toast({ title: "Offline", description: `${label} is currently offline. Please check back later.`, variant: "destructive" });
