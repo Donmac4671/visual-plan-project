@@ -570,27 +570,28 @@ export default function Admin() {
               </SelectContent>
             </Select>
           </div>
-          <div className="mb-4 rounded-xl border border-border bg-card p-3 flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-3">
-              <Switch checked={mashupEnabled} onCheckedChange={(v) => handleToggleProduct("mashup_enabled", v)} />
-              <div>
-                <p className="text-sm font-semibold text-foreground">MashUp</p>
-                <p className="text-xs text-muted-foreground">{mashupEnabled ? "Visible to users" : "Hidden from users"}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={airtimeEnabled} onCheckedChange={(v) => handleToggleProduct("airtime_enabled", v)} />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Airtime</p>
-                <p className="text-xs text-muted-foreground">{airtimeEnabled ? "Visible to users" : "Hidden from users"}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={vsEnabled} onCheckedChange={(v) => handleToggleProduct("vs_enabled", v)} />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Telecel V+D+S</p>
-                <p className="text-xs text-muted-foreground">{vsEnabled ? "Visible to users" : "Hidden from users"}</p>
-              </div>
+          <div className="mb-4 rounded-xl border border-border bg-card p-3">
+            <p className="text-sm font-semibold text-foreground mb-1">Public Visibility</p>
+            <p className="text-xs text-muted-foreground mb-3">Toggle entire product categories on/off for users. (Per-bundle Online/Offline is managed in the Bundles tab.)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { key: "mashup_data_enabled" as const, label: "MTN Mashup Data", value: mashupDataEnabled },
+                { key: "mashup_enabled" as const, label: "MTN Mashup Minutes + Data", value: mashupEnabled },
+                { key: "mtn_enabled" as const, label: "MTN", value: mtnEnabled },
+                { key: "telecel_enabled" as const, label: "TELECEL", value: telecelEnabled },
+                { key: "at_premium_enabled" as const, label: "AIRTELTIGO PREMIUM", value: atPremiumEnabled },
+                { key: "at_bigtime_enabled" as const, label: "AIRTELTIGO BIG TIME", value: atBigtimeEnabled },
+                { key: "airtime_enabled" as const, label: "Airtime", value: airtimeEnabled },
+                { key: "vs_enabled" as const, label: "Telecel V+D+S", value: vsEnabled },
+              ].map((t) => (
+                <div key={t.key} className="flex items-center gap-3 rounded-lg border border-border p-2">
+                  <Switch checked={t.value} onCheckedChange={(v) => handleToggleProduct(t.key, v)} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{t.label}</p>
+                    <p className="text-xs text-muted-foreground">{t.value ? "Visible to public" : "Hidden from public"}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
