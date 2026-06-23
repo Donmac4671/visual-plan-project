@@ -186,7 +186,7 @@ export default function DataBundles() {
       )}
 
       <div className="space-y-3">
-        {mergedNetworks.map((network) => {
+        {visibleNetworks.map((network) => {
           if (network.bundles.length === 0) return null;
           return (
           <div key={network.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
