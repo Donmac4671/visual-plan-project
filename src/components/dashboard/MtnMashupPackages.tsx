@@ -156,7 +156,7 @@ export default function MtnMashupPackages() {
         </div>
       )}
 
-      {(
+      {mashupEnabled && (
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "combo" ? null : "combo")}
