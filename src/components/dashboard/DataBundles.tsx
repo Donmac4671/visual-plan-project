@@ -16,6 +16,7 @@ import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import { useResellerPrices } from "@/hooks/useResellerPrices";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useProductToggles } from "@/hooks/useProductToggles";
 import MtnMashupPackages from "@/components/dashboard/MtnMashupPackages";
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
