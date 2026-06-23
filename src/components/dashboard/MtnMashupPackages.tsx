@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
+import { useProductToggles } from "@/hooks/useProductToggles";
 
 
 const MTN_PREFIXES = ["024", "054", "055", "059", "025", "053"];
