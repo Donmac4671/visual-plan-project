@@ -32,16 +32,45 @@ import { cn } from "@/lib/utils";
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const { mashupEnabled, airtimeEnabled, vsEnabled, refresh: refreshToggles } = useProductToggles();
+  const {
+    mashupEnabled,
+    airtimeEnabled,
+    vsEnabled,
+    mashupDataEnabled,
+    mtnEnabled,
+    telecelEnabled,
+    atPremiumEnabled,
+    atBigtimeEnabled,
+    refresh: refreshToggles,
+  } = useProductToggles();
 
-  const handleToggleProduct = async (key: "mashup_enabled" | "airtime_enabled" | "vs_enabled", value: boolean) => {
+  type ToggleKey =
+    | "mashup_enabled"
+    | "airtime_enabled"
+    | "vs_enabled"
+    | "mashup_data_enabled"
+    | "mtn_enabled"
+    | "telecel_enabled"
+    | "at_premium_enabled"
+    | "at_bigtime_enabled";
+
+  const handleToggleProduct = async (key: ToggleKey, value: boolean) => {
     const { error } = await supabase.from("app_settings").upsert({ key, value: value as any }, { onConflict: "key" });
     if (error) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
       return;
     }
-    const labels: Record<string, string> = { mashup_enabled: "MashUp", airtime_enabled: "Airtime", vs_enabled: "Telecel V+D+S" };
-    toast({ title: "Updated", description: `${labels[key]} ${value ? "enabled" : "disabled"}` });
+    const labels: Record<ToggleKey, string> = {
+      mashup_enabled: "MTN Mashup Minutes + Data",
+      airtime_enabled: "Airtime",
+      vs_enabled: "Telecel V+D+S",
+      mashup_data_enabled: "MTN Mashup Data",
+      mtn_enabled: "MTN",
+      telecel_enabled: "Telecel",
+      at_premium_enabled: "AirtelTigo Premium",
+      at_bigtime_enabled: "AirtelTigo Big Time",
+    };
+    toast({ title: "Updated", description: `${labels[key]} ${value ? "visible" : "hidden"}` });
     refreshToggles();
   };
 
