@@ -118,7 +118,7 @@ export default function MtnMashupPackages() {
 
   return (
     <div className="space-y-3">
-      {(
+      {mashupDataEnabled && (
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === "data" ? null : "data")}
