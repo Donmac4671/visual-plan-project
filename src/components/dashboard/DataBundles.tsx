@@ -88,6 +88,15 @@ export default function DataBundles() {
   const { promo, applyDiscount } = useActivePromo(userTier);
   const { getPrice: getResellerPrice, isResellerCustomer } = useResellerPrices();
   const { isHidden } = useHiddenBundles();
+  const { mtnEnabled, telecelEnabled, atPremiumEnabled, atBigtimeEnabled } = useProductToggles();
+
+  const networkVisibility: Record<string, boolean> = {
+    mtn: mtnEnabled,
+    telecel: telecelEnabled,
+    "at-premium": atPremiumEnabled,
+    "at-bigtime": atBigtimeEnabled,
+  };
+  const visibleNetworks = mergedNetworks.filter((n) => networkVisibility[n.id] !== false);
 
   const toggleNetwork = (id: string) => {
     setExpandedNetwork(expandedNetwork === id ? null : id);
