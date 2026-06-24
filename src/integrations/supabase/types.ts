@@ -107,6 +107,66 @@ export type Database = {
         }
         Relationships: []
       }
+      api_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_webhooks: {
+        Row: {
+          created_at: string
+          id: string
+          secret: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          secret: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          secret?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -860,6 +920,7 @@ export type Database = {
       }
     }
     Functions: {
+      _random_token: { Args: { p_len: number }; Returns: string }
       admin_get_auto_deliver_minutes: { Args: never; Returns: number }
       admin_set_auto_deliver_minutes: {
         Args: { p_minutes: number }
@@ -890,6 +951,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      api_place_wallet_order: {
+        Args: {
+          p_amount: number
+          p_bundle: string
+          p_network: string
+          p_phone: string
+          p_user: string
+        }
+        Returns: Json
+      }
       auto_claim_topup_by_reference: {
         Args: {
           p_amount: number
@@ -912,6 +983,9 @@ export type Database = {
         Args: { p_amount: number; p_reference: string; p_user_id: string }
         Returns: undefined
       }
+      create_api_token: { Args: { p_name?: string }; Returns: Json }
+      delete_api_token: { Args: { p_id: string }; Returns: undefined }
+      delete_api_webhook: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -978,8 +1052,11 @@ export type Database = {
         }[]
       }
       refund_failed_order: { Args: { p_order_id: string }; Returns: undefined }
+      regenerate_api_token: { Args: { p_id: string }; Returns: Json }
       register_referral: { Args: { p_code: string }; Returns: undefined }
       run_auto_deliver: { Args: never; Returns: number }
+      set_api_webhook: { Args: { p_url: string }; Returns: Json }
+      verify_api_token: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"

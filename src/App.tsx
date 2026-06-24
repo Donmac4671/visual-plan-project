@@ -28,7 +28,9 @@ import Complaints from "./pages/Complaints";
 import ResetPassword from "./pages/ResetPassword";
 import Flyer from "./pages/Flyer";
 import Reseller from "./pages/Reseller";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
+
 import { useCaptureResellerRef } from "@/hooks/useResellerRef";
 
 const queryClient = new QueryClient();
@@ -202,6 +204,15 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/api-docs"
+                element={
+                  <ProtectedRoute>
+                    <ApiDocs />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
