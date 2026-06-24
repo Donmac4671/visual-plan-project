@@ -85,6 +85,13 @@ export default function Profile() {
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+
+        <ApiTokensSection />
+      </div>
+    </DashboardLayout>
+  );
+}
+
       </div>
     </DashboardLayout>
   );
