@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Phone, Shield } from "lucide-react";
+import ApiTokensSection from "@/components/profile/ApiTokensSection";
+
 
 export default function Profile() {
   const { profile, refreshProfile } = useAuth();
