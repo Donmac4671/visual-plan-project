@@ -92,6 +92,15 @@ serve(async (req) => {
       if (!bundle) return json({ error: "Missing 'bundle' (e.g. '1GB','2GB')" }, 400);
       if (!Number.isFinite(amount) || amount <= 0) return json({ error: "Invalid 'amount'" }, 400);
 
+      // Block hidden (offline) bundles
+      const { data: hiddenRow } = await supabase
+        .from("hidden_bundles")
+        .select("id")
+        .eq("network_id", network)
+        .eq("bundle_size", bundle)
+        .maybeSingle();
+      if (hiddenRow) return json({ error: `${network} ${bundle} is currently offline.` }, 409);
+
       const { data, error } = await supabase.rpc("api_place_wallet_order", {
         p_user: userId,
         p_network: network,
