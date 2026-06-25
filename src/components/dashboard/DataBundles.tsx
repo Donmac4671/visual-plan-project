@@ -269,77 +269,127 @@ export default function DataBundles() {
 
       {/* Add to cart dialog */}
       <Dialog open={!!selectedBundle} onOpenChange={() => setSelectedBundle(null)}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              {selectedBundle && <NetworkIcon network={selectedBundle.network} />}
-              <div>
-                <DialogTitle>{selectedBundle?.network.name} {selectedBundle?.bundle.size}</DialogTitle>
-                <p className="text-sm text-muted-foreground">Add bundle to cart</p>
-              </div>
-            </div>
-          </DialogHeader>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 overflow-hidden rounded-2xl border-0">
+          {selectedBundle && (() => {
+            const reseller = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
+            const base = reseller ?? getBundlePrice(selectedBundle.bundle, userTier);
+            const final = promo && !isResellerCustomer ? applyDiscount(base) : base;
+            const hasDiscount = final < base;
+            const headerStyle = {
+              background: BRAND_BG[selectedBundle.network.id] ?? "var(--accent)",
+              color: BRAND_TEXT[selectedBundle.network.id] ?? "#fff",
+            };
+            const validity = getValidity(selectedBundle.network.id);
+            const phoneValid = phoneNumber.length === 10 && !isWrongNetwork && detectedNetwork !== "unknown";
+            return (
+              <>
+                {/* Branded header */}
+                <div style={headerStyle} className="relative px-5 pt-6 pb-8">
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+                  <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-black/10 blur-2xl" />
+                  <DialogHeader className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/40 shadow-lg bg-white/20">
+                        <img
+                          src={networkLogos[selectedBundle.network.id]}
+                          alt={selectedBundle.network.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="text-left">
+                        <DialogTitle style={{ color: "inherit" }} className="text-lg font-extrabold tracking-tight">
+                          {selectedBundle.network.name} {selectedBundle.bundle.size}
+                        </DialogTitle>
+                        <p className="text-xs opacity-80">Confirm details to add to cart</p>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <div className="bg-accent rounded-xl p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">💰 Price</p>
-              {(() => {
-                if (!selectedBundle) return null;
-                const reseller = getResellerPrice(selectedBundle.network.id, selectedBundle.bundle.size);
-                const base = reseller ?? getBundlePrice(selectedBundle.bundle, userTier);
-                const final = promo && !isResellerCustomer ? applyDiscount(base) : base;
-                const hasDiscount = final < base;
-                return (
-                  <>
-                    {hasDiscount && <p className="text-sm text-muted-foreground line-through">{formatCurrency(base)}</p>}
-                    <p className={`text-xl font-bold ${hasDiscount ? "text-green-600" : "text-foreground"}`}>{formatCurrency(final)}</p>
-                  </>
-                );
-              })()}
-            </div>
-            <div className="bg-accent rounded-xl p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">⏱ Validity</p>
-              <p className="text-xl font-bold text-foreground">
-                {selectedBundle?.network.id === "at-bigtime" ? "Non-Expiry" : selectedBundle?.network.id === "at-premium" ? "60 Days" : "90 Days"}
-              </p>
-            </div>
-          </div>
+                <div className="px-5 -mt-5 pb-5 space-y-4">
+                  {/* Price + validity card */}
+                  <div className="bg-card rounded-2xl border border-border shadow-md p-4 grid grid-cols-2 divide-x divide-border">
+                    <div className="pr-3 text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Price</p>
+                      {hasDiscount && (
+                        <p className="text-xs text-muted-foreground line-through leading-none">{formatCurrency(base)}</p>
+                      )}
+                      <p className={`text-2xl font-extrabold ${hasDiscount ? "text-green-600" : "text-foreground"}`}>
+                        {formatCurrency(final)}
+                      </p>
+                    </div>
+                    <div className="pl-3 text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Validity</p>
+                      <p className="text-2xl font-extrabold text-foreground">{validity}</p>
+                    </div>
+                  </div>
 
-          <div className="mt-4">
-            <label className="text-sm font-medium text-foreground flex items-center gap-1 mb-2">
-              📞 Recipient Phone Number
-            </label>
-            <Input
-              placeholder="e.g., 0549358359"
-              value={phoneNumber}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                setPhoneNumber(val);
-              }}
-              maxLength={10}
-              inputMode="numeric"
-            />
-            {phoneNumber.length > 0 && phoneNumber.length < 10 && (
-              <p className="text-xs text-destructive mt-1">{10 - phoneNumber.length} more digit(s) needed</p>
-            )}
-            {isWrongNetwork && selectedBundle && (
-              <p className="text-xs text-destructive mt-1 font-semibold">
-                ⚠️ This number doesn't look like a {getExpectedNetworkName(selectedBundle.network.id)} number
-              </p>
-            )}
-            {detectedNetwork === "unknown" && phoneNumber.length >= 3 && (
-              <p className="text-xs text-destructive mt-1">⚠️ Unrecognized phone number prefix</p>
-            )}
-          </div>
+                  {/* Phone input */}
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Recipient Phone Number
+                    </label>
+                    <div
+                      className={`flex items-center gap-2 rounded-xl border-2 bg-background px-3 transition-colors ${
+                        phoneNumber.length === 0
+                          ? "border-border"
+                          : phoneValid
+                          ? "border-green-500"
+                          : "border-destructive"
+                      }`}
+                    >
+                      <span className="text-lg">📞</span>
+                      <Input
+                        placeholder="0549358359"
+                        value={phoneNumber}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setPhoneNumber(val);
+                        }}
+                        maxLength={10}
+                        inputMode="numeric"
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base font-semibold tracking-wider"
+                      />
+                      {phoneValid && (
+                        <span className="text-green-600 text-lg" aria-hidden>✓</span>
+                      )}
+                    </div>
+                    {phoneNumber.length > 0 && phoneNumber.length < 10 && (
+                      <p className="text-xs text-muted-foreground mt-1.5 ml-1">
+                        {10 - phoneNumber.length} more digit(s) needed
+                      </p>
+                    )}
+                    {isWrongNetwork && (
+                      <p className="text-xs text-destructive mt-1.5 ml-1 font-semibold">
+                        ⚠️ Not a {getExpectedNetworkName(selectedBundle.network.id)} number
+                      </p>
+                    )}
+                    {detectedNetwork === "unknown" && phoneNumber.length >= 3 && (
+                      <p className="text-xs text-destructive mt-1.5 ml-1">⚠️ Unrecognized phone prefix</p>
+                    )}
+                  </div>
 
-          <div className="flex gap-3 mt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setSelectedBundle(null)}>
-              Cancel
-            </Button>
-            <Button className="flex-1 gradient-primary border-0" onClick={handleAddToCart}>
-              <ShoppingCart className="w-4 h-4 mr-1" /> Add to Cart
-            </Button>
-          </div>
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-1">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11 rounded-xl"
+                      onClick={() => setSelectedBundle(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex-1 h-11 rounded-xl gradient-primary border-0 shadow-md font-semibold"
+                      onClick={handleAddToCart}
+                      disabled={!phoneValid}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-1.5" /> Add to Cart
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </>
