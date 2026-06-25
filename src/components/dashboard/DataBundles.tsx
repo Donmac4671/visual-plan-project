@@ -37,17 +37,42 @@ function NetworkIcon({ network }: { network: Network }) {
   );
 }
 
+// Brand colors (official)
+const BRAND_BG: Record<string, string> = {
+  mtn: "#FFCB05", // MTN bright yellow
+  telecel: "#EE2722", // Telecel bright red
+  "at-bigtime": "linear-gradient(135deg, #0066B3 0%, #0066B3 55%, #ED1C24 55%, #ED1C24 100%)", // AirtelTigo blue + red
+  "at-premium": "linear-gradient(135deg, #0066B3 0%, #0066B3 55%, #ED1C24 55%, #ED1C24 100%)",
+};
+const BRAND_TEXT: Record<string, string> = {
+  mtn: "#1a1a1a",
+  telecel: "#ffffff",
+  "at-bigtime": "#ffffff",
+  "at-premium": "#ffffff",
+};
+
+function getValidity(networkId: string): string {
+  if (networkId === "at-bigtime") return "Non-Expiry";
+  if (networkId === "at-premium") return "60 Days";
+  return "90 Days";
+}
+
 function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPrice, offline, onOfflineClick }: { bundle: DataBundle; network: Network; tier: string; onSelect: () => void; applyDiscount?: (price: number) => number; resellerPrice?: number; offline?: boolean; onOfflineClick?: () => void }) {
-  const gradientClass = offline ? "bg-gradient-to-br from-gray-400 to-gray-500" : network.gradient;
   const basePrice = resellerPrice ?? getBundlePrice(bundle, tier);
   const displayPrice = applyDiscount ? applyDiscount(basePrice) : basePrice;
   const hasDiscount = displayPrice < basePrice;
+  const cardStyle = offline
+    ? { background: "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)", color: "#fff" }
+    : { background: BRAND_BG[network.id] ?? undefined, color: BRAND_TEXT[network.id] ?? "#fff" };
 
   return (
     <div className="flex flex-col items-center">
-      <div className={`${gradientClass} rounded-2xl p-4 w-full aspect-square flex flex-col items-center justify-center text-white relative transition-all duration-200 ${offline ? "opacity-70" : "hover:shadow-lg hover:-translate-y-1 hover:scale-105"}`}>
+      <div
+        style={cardStyle}
+        className={`rounded-2xl p-3 w-full aspect-square flex flex-col items-center justify-center text-center relative transition-all duration-200 ${offline ? "opacity-70" : "hover:shadow-lg hover:-translate-y-1 hover:scale-105"}`}
+      >
         {offline ? (
-          <span className="absolute top-1 right-1 flex items-center gap-1 bg-gray-600 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+          <span className="absolute top-1 right-1 flex items-center gap-1 bg-gray-700 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow">
             <span className="w-1.5 h-1.5 rounded-full bg-white" /> Offline
           </span>
         ) : (
@@ -55,15 +80,20 @@ function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPr
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
           </span>
         )}
-        <span className="text-3xl lg:text-4xl font-bold">{bundle.sizeGB}</span>
-        <span className="text-xs font-medium uppercase">Gigabytes</span>
-      </div>
-      <div className="mt-2 bg-accent rounded-full px-3 py-1 flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">Price</span>
+        <span className="text-sm font-extrabold tracking-wide uppercase leading-tight">
+          {network.name} {bundle.size}
+        </span>
+        <span className="text-2xl lg:text-3xl font-extrabold mt-1">
+          {formatCurrency(displayPrice)}
+        </span>
         {hasDiscount && (
-          <span className="text-xs text-muted-foreground line-through">{formatCurrency(basePrice)}</span>
+          <span className="text-[10px] opacity-70 line-through leading-none">
+            {formatCurrency(basePrice)}
+          </span>
         )}
-        <span className={`text-sm font-bold ${hasDiscount ? "text-green-600" : "text-foreground"}`}>{formatCurrency(displayPrice)}</span>
+        <span className="text-[10px] font-medium opacity-90 mt-1">
+          Validity: {getValidity(network.id)}
+        </span>
       </div>
       <Button
         size="sm"
