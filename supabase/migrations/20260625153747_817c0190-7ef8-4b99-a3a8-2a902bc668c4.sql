@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users can insert own orders" ON public.orders;
