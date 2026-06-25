@@ -54,6 +54,7 @@ const BRAND_TEXT: Record<string, string> = {
 function getValidity(networkId: string): string {
   if (networkId === "at-bigtime") return "Non-Expiry";
   if (networkId === "at-premium") return "60 Days";
+  if (networkId === "telecel") return "60 Days";
   return "90 Days";
 }
 
