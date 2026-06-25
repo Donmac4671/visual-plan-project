@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
 
     // Parse request body
     const body = await req.json();
@@ -39,6 +41,19 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Block any hidden (offline) bundles server-side
+    const { data: hidden } = await admin.from("hidden_bundles").select("network_id, bundle_size");
+    const hiddenSet = new Set((hidden ?? []).map((r: any) => `${r.network_id}::${r.bundle_size}`));
+    for (const item of items) {
+      const key = `${item.network_id}::${item.bundle}`;
+      if (hiddenSet.has(key)) {
+        return new Response(JSON.stringify({ error: `${item.network} ${item.bundle} is currently offline. Please remove it from your cart.` }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const results = [];

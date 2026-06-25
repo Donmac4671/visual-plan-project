@@ -105,6 +105,20 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Block any hidden (offline) bundles server-side
+    const { data: hidden } = await admin.from("hidden_bundles").select("network_id, bundle_size");
+    const hiddenSet = new Set((hidden ?? []).map((r: any) => `${r.network_id}::${r.bundle_size}`));
+    for (const item of items) {
+      const netId = (item.network_id ?? item.network ?? "").toString();
+      const key = `${netId}::${item.bundle}`;
+      if (hiddenSet.has(key)) {
+        return new Response(JSON.stringify({ error: `${item.network} ${item.bundle} is currently offline. Please remove it from your cart.` }), {
+          status: 409,
+          headers: jsonHeaders,
+        });
+      }
+    }
+
     // Idempotency: refuse to reuse a reference that already has orders associated
     const { data: existingOrders } = await admin
       .from("transactions")
