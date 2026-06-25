@@ -454,53 +454,92 @@ export default function MashupAirtime() {
       </Dialog>
 
       {/* Airtime dialog */}
-      <Dialog
-        open={airtimeOpen}
-        onOpenChange={(o) => {
-          if (!o) closeAirtime();
-        }}
-      >
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Buy Airtime</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium mb-2 block">📞 Phone Number (Any Network)</label>
-              <Input
-                placeholder="e.g., 0549358359"
-                value={airtimePhone}
-                onChange={(e) => setAirtimePhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                maxLength={10}
-                inputMode="numeric"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                💰 Amount (₵{AIRTIME_MIN} - ₵{AIRTIME_MAX})
-              </label>
-              <Input
-                type="number"
-                step="0.5"
-                min={AIRTIME_MIN}
-                max={AIRTIME_MAX}
-                placeholder="e.g., 10"
-                value={airtimeAmount}
-                onChange={(e) => setAirtimeAmount(e.target.value)}
-                inputMode="decimal"
-              />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={closeAirtime}>
-                Cancel
-              </Button>
-              <Button className="flex-1 gradient-primary border-0" onClick={handleAddAirtime}>
-                Add to Cart
-              </Button>
-            </div>
-          </div>
+      <Dialog open={airtimeOpen} onOpenChange={(o) => { if (!o) closeAirtime(); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 overflow-hidden rounded-2xl border-0">
+          {(() => {
+            const phoneValid = isValidPhone(airtimePhone);
+            const amt = parseFloat(airtimeAmount);
+            const amtValid = Number.isFinite(amt) && amt >= AIRTIME_MIN && amt <= AIRTIME_MAX;
+            return (
+              <>
+                <div style={{ background: "linear-gradient(135deg,#10b981 0%,#0d9488 100%)" }} className="relative px-5 pt-6 pb-8 text-white">
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+                  <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-black/10 blur-2xl" />
+                  <DialogHeader className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-white/20 ring-2 ring-white/40 shadow-lg flex items-center justify-center">
+                        <Phone className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <DialogTitle className="text-lg font-extrabold tracking-tight text-white">Buy Airtime</DialogTitle>
+                        <p className="text-xs opacity-80">Works on all Ghana networks</p>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                </div>
+
+                <div className="px-5 -mt-5 pb-5 space-y-4">
+                  <div className="bg-card rounded-2xl border border-border shadow-md p-4 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Allowed amount</p>
+                    <p className="text-xl font-extrabold">₵{AIRTIME_MIN} – ₵{AIRTIME_MAX}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Recipient Phone Number
+                    </label>
+                    <div className={`flex items-center gap-2 rounded-xl border-2 bg-background px-3 transition-colors ${
+                      airtimePhone.length === 0 ? "border-border" : phoneValid ? "border-green-500" : "border-destructive"
+                    }`}>
+                      <span className="text-lg">📞</span>
+                      <Input
+                        placeholder="0549358359"
+                        value={airtimePhone}
+                        onChange={(e) => setAirtimePhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        maxLength={10}
+                        inputMode="numeric"
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base font-semibold tracking-wider"
+                      />
+                      {phoneValid && <span className="text-green-600 text-lg">✓</span>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Amount (₵)
+                    </label>
+                    <div className={`flex items-center gap-2 rounded-xl border-2 bg-background px-3 transition-colors ${
+                      airtimeAmount.length === 0 ? "border-border" : amtValid ? "border-green-500" : "border-destructive"
+                    }`}>
+                      <span className="text-lg">💰</span>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min={AIRTIME_MIN}
+                        max={AIRTIME_MAX}
+                        placeholder="10"
+                        value={airtimeAmount}
+                        onChange={(e) => setAirtimeAmount(e.target.value)}
+                        inputMode="decimal"
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base font-semibold tracking-wider"
+                      />
+                      {amtValid && <span className="text-green-600 text-lg">✓</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-1">
+                    <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={closeAirtime}>Cancel</Button>
+                    <Button className="flex-1 h-11 rounded-xl gradient-primary border-0 font-semibold" onClick={handleAddAirtime} disabled={!phoneValid || !amtValid}>
+                      <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
