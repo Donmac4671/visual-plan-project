@@ -305,68 +305,112 @@ export default function MashupAirtime() {
 
       {/* Telecel V+D+S dialog */}
       <Dialog open={!!vsPkg} onOpenChange={(o) => { if (!o) closeVs(); }}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Telecel {vsPkg ? formatCurrency(vsPkg.price) : ""}</DialogTitle>
-          </DialogHeader>
-          {vsPkg && (
-            <div className="space-y-3">
-              {vsPkg.variants.length > 1 ? (
-                <div>
-                  <p className="text-sm font-medium mb-2">Choose your offer:</p>
-                  <RadioGroup value={String(vsVariantIdx)} onValueChange={(v) => setVsVariantIdx(Number(v))} className="gap-2">
-                    {vsPkg.variants.map((v, i) => {
-                      const desc = [v.minutes, v.data, v.sms].filter(Boolean).join(" + ");
-                      const tag = v.kind === "vds" ? "Voice + Data + SMS" : "Voice + SMS";
-                      return (
-                        <Label
-                          key={i}
-                          htmlFor={`vs-var-${i}`}
-                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${vsVariantIdx === i ? "border-primary bg-accent" : "border-border"}`}
-                        >
-                          <RadioGroupItem value={String(i)} id={`vs-var-${i}`} className="mt-1" />
-                          <div className="flex-1">
-                            <p className="text-xs font-semibold text-muted-foreground">{tag}</p>
-                            <p className="text-sm font-semibold">{desc}</p>
-                          </div>
-                        </Label>
-                      );
-                    })}
-                  </RadioGroup>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 overflow-hidden rounded-2xl border-0">
+          {vsPkg && (() => {
+            const variant = vsPkg.variants[vsVariantIdx];
+            const phoneValid = isValidPhone(vsPhone) && isTelecelNumber(vsPhone);
+            const wrongNet = vsPhone.length === 10 && !isTelecelNumber(vsPhone);
+            const headerBg = vsPkg.isSpecial
+              ? "linear-gradient(135deg,#f59e0b 0%,#ea580c 100%)"
+              : "linear-gradient(135deg,#EE2722 0%,#b91c1c 100%)";
+            return (
+              <>
+                <div style={{ background: headerBg, color: "#fff" }} className="relative px-5 pt-6 pb-8">
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+                  <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-black/10 blur-2xl" />
+                  <DialogHeader className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-white/20 ring-2 ring-white/40 shadow-lg flex items-center justify-center">
+                        <MessageSquare className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <DialogTitle className="text-lg font-extrabold tracking-tight text-white">
+                          {vsPkg.isSpecial ? "Telecel Special" : "Telecel V+D+S"} — {formatCurrency(vsPkg.price)}
+                        </DialogTitle>
+                        <p className="text-xs opacity-80">Confirm details to add to cart</p>
+                      </div>
+                    </div>
+                  </DialogHeader>
                 </div>
-              ) : (
-                <div className="bg-accent rounded-xl p-3 text-center">
-                  <p className="text-sm font-semibold">
-                    {[vsPkg.variants[0].minutes, vsPkg.variants[0].data, vsPkg.variants[0].sms].filter(Boolean).join(" + ")}
-                  </p>
-                  {vsPkg.variants[0].validity && <p className="text-xs text-muted-foreground mt-1">Validity: {vsPkg.variants[0].validity}</p>}
-                  {vsPkg.variants[0].allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
+
+                <div className="px-5 -mt-5 pb-5 space-y-4">
+                  {vsPkg.variants.length > 1 ? (
+                    <div className="bg-card rounded-2xl border border-border shadow-md p-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Choose your offer</p>
+                      <RadioGroup value={String(vsVariantIdx)} onValueChange={(v) => setVsVariantIdx(Number(v))} className="gap-2">
+                        {vsPkg.variants.map((v, i) => {
+                          const desc = [v.minutes, v.data, v.sms].filter(Boolean).join(" + ");
+                          const tag = v.kind === "vds" ? "Voice + Data + SMS" : "Voice + SMS";
+                          return (
+                            <Label
+                              key={i}
+                              htmlFor={`vs-var-${i}`}
+                              className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${vsVariantIdx === i ? "border-red-500 bg-red-500/5" : "border-border"}`}
+                            >
+                              <RadioGroupItem value={String(i)} id={`vs-var-${i}`} className="mt-1" />
+                              <div className="flex-1">
+                                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">{tag}</p>
+                                <p className="text-sm font-semibold">{desc}</p>
+                              </div>
+                            </Label>
+                          );
+                        })}
+                      </RadioGroup>
+                    </div>
+                  ) : (
+                    <div className="bg-card rounded-2xl border border-border shadow-md p-4 text-center">
+                      <p className="text-sm font-semibold">
+                        {[variant.minutes, variant.data, variant.sms].filter(Boolean).join(" + ")}
+                      </p>
+                      {variant.allNetworks && <p className="text-xs text-amber-600 font-semibold mt-1">📞 Calls all networks</p>}
+                    </div>
+                  )}
+
+                  <div className="bg-card rounded-2xl border border-border shadow-md p-4 grid grid-cols-2 divide-x divide-border">
+                    <div className="pr-3 text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Price</p>
+                      <p className="text-2xl font-extrabold">{formatCurrency(vsPkg.price)}</p>
+                    </div>
+                    <div className="pl-3 text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Validity</p>
+                      <p className="text-xl font-extrabold">{variant?.validity ?? "No expiry"}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Telecel Phone Number
+                    </label>
+                    <div className={`flex items-center gap-2 rounded-xl border-2 bg-background px-3 transition-colors ${
+                      vsPhone.length === 0 ? "border-border" : phoneValid ? "border-green-500" : "border-destructive"
+                    }`}>
+                      <span className="text-lg">📞</span>
+                      <Input
+                        placeholder="0202345678"
+                        value={vsPhone}
+                        onChange={(e) => setVsPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        maxLength={10}
+                        inputMode="numeric"
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base font-semibold tracking-wider"
+                      />
+                      {phoneValid && <span className="text-green-600 text-lg">✓</span>}
+                    </div>
+                    {wrongNet && <p className="text-xs text-destructive mt-1.5 ml-1 font-semibold">⚠️ Not a Telecel number (020, 050)</p>}
+                  </div>
+
+                  <div className="flex gap-3 pt-1">
+                    <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={closeVs}>Cancel</Button>
+                    <Button className="flex-1 h-11 rounded-xl gradient-primary border-0 font-semibold" onClick={handleAddVs} disabled={!phoneValid}>
+                      <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+                    </Button>
+                  </div>
                 </div>
-              )}
-              <div className="bg-accent/50 rounded-xl p-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                  {vsPkg.variants[vsVariantIdx]?.validity ? `Validity: ${vsPkg.variants[vsVariantIdx].validity}` : "No expiry"}
-                </p>
-                <p className="text-xs text-muted-foreground">⚠️ Telecel numbers only</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">📞 Telecel Phone Number</label>
-                <Input
-                  placeholder="e.g., 0202345678"
-                  value={vsPhone}
-                  onChange={(e) => setVsPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  maxLength={10}
-                  inputMode="numeric"
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={closeVs}>Cancel</Button>
-                <Button className="flex-1 gradient-primary border-0" onClick={handleAddVs}>Add to Cart</Button>
-              </div>
-            </div>
-          )}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
 
       <Dialog
         open={!!pkg}
