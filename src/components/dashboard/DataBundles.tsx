@@ -98,7 +98,8 @@ function BundleCard({ bundle, network, tier, onSelect, applyDiscount, resellerPr
       </div>
       <Button
         size="sm"
-        className="mt-2 gradient-primary border-0 text-xs w-full"
+        style={offline ? { background: "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)", color: "#fff" } : { background: BRAND_BG[network.id], color: BRAND_TEXT[network.id] }}
+        className="mt-2 border-0 text-xs w-full font-semibold shadow-sm hover:opacity-90 hover:shadow-md transition-all"
         onClick={offline ? onOfflineClick : onSelect}
       >
         <ShoppingCart className="w-3 h-3 mr-1" /> {offline ? "Offline" : "Select Bundle"}
