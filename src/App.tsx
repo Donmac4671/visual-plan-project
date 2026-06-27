@@ -216,6 +216,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
