@@ -86,6 +86,7 @@ export default function Register() {
     } else {
       if (data?.session) {
         await bindStoredResellerRef();
+        await supabase.rpc("accept_terms" as any).catch(() => undefined);
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
