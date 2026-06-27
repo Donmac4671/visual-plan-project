@@ -27,6 +27,11 @@ export default function Footer({ showGuides = false }: { showGuides?: boolean })
             <ExternalLink className="w-3 h-3" />
             Join our WhatsApp Channel
           </a>
+          <div className="flex items-center gap-4 text-xs">
+            <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms & Conditions</Link>
+            <span className="text-muted-foreground">·</span>
+            <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
+          </div>
           <p className="text-center text-xs text-muted-foreground">© 2026 Donmac Data Hub. All rights reserved.</p>
         </div>
       </div>
