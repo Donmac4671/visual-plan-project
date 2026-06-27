@@ -489,6 +489,7 @@ export type Database = {
           phone: string
           referral_code: string
           reseller_id: string | null
+          terms_accepted_at: string | null
           tier: string
           topup_reference_code: string
           updated_at: string
@@ -505,6 +506,7 @@ export type Database = {
           phone?: string
           referral_code?: string
           reseller_id?: string | null
+          terms_accepted_at?: string | null
           tier?: string
           topup_reference_code?: string
           updated_at?: string
@@ -521,6 +523,7 @@ export type Database = {
           phone?: string
           referral_code?: string
           reseller_id?: string | null
+          terms_accepted_at?: string | null
           tier?: string
           topup_reference_code?: string
           updated_at?: string
@@ -921,6 +924,7 @@ export type Database = {
     }
     Functions: {
       _random_token: { Args: { p_len: number }; Returns: string }
+      accept_terms: { Args: never; Returns: undefined }
       admin_get_auto_deliver_minutes: { Args: never; Returns: number }
       admin_set_auto_deliver_minutes: {
         Args: { p_minutes: number }

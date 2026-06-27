@@ -29,6 +29,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Flyer from "./pages/Flyer";
 import Reseller from "./pages/Reseller";
 import ApiDocs from "./pages/ApiDocs";
+import Terms from "./pages/Terms";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAcceptanceGate from "@/components/global/TermsAcceptanceGate";
 import NotFound from "./pages/NotFound";
 
 import { useCaptureResellerRef } from "@/hooks/useResellerRef";
@@ -94,6 +97,7 @@ const App = () => (
             <RealtimeNotifications />
             <EnableNotificationsBanner />
             <SiteMessagePopup />
+            <TermsAcceptanceGate />
 
             <FloatingCartButton />
             <LiveChatWidget />
@@ -212,6 +216,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -9,6 +9,8 @@ import { useCanonical } from "@/hooks/useCanonical";
 import { supabase } from "@/integrations/supabase/client";
 import { bindStoredResellerRef } from "@/hooks/useResellerRef";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 export default function Register() {
   useCanonical("/register");
@@ -19,6 +21,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verificationMode, setVerificationMode] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -42,6 +45,10 @@ export default function Register() {
     }
     if (password !== confirmPassword) {
       toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (!acceptedTerms) {
+      toast({ title: "Accept Terms", description: "Please accept the Terms & Conditions and Privacy Policy to continue.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -79,6 +86,7 @@ export default function Register() {
     } else {
       if (data?.session) {
         await bindStoredResellerRef();
+        try { await supabase.rpc("accept_terms" as any); } catch {}
         toast({ title: "Welcome!", description: "Account created and signed in successfully." });
         navigate("/dashboard");
       } else {
@@ -187,7 +195,16 @@ export default function Register() {
                     <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
                   </div>
                 </div>
-                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
+                <label className="flex items-start gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(!!v)} className="mt-0.5" />
+                  <span className="text-muted-foreground">
+                    I agree to the{" "}
+                    <Link to="/terms" target="_blank" className="text-primary font-medium hover:underline">Terms & Conditions</Link>
+                    {" "}and{" "}
+                    <Link to="/privacy" target="_blank" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+                  </span>
+                </label>
+                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading || !acceptedTerms}>
                   {loading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>

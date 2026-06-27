@@ -14,6 +14,7 @@ interface Profile {
   is_blocked: boolean;
   tier: string;
   reseller_id?: string | null;
+  terms_accepted_at?: string | null;
 }
 
 interface AuthContextType {

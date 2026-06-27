@@ -570,30 +570,6 @@ export default function Admin() {
               </SelectContent>
             </Select>
           </div>
-          <div className="mb-4 rounded-xl border border-border bg-card p-3">
-            <p className="text-sm font-semibold text-foreground mb-1">Public Visibility</p>
-            <p className="text-xs text-muted-foreground mb-3">Toggle entire product categories on/off for users. (Per-bundle Online/Offline is managed in the Bundles tab.)</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                { key: "mashup_data_enabled" as const, label: "MTN Mashup Data", value: mashupDataEnabled },
-                { key: "mashup_enabled" as const, label: "MTN Mashup Minutes + Data", value: mashupEnabled },
-                { key: "mtn_enabled" as const, label: "MTN", value: mtnEnabled },
-                { key: "telecel_enabled" as const, label: "TELECEL", value: telecelEnabled },
-                { key: "at_premium_enabled" as const, label: "AIRTELTIGO PREMIUM", value: atPremiumEnabled },
-                { key: "at_bigtime_enabled" as const, label: "AIRTELTIGO BIG TIME", value: atBigtimeEnabled },
-                { key: "airtime_enabled" as const, label: "Airtime", value: airtimeEnabled },
-                { key: "vs_enabled" as const, label: "Telecel V+D+S", value: vsEnabled },
-              ].map((t) => (
-                <div key={t.key} className="flex items-center gap-3 rounded-lg border border-border p-2">
-                  <Switch checked={t.value} onCheckedChange={(v) => handleToggleProduct(t.key, v)} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{t.label}</p>
-                    <p className="text-xs text-muted-foreground">{t.value ? "Visible to public" : "Hidden from public"}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
           <div className="mb-4 flex flex-wrap gap-3 items-end">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -834,6 +810,30 @@ export default function Admin() {
 
         {/* BUNDLES TAB */}
         <TabsContent value="bundles">
+          <div className="mb-4 rounded-xl border border-border bg-card p-3">
+            <p className="text-sm font-semibold text-foreground mb-1">Public Visibility</p>
+            <p className="text-xs text-muted-foreground mb-3">Toggle entire product categories on/off for users. (Per-bundle Online/Offline is managed below.)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { key: "mashup_data_enabled" as const, label: "MTN Mashup Data", value: mashupDataEnabled },
+                { key: "mashup_enabled" as const, label: "MTN Mashup Minutes + Data", value: mashupEnabled },
+                { key: "mtn_enabled" as const, label: "MTN", value: mtnEnabled },
+                { key: "telecel_enabled" as const, label: "TELECEL", value: telecelEnabled },
+                { key: "at_premium_enabled" as const, label: "AIRTELTIGO PREMIUM", value: atPremiumEnabled },
+                { key: "at_bigtime_enabled" as const, label: "AIRTELTIGO BIG TIME", value: atBigtimeEnabled },
+                { key: "airtime_enabled" as const, label: "Airtime", value: airtimeEnabled },
+                { key: "vs_enabled" as const, label: "Telecel V+D+S", value: vsEnabled },
+              ].map((t) => (
+                <div key={t.key} className="flex items-center gap-3 rounded-lg border border-border p-2">
+                  <Switch checked={t.value} onCheckedChange={(v) => handleToggleProduct(t.key, v)} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{t.label}</p>
+                    <p className="text-xs text-muted-foreground">{t.value ? "Visible to public" : "Hidden from public"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           <AdminBundleManager />
         </TabsContent>
 
