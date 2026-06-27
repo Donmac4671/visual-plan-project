@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { bindStoredResellerRef } from "@/hooks/useResellerRef";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
+
 
 export default function Register() {
   useCanonical("/register");
