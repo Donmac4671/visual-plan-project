@@ -29,6 +29,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Flyer from "./pages/Flyer";
 import Reseller from "./pages/Reseller";
 import ApiDocs from "./pages/ApiDocs";
+import Terms from "./pages/Terms";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAcceptanceGate from "@/components/global/TermsAcceptanceGate";
 import NotFound from "./pages/NotFound";
 
 import { useCaptureResellerRef } from "@/hooks/useResellerRef";
