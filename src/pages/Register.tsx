@@ -9,6 +9,8 @@ import { useCanonical } from "@/hooks/useCanonical";
 import { supabase } from "@/integrations/supabase/client";
 import { bindStoredResellerRef } from "@/hooks/useResellerRef";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "react-router-dom";
 
 export default function Register() {
   useCanonical("/register");
@@ -19,6 +21,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verificationMode, setVerificationMode] = useState(false);
   const [otpCode, setOtpCode] = useState("");
