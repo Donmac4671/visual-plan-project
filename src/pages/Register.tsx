@@ -47,6 +47,10 @@ export default function Register() {
       toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
       return;
     }
+    if (!acceptedTerms) {
+      toast({ title: "Accept Terms", description: "Please accept the Terms & Conditions and Privacy Policy to continue.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     // Pre-check: phone number must be unique. Use RPC to bypass RLS.
