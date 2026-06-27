@@ -195,7 +195,16 @@ export default function Register() {
                     <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" required />
                   </div>
                 </div>
-                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading}>
+                <label className="flex items-start gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(!!v)} className="mt-0.5" />
+                  <span className="text-muted-foreground">
+                    I agree to the{" "}
+                    <Link to="/terms" target="_blank" className="text-primary font-medium hover:underline">Terms & Conditions</Link>
+                    {" "}and{" "}
+                    <Link to="/privacy" target="_blank" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+                  </span>
+                </label>
+                <Button type="submit" className="w-full gradient-primary border-0" size="lg" disabled={loading || !acceptedTerms}>
                   {loading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
