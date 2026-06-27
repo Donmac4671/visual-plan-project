@@ -97,6 +97,7 @@ const App = () => (
             <RealtimeNotifications />
             <EnableNotificationsBanner />
             <SiteMessagePopup />
+            <TermsAcceptanceGate />
 
             <FloatingCartButton />
             <LiveChatWidget />
