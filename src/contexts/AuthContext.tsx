@@ -90,6 +90,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Enforce account block: sign out immediately
+      if (profileData && (profileData as Profile).is_blocked) {
+        await supabase.auth.signOut({ scope: "global" }).catch(() => undefined);
+        clearStoredSession();
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        if (typeof window !== "undefined") {
+          window.alert("Your account has been blocked. Please contact support.");
+        }
+        return;
+      }
+
       setProfile((profileData as Profile) ?? null);
 
       const { data: roles, error: rolesError } = await supabase

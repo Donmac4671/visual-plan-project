@@ -19,7 +19,7 @@ export default function SiteMessagePopup() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchMessage = async () => {
+    const checkLatest = async () => {
       const { data } = await supabase
         .from("site_messages")
         .select("*")
@@ -30,15 +30,23 @@ export default function SiteMessagePopup() {
       if (data && data.length > 0 && data[0].message.trim()) {
         const msg = data[0];
         const dismissedKey = `site_msg_dismissed_${msg.id}_${msg.updated_at}`;
-        if (!sessionStorage.getItem(dismissedKey)) {
+        if (!localStorage.getItem(dismissedKey)) {
           setMessage(msg.message);
           setOpen(true);
-          sessionStorage.setItem(dismissedKey, "1");
+          localStorage.setItem(dismissedKey, "1");
         }
       }
     };
 
-    fetchMessage();
+    checkLatest();
+
+    const ch = supabase
+      .channel(`site-messages-popup-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_messages" }, () => checkLatest())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user]);
 
   if (!message) return null;
