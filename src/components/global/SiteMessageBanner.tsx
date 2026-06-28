@@ -46,7 +46,7 @@ export default function SiteMessageBanner() {
 
   const dismiss = () => {
     if (banner) {
-      sessionStorage.setItem(
+      localStorage.setItem(
         `site_banner_dismissed_${banner.id}_${banner.updated_at}`,
         "1",
       );
