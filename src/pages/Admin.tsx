@@ -535,7 +535,7 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground">Pending</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
-                  <p className="text-lg font-bold text-primary">{orders.filter(o => o.status === "processing").length}</p>
+                  <p className="text-lg font-bold text-blue-600">{orders.filter(o => o.status === "processing").length}</p>
                   <p className="text-xs text-muted-foreground">Processing</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
