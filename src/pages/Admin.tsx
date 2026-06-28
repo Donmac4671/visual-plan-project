@@ -688,7 +688,7 @@ export default function Admin() {
                       <Badge variant="outline" className={
                         o.status === "completed" ? "bg-success/10 text-success" :
                         o.status === "pending" ? "bg-warning/10 text-warning" :
-                        o.status === "processing" ? "bg-primary/10 text-primary" :
+                        o.status === "processing" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
                         o.status === "waiting" ? "bg-warning/10 text-warning" :
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
