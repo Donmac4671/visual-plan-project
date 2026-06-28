@@ -286,6 +286,12 @@ export default function Admin() {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    if (status === "failed") {
+      const ok = window.confirm(
+        "Mark this order as FAILED?\n\nThis will automatically refund the customer's wallet.\n\nOnly mark as failed if:\n  1. Your GHData balance is not enough, OR\n  2. The package is not available on GHData.\n\nDo NOT mark as failed if the order was actually delivered. Click Cancel and choose 'Delivered' instead."
+      );
+      if (!ok) return;
+    }
     const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     const displayLabel = status === "completed" ? "delivered" : status;
