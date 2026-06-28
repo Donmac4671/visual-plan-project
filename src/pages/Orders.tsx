@@ -93,7 +93,7 @@ export default function Orders() {
     { key: "all", label: "All", icon: List, color: "text-foreground" },
     { key: "pending", label: "Pending", icon: Clock, color: "text-warning" },
     { key: "waiting", label: "Waiting", icon: Hourglass, color: "text-amber-600" },
-    { key: "processing", label: "Processing", icon: Loader, color: "text-primary" },
+    { key: "processing", label: "Processing", icon: Loader, color: "text-blue-600" },
     { key: "completed", label: "Delivered", icon: CheckCircle, color: "text-success" },
     { key: "failed", label: "Failed", icon: XCircle, color: "text-destructive" },
   ];
