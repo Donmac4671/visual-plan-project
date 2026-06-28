@@ -286,6 +286,12 @@ export default function Admin() {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    if (status === "failed") {
+      const ok = window.confirm(
+        "Mark this order as FAILED?\n\nThis will automatically refund the customer's wallet.\n\nOnly mark as failed if:\n  1. Your GHData balance is not enough, OR\n  2. The package is not available on GHData.\n\nDo NOT mark as failed if the order was actually delivered. Click Cancel and choose 'Delivered' instead."
+      );
+      if (!ok) return;
+    }
     const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     const displayLabel = status === "completed" ? "delivered" : status;
@@ -529,7 +535,7 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground">Pending</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
-                  <p className="text-lg font-bold text-primary">{orders.filter(o => o.status === "processing").length}</p>
+                  <p className="text-lg font-bold text-blue-600">{orders.filter(o => o.status === "processing").length}</p>
                   <p className="text-xs text-muted-foreground">Processing</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
@@ -682,7 +688,7 @@ export default function Admin() {
                       <Badge variant="outline" className={
                         o.status === "completed" ? "bg-success/10 text-success" :
                         o.status === "pending" ? "bg-warning/10 text-warning" :
-                        o.status === "processing" ? "bg-primary/10 text-primary" :
+                        o.status === "processing" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
                         o.status === "waiting" ? "bg-warning/10 text-warning" :
                         "bg-destructive/10 text-destructive"
                       }>{o.status === "completed" ? "delivered" : o.status}</Badge>
