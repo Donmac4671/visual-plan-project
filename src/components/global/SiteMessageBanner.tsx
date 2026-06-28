@@ -16,20 +16,32 @@ export default function SiteMessageBanner() {
     const fetchBanner = async () => {
       const { data } = await supabase
         .from("site_messages")
-        .select("id, message, updated_at, show_as_banner")
+        .select("id, message, updated_at, show_as_banner, is_active")
         .eq("show_as_banner", true)
+        .eq("is_active", true)
         .order("updated_at", { ascending: false })
         .limit(1);
 
       if (data && data.length > 0 && data[0].message.trim()) {
         const msg = data[0];
         const dismissedKey = `site_banner_dismissed_${msg.id}_${msg.updated_at}`;
-        if (!sessionStorage.getItem(dismissedKey)) {
+        if (!localStorage.getItem(dismissedKey)) {
           setBanner({ id: msg.id, message: msg.message, updated_at: msg.updated_at });
+          setHidden(false);
         }
+      } else {
+        setBanner(null);
       }
     };
     fetchBanner();
+
+    const ch = supabase
+      .channel(`site-messages-banner-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_messages" }, () => fetchBanner())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   const dismiss = () => {
