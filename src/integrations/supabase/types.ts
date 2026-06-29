@@ -1006,6 +1006,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_bundle_hidden: {
+        Args: { p_bundle: string; p_network_id: string }
+        Returns: boolean
+      }
+      is_network_enabled: { Args: { p_network: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
