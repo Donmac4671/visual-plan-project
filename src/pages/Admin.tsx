@@ -113,6 +113,7 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [failConfirmOrderId, setFailConfirmOrderId] = useState<string | null>(null);
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
   const [autoDeliverMinutes, setAutoDeliverMinutes] = useState<string>("manual");
 
