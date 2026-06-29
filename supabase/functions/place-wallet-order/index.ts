@@ -46,10 +46,39 @@ Deno.serve(async (req) => {
     // Block any hidden (offline) bundles server-side
     const { data: hidden } = await admin.from("hidden_bundles").select("network_id, bundle_size");
     const hiddenSet = new Set((hidden ?? []).map((r: any) => `${r.network_id}::${r.bundle_size}`));
+
+    // Block whole-network offline toggles server-side
+    const TOGGLE_KEYS = [
+      "mtn_enabled","telecel_enabled","at_premium_enabled","at_bigtime_enabled",
+      "airtime_enabled","mashup_enabled","vs_enabled","mashup_data_enabled",
+    ];
+    const { data: toggles } = await admin.from("app_settings").select("key,value").in("key", TOGGLE_KEYS);
+    const enabledMap: Record<string, boolean> = {};
+    (toggles ?? []).forEach((r: any) => { enabledMap[r.key] = r.value !== false && r.value !== "false"; });
+    const networkKey = (id: string) => {
+      const k = (id || "").toLowerCase();
+      if (k === "mtn") return "mtn_enabled";
+      if (k === "telecel") return "telecel_enabled";
+      if (k === "at-premium") return "at_premium_enabled";
+      if (k === "at-bigtime") return "at_bigtime_enabled";
+      if (k === "airtime") return "airtime_enabled";
+      if (k === "mashup") return "mashup_enabled";
+      if (k === "vs") return "vs_enabled";
+      if (k === "mashup-data" || k === "mashup-combo") return "mashup_data_enabled";
+      return null;
+    };
+
     for (const item of items) {
       const key = `${item.network_id}::${item.bundle}`;
       if (hiddenSet.has(key)) {
         return new Response(JSON.stringify({ error: `${item.network} ${item.bundle} is currently offline. Please remove it from your cart.` }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const tk = networkKey(item.network_id);
+      if (tk && enabledMap[tk] === false) {
+        return new Response(JSON.stringify({ error: `${item.network} is currently offline. Please try again later.` }), {
           status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setIsAdmin(false);
         if (typeof window !== "undefined") {
-          window.alert("Your account has been blocked. Please contact support.");
+          window.dispatchEvent(new CustomEvent("donmac:account-blocked"));
         }
         return;
       }

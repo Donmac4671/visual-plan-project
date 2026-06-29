@@ -10,6 +10,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
@@ -102,6 +113,7 @@ export default function Admin() {
   const [walletDesc, setWalletDesc] = useState("");
   const [replyDialog, setReplyDialog] = useState<any | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [failConfirmOrderId, setFailConfirmOrderId] = useState<string | null>(null);
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
   const [autoDeliverMinutes, setAutoDeliverMinutes] = useState<string>("manual");
 
@@ -287,15 +299,23 @@ export default function Admin() {
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     if (status === "failed") {
-      const ok = window.confirm(
-        "Mark this order as FAILED?\n\nThis will automatically refund the customer's wallet.\n\nOnly mark as failed if:\n  1. Your GHData balance is not enough, OR\n  2. The package is not available on GHData.\n\nDo NOT mark as failed if the order was actually delivered. Click Cancel and choose 'Delivered' instead."
-      );
-      if (!ok) return;
+      setFailConfirmOrderId(orderId);
+      return;
     }
     const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: status });
     if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
     const displayLabel = status === "completed" ? "delivered" : status;
     toast({ title: "Order Updated", description: `Status changed to ${displayLabel}` });
+    fetchData();
+  };
+
+  const confirmMarkFailed = async () => {
+    const orderId = failConfirmOrderId;
+    if (!orderId) return;
+    setFailConfirmOrderId(null);
+    const { error } = await supabase.rpc("admin_update_order_status", { order_id: orderId, new_status: "failed" });
+    if (error) { toast({ title: "Update Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Order marked failed", description: "Customer wallet has been refunded automatically." });
     fetchData();
   };
 
@@ -901,6 +921,46 @@ export default function Admin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mark Failed Confirmation */}
+      <AlertDialog open={!!failConfirmOrderId} onOpenChange={(o) => !o && setFailConfirmOrderId(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+              <AlertTriangle className="w-7 h-7 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl">
+              Mark this order as FAILED?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p className="text-center">
+                  The customer's wallet will be <span className="font-semibold text-foreground">refunded automatically</span>.
+                </p>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="font-semibold text-foreground mb-1">Only mark as failed if:</p>
+                  <ol className="list-decimal pl-5 space-y-1 text-foreground/90">
+                    <li>Your GHData balance is not enough, or</li>
+                    <li>The package is not available on GHData.</li>
+                  </ol>
+                </div>
+                <p className="text-center text-destructive font-medium">
+                  Do NOT use this if the order was actually delivered — choose "Delivered" instead.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmMarkFailed}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, mark as failed & refund
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
