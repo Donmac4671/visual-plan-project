@@ -921,6 +921,46 @@ export default function Admin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mark Failed Confirmation */}
+      <AlertDialog open={!!failConfirmOrderId} onOpenChange={(o) => !o && setFailConfirmOrderId(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+              <AlertTriangle className="w-7 h-7 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl">
+              Mark this order as FAILED?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p className="text-center">
+                  The customer's wallet will be <span className="font-semibold text-foreground">refunded automatically</span>.
+                </p>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="font-semibold text-foreground mb-1">Only mark as failed if:</p>
+                  <ol className="list-decimal pl-5 space-y-1 text-foreground/90">
+                    <li>Your GHData balance is not enough, or</li>
+                    <li>The package is not available on GHData.</li>
+                  </ol>
+                </div>
+                <p className="text-center text-destructive font-medium">
+                  Do NOT use this if the order was actually delivered — choose "Delivered" instead.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmMarkFailed}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, mark as failed & refund
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
