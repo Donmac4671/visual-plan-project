@@ -99,6 +99,7 @@ const App = () => (
             <EnableNotificationsBanner />
             <SiteMessagePopup />
             <TermsAcceptanceGate />
+            <BlockedAccountDialog />
 
             <FloatingCartButton />
             <LiveChatWidget />
