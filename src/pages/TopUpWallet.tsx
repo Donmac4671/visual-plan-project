@@ -81,13 +81,12 @@ export default function TopUpWallet() {
       toast({ title: "Error", description: `Minimum top-up amount is ₵${minTopUp}`, variant: "destructive" });
       return;
     }
-    // Paystack requires unique emails per transaction. Build a synthetic email
-    // from the user's phone number so each customer is properly separated.
+    // Attach the user's phone number to our domain as the payer email so each
+    // customer is tracked correctly on Paystack.
     const userPhone = (profile?.phone || "").replace(/\D/g, "");
-    const uniqueSuffix = Date.now();
     const payerEmail = userPhone
-      ? `${userPhone}-${uniqueSuffix}@donmacdatahub.com`
-      : `user-${user?.id?.slice(0, 8) || uniqueSuffix}-${uniqueSuffix}@donmacdatahub.com`;
+      ? `${userPhone}@donmacdatahub.com`
+      : `user-${user?.id?.slice(0, 8) || "guest"}@donmacdatahub.com`;
 
     await initPaystack({
       email: payerEmail,
