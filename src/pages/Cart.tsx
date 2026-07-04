@@ -210,8 +210,10 @@ export default function Cart() {
       return;
     }
 
-    const phones = items.map((i) => i.phoneNumber.replace(/\D/g, "")).filter(Boolean);
-    const syntheticEmail = `${phones[0] || "guest"}-${Date.now()}@donmacdatahub.com`;
+    const userPhone = (profile?.phone || "").replace(/\D/g, "");
+    const firstItemPhone = (items[0]?.phoneNumber || "").replace(/\D/g, "");
+    const phoneForEmail = userPhone || firstItemPhone || "guest";
+    const syntheticEmail = `${phoneForEmail}@donmacdatahub.com`;
 
     const itemsForBackend = [
       ...dataItems.map((item) => ({
