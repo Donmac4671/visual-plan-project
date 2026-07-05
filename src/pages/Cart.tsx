@@ -213,7 +213,7 @@ export default function Cart() {
     const userPhone = (profile?.phone || "").replace(/\D/g, "");
     const firstItemPhone = (items[0]?.phoneNumber || "").replace(/\D/g, "");
     const phoneForEmail = userPhone || firstItemPhone || "guest";
-    const syntheticEmail = `${phoneForEmail}@donmacdatahub.com`;
+    const syntheticEmail = `${phoneForEmail}+${Date.now()}@donmacdatahub.com`;
 
     const itemsForBackend = [
       ...dataItems.map((item) => ({
