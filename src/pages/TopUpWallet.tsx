@@ -82,11 +82,11 @@ export default function TopUpWallet() {
       return;
     }
     // Attach the user's phone number to our domain as the payer email so each
-    // customer is tracked correctly on Paystack.
+    // customer is tracked correctly on Paystack. Add a timestamp so each
+    // transaction reference is unique on Paystack's side.
     const userPhone = (profile?.phone || "").replace(/\D/g, "");
-    const payerEmail = userPhone
-      ? `${userPhone}@donmacdatahub.com`
-      : `user-${user?.id?.slice(0, 8) || "guest"}@donmacdatahub.com`;
+    const phoneForEmail = userPhone || `user-${user?.id?.slice(0, 8) || "guest"}`;
+    const payerEmail = `${phoneForEmail}+${Date.now()}@donmacdatahub.com`;
 
     await initPaystack({
       email: payerEmail,
