@@ -55,7 +55,9 @@ export default function Login() {
       }
     } else {
       await bindStoredResellerRef();
-      navigate("/dashboard");
+      const next = searchParams.get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+      navigate(safeNext);
     }
   };
 

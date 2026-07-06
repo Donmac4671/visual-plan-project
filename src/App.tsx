@@ -33,6 +33,7 @@ import ApiDocs from "./pages/ApiDocs";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAcceptanceGate from "@/components/global/TermsAcceptanceGate";
+import OAuthConsent from "./pages/OAuthConsent";
 import NotFound from "./pages/NotFound";
 
 import { useCaptureResellerRef } from "@/hooks/useResellerRef";
@@ -48,8 +49,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    const next = new URLSearchParams(location.search).get("next");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    return <Navigate to={safeNext} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -220,6 +226,7 @@ const App = () => (
               />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
