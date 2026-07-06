@@ -23,7 +23,7 @@ export default defineTool({
     }
     const { data, error } = await sb(ctx)
       .from("orders")
-      .select("id, network, phone_number, bundle, amount, status, created_at")
+      .select("id, order_ref, network, phone_number, bundle_size, amount, status, created_at")
       .eq("user_id", ctx.getUserId())
       .order("created_at", { ascending: false })
       .limit(limit);
