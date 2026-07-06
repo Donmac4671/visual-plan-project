@@ -49,8 +49,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    const next = new URLSearchParams(location.search).get("next");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    return <Navigate to={safeNext} replace />;
+  }
   return <>{children}</>;
 }
 
