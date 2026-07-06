@@ -221,6 +221,7 @@ const App = () => (
               />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
