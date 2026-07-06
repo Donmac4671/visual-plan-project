@@ -33,6 +33,7 @@ import ApiDocs from "./pages/ApiDocs";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAcceptanceGate from "@/components/global/TermsAcceptanceGate";
+import OAuthConsent from "./pages/OAuthConsent";
 import NotFound from "./pages/NotFound";
 
 import { useCaptureResellerRef } from "@/hooks/useResellerRef";
