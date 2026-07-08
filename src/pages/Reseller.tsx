@@ -13,9 +13,9 @@ import { Copy, Store, TrendingUp } from "lucide-react";
 // Wholesale (cost) prices used to compute reseller profit. Kept in sync with admin profit cost map.
 const COST_MAP: Record<string, Record<string, number>> = {
   mtn: {
-    "1GB": 3.95, "2GB": 7.9, "3GB": 11.85, "4GB": 15.8, "5GB": 19.75, "6GB": 23.7,
-    "7GB": 27.65, "8GB": 31.6, "10GB": 39.5, "15GB": 59.25, "20GB": 79, "25GB": 98.75,
-    "30GB": 118.5, "40GB": 158, "50GB": 197.5,
+    "1GB": 3.94, "2GB": 7.98, "3GB": 11.82, "4GB": 15.76, "5GB": 19.70, "6GB": 23.63,
+    "7GB": 27.22, "8GB": 31.51, "10GB": 38.89, "15GB": 59.09, "20GB": 77.67, "25GB": 97.97,
+    "30GB": 117.16, "40GB": 154.53, "50GB": 194.93,
   },
   telecel: {
     "2GB": 10, "3GB": 15, "5GB": 21.5, "10GB": 41, "15GB": 59, "20GB": 78,
