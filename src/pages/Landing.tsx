@@ -90,7 +90,7 @@ export default function Landing() {
             "@type": "Offer",
             url: "https://donmacdatahub.com/",
             priceCurrency: "GHS",
-            price: "4.10",
+            price: "4.15",
             priceValidUntil: "2026-12-31",
             availability: "https://schema.org/InStock",
             seller: { "@type": "Organization", name: "Donmac Data Hub" },
@@ -120,7 +120,7 @@ export default function Landing() {
             Cheap Data Bundles Ghana – Buy MTN, Telecel &amp; AirtelTigo Data Online
           </h1>
           <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Get <strong>MTN 1GB for just ₵4.10</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>fast delivery in 3–30 minutes</strong>.
+            Donmac Data Hub offers the <strong>cheapest data bundles in Ghana</strong>. Get <strong>MTN 1GB for just ₵4.15</strong>. Buy affordable MTN data, Telecel data, and AirtelTigo data with <strong>fast delivery in 3–30 minutes</strong>.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg" variant="secondary" className="text-base font-semibold px-8">
