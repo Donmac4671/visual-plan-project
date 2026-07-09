@@ -53,6 +53,16 @@ Deno.serve(async (req) => {
 
     for (const order of pendingOrders) {
       try {
+        const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
+        if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
+          await supabase
+            .from("orders")
+            .update({ status: "processing", gh_reference: `manual-${netId}-${Date.now()}` })
+            .eq("id", order.id);
+          results.push({ order_ref: order.order_ref, skipped: true, reason: "manual delivery network" });
+          continue;
+        }
+
         // Extract sizeGB from bundle_size string like "5GB"
         const sizeMatch = order.bundle_size.match(/(\d+(?:\.\d+)?)/);
         const bundleSizeGb = sizeMatch ? parseFloat(sizeMatch[1]) : 1;

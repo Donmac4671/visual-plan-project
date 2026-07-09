@@ -110,7 +110,7 @@ serve(async (req) => {
     // Get all non-final orders from the last 7 days
     const { data: orders, error } = await supabase
       .from("orders")
-      .select("id, gh_reference, order_ref, status")
+      .select("id, gh_reference, order_ref, network, status")
       .in("status", ["pending", "processing", "waiting"])
       .gte("created_at", sevenDaysAgo)
       .limit(100);
@@ -126,6 +126,12 @@ serve(async (req) => {
     const results: any[] = [];
 
     for (const order of orders) {
+      const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
+      if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
+        results.push({ order_ref: order.order_ref, skipped: true, reason: "manual delivery network" });
+        continue;
+      }
+
       const refs = Array.from(new Set([order.gh_reference, order.order_ref].filter(Boolean) as string[]));
       if (refs.length === 0) continue;
 

@@ -95,7 +95,6 @@ const GH_API_BASE = "https://ghdataconnect.com/api";
 
 const FULFILL_ENDPOINT = "/v1/purchaseBundle";
 const FULFILL_NETWORK_KEYS: Record<string, string[]> = {
-  mtn: ["mtn"],
   telecel: ["telecel"],
   "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
   "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE", "premium", "PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
@@ -358,7 +357,7 @@ async function handleOrderCommand(
   order: { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string }
 ) {
   const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
-  if (!GH_API_KEY) {
+  if (order.networkId !== "mtn" && !GH_API_KEY) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ GHDataConnect API key not configured.`);
     return;
   }
@@ -475,6 +474,14 @@ async function handleOrderCommand(
       }
     }
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to create order: ${orderErr.message}`);
+    return;
+  }
+
+  if (order.networkId === "mtn") {
+    await supabase.from("orders").update({ gh_reference: `manual-mtn-${Date.now()}`, status: "processing" }).eq("id", newOrder.id);
+    await sendTelegramMessage(lovableKey, telegramKey, chatId,
+      `✅ MTN Order Created For Manual Delivery!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}`
+    );
     return;
   }
 

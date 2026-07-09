@@ -183,12 +183,19 @@ Deno.serve(async (req) => {
       if (data) {
         const orderId = String(data);
         orderIds.push(orderId);
-        const networkIdRaw = (item.network_id ?? item.network).toLowerCase();
+        const networkIdRaw = (item.network_id ?? item.network).toLowerCase().trim().replace(/\s+/g, "-");
         const isNonGh = ["mtn", "mashup", "airtime", "vs", "mashup-data", "mashup-combo"].includes(networkIdRaw);
         const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, "")) ?? 0;
-        const fulfillment = isNonGh
-          ? { ok: true, status: 200, result: { skipped: true, reason: "non-data product" } }
-          : await fulfillOrder(supabaseUrl, serviceKey, orderId, item.network_id ?? item.network, item.phone, bundleSizeGb);
+        let fulfillment;
+        if (isNonGh) {
+          await admin
+            .from("orders")
+            .update({ status: "processing", gh_reference: `manual-${networkIdRaw}-${Date.now()}` })
+            .eq("id", orderId);
+          fulfillment = { ok: true, status: 200, result: { skipped: true, reason: "manual delivery network" } };
+        } else {
+          fulfillment = await fulfillOrder(supabaseUrl, serviceKey, orderId, item.network_id ?? item.network, item.phone, bundleSizeGb);
+        }
         fulfillments.push({ orderId, ...fulfillment });
         console.log("Paystack order fulfillment result:", JSON.stringify({ orderId, fulfillment }));
       }

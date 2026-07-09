@@ -108,13 +108,14 @@ export default function Cart() {
       return;
     }
 
-    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
+    const manualNetworkIds = ["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"];
+    const manualItems = items.filter((i) => manualNetworkIds.includes(i.networkId));
+    const dataItems = items.filter((i) => !manualNetworkIds.includes(i.networkId));
 
     setProcessing(true);
 
     try {
-      // Handle Airtime, Mashup & Telecel V&S (manual delivery)
+      // Handle MTN, Airtime, Mashup & Telecel V&S (manual delivery)
       for (const item of manualItems) {
         let amount = item.effectivePrice;
         if (item.networkId === "mashup") amount = item.effectivePrice + calculateMashupFee(item.effectivePrice);
@@ -194,8 +195,9 @@ export default function Cart() {
     if (!profile) return;
     setProcessing(true);
 
-    const manualItems = items.filter((i) => i.networkId === "airtime" || i.networkId === "mashup" || i.networkId === "vs");
-    const dataItems = items.filter((i) => i.networkId !== "airtime" && i.networkId !== "mashup" && i.networkId !== "vs");
+    const manualNetworkIds = ["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"];
+    const manualItems = items.filter((i) => manualNetworkIds.includes(i.networkId));
+    const dataItems = items.filter((i) => !manualNetworkIds.includes(i.networkId));
 
     const dataPhones = dataItems.map((i) => i.phoneNumber);
     const pendingPhones = await checkPendingOrders(dataPhones);
