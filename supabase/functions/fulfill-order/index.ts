@@ -107,18 +107,19 @@ serve(async (req) => {
     }
 
     const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
+    const networkKey = normalizeNetworkKey(network_id);
 
     // ============================================================
-    // 🔥 BLOCK Airtime and Mashup - NEVER go to GHData
+    // 🔥 BLOCK manual-delivery products - NEVER go to GHData
     // ============================================================
-    if (network_id === "airtime" || network_id === "mashup" || network_id === "vs" || network_id === "mashup-data" || network_id === "mashup-combo") {
+    if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkKey)) {
       console.log(`🚫 Blocked ${network_id} order ${order_id} from GHData. Setting to processing (manual delivery).`);
 
       await supabase
         .from("orders")
         .update({
           status: "processing",
-          gh_reference: `manual-${network_id}-${Date.now()}`,
+          gh_reference: `manual-${networkKey}-${Date.now()}`,
         })
         .eq("id", order_id);
 
@@ -126,7 +127,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           message: `${network_id} order set to processing (manual delivery required)`,
-          product_type: network_id,
+          product_type: networkKey,
           order_id: order_id,
           status: "processing",
         }),
@@ -137,7 +138,6 @@ serve(async (req) => {
     }
 
     // Check if this is a valid GHData network
-    const networkKey = normalizeNetworkKey(network_id);
     const candidateKeys = NETWORK_KEYS[networkKey];
     if (!candidateKeys) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {

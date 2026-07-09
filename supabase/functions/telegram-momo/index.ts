@@ -358,7 +358,7 @@ async function handleOrderCommand(
   order: { phone: string; networkId: string; networkDisplay: string; sizeGB: number; sizeLabel: string }
 ) {
   const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
-  if (!GH_API_KEY) {
+  if (order.networkId !== "mtn" && !GH_API_KEY) {
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ GHDataConnect API key not configured.`);
     return;
   }
@@ -475,6 +475,14 @@ async function handleOrderCommand(
       }
     }
     await sendTelegramMessage(lovableKey, telegramKey, chatId, `❌ Failed to create order: ${orderErr.message}`);
+    return;
+  }
+
+  if (order.networkId === "mtn") {
+    await supabase.from("orders").update({ gh_reference: `manual-mtn-${Date.now()}`, status: "processing" }).eq("id", newOrder.id);
+    await sendTelegramMessage(lovableKey, telegramKey, chatId,
+      `✅ MTN Order Created For Manual Delivery!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}`
+    );
     return;
   }
 
