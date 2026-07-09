@@ -13,13 +13,17 @@ export default function WelcomeBanner() {
   }, []);
 
   const firstName = profile?.full_name?.split(" ")[0] || "User";
+  const hour = now.getHours();
+  const greeting =
+    hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const greetingEmoji = hour < 12 ? "🌅" : hour < 17 ? "☀️" : "🌙";
 
   return (
     <div className="rounded-xl gradient-primary p-4 text-primary-foreground">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">👋</span>
+        <span className="text-lg">{greetingEmoji}</span>
         <span className="font-bold text-sm">
-          Welcome to DonMacDataHub, {firstName}!
+          {greeting}, {firstName}! Welcome to DonMacDataHub
         </span>
       </div>
       <div className="flex items-center gap-4 mt-2">
