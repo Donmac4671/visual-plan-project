@@ -49,8 +49,8 @@ const PIE_COLORS = ["hsl(var(--warning))", "hsl(var(--primary))", "hsl(var(--suc
 // Original cost prices per network/bundle (DATA ONLY)
 const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
   MTN: {
-    "1GB": 4.08,
-    "2GB": 8.16,
+    "1GB": 4.24,
+    "2GB": 8.18,
     "3GB": 12.22,
     "4GB": 16.16,
     "5GB": 20.30,
@@ -63,7 +63,7 @@ const ORIGINAL_PRICES: Record<string, Record<string, number>> = {
     "25GB": 97.97,
     "30GB": 117.16,
     "40GB": 154.53,
-    "50GB": 195.84,
+    "50GB": 199.98,
   },
   TELECEL: {
     "2GB": 9.09,
