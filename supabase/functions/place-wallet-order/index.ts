@@ -109,27 +109,29 @@ Deno.serve(async (req) => {
       const orderIdStr = String(orderId);
       console.log(`✅ Order created: ${orderIdStr}`);
 
-      // Handle Airtime and Mashup - set to "processing" (manual delivery)
-      if (item.network_id === "mtn" || item.network_id === "airtime" || item.network_id === "mashup" || item.network_id === "vs" || item.network_id === "mashup-data" || item.network_id === "mashup-combo") {
+      const networkId = String(item.network_id || "").toLowerCase().trim().replace(/\s+/g, "-");
+
+      // Handle MTN, Airtime and Mashup - set to "processing" (manual delivery)
+      if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkId)) {
         const { error: updateError } = await supabase
           .from("orders")
           .update({
             status: "processing",
-            gh_reference: `${item.network_id}-manual-${Date.now()}`,
+            gh_reference: `${networkId}-manual-${Date.now()}`,
           })
           .eq("id", orderIdStr);
 
         if (updateError) {
           console.error("❌ Update Error:", updateError);
         } else {
-          console.log(`✅ ${item.network_id} order ${orderIdStr} set to processing (manual delivery)`);
+          console.log(`✅ ${networkId} order ${orderIdStr} set to processing (manual delivery)`);
         }
 
         results.push({
           orderId: orderIdStr,
-          product: item.network_id,
+          product: networkId,
           status: "processing",
-          message: `${item.network_id} order created - manual delivery required`,
+          message: `${networkId} order created - manual delivery required`,
         });
       } else {
         // ============================================================
