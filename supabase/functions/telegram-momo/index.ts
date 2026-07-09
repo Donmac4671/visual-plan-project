@@ -95,7 +95,6 @@ const GH_API_BASE = "https://ghdataconnect.com/api";
 
 const FULFILL_ENDPOINT = "/v1/purchaseBundle";
 const FULFILL_NETWORK_KEYS: Record<string, string[]> = {
-  mtn: ["mtn"],
   telecel: ["telecel"],
   "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime"],
   "at-premium": ["AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM", "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE", "premium", "PREMIUM", "atpremium", "at_premium", "at-premium", "airteltigo_premium", "airteltigopremium"],
