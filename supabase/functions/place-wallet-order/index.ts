@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       console.log(`✅ Order created: ${orderIdStr}`);
 
       // Handle Airtime and Mashup - set to "processing" (manual delivery)
-      if (item.network_id === "airtime" || item.network_id === "mashup" || item.network_id === "vs" || item.network_id === "mashup-data" || item.network_id === "mashup-combo") {
+      if (item.network_id === "mtn" || item.network_id === "airtime" || item.network_id === "mashup" || item.network_id === "vs" || item.network_id === "mashup-data" || item.network_id === "mashup-combo") {
         const { error: updateError } = await supabase
           .from("orders")
           .update({
