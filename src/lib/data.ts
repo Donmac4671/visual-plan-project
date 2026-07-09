@@ -20,7 +20,7 @@ export const networks: Network[] = [
     color: "bg-yellow-400",
     gradient: "gradient-mtn",
     bundles: [
-      { size: "1GB", sizeGB: 1, price: 4.30, generalPrice: 4.30 },
+      { size: "1GB", sizeGB: 1, price: 4.50, generalPrice: 4.50 },
       { size: "2GB", sizeGB: 2, price: 8.60, generalPrice: 8.60 },
       { size: "3GB", sizeGB: 3, price: 12.90, generalPrice: 12.90 },
       { size: "4GB", sizeGB: 4, price: 17.20, generalPrice: 17.20 },
