@@ -108,7 +108,7 @@ export default function Cart() {
       return;
     }
 
-    const manualNetworkIds = ["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"];
+    const manualNetworkIds = ["airtime", "mashup", "vs", "mashup-data", "mashup-combo"];
     const manualItems = items.filter((i) => manualNetworkIds.includes(i.networkId));
     const dataItems = items.filter((i) => !manualNetworkIds.includes(i.networkId));
 
