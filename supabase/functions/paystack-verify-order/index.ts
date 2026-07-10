@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
         const orderId = String(data);
         orderIds.push(orderId);
         const networkIdRaw = (item.network_id ?? item.network).toLowerCase().trim().replace(/\s+/g, "-");
-        const isNonGh = ["mtn", "mashup", "airtime", "vs", "mashup-data", "mashup-combo"].includes(networkIdRaw);
+        const isNonGh = ["mashup", "airtime", "vs", "mashup-data", "mashup-combo"].includes(networkIdRaw);
         const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, "")) ?? 0;
         let fulfillment;
         if (isNonGh) {

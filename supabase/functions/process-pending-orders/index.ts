@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     for (const order of pendingOrders) {
       try {
         const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
-        if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
+        if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
           await supabase
             .from("orders")
             .update({ status: "processing", gh_reference: `manual-${netId}-${Date.now()}` })
