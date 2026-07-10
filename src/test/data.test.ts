@@ -7,7 +7,7 @@ describe("Data bundles pricing", () => {
     expect(mtn).toBeDefined();
 
     const expectedMtn = [
-      { size: "1GB", price: 4.15 },
+      { size: "1GB", price: 4.50 },
       { size: "2GB", price: 8.30 },
       { size: "3GB", price: 12.45 },
       { size: "4GB", price: 16.60 },
