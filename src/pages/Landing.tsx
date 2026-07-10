@@ -90,7 +90,7 @@ export default function Landing() {
             "@type": "Offer",
             url: "https://donmacdatahub.com/",
             priceCurrency: "GHS",
-            price: "4.15",
+            price: "4.50",
             priceValidUntil: "2026-12-31",
             availability: "https://schema.org/InStock",
             seller: { "@type": "Organization", name: "Donmac Data Hub" },
