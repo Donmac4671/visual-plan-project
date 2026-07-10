@@ -477,13 +477,6 @@ async function handleOrderCommand(
     return;
   }
 
-  if (order.networkId === "mtn") {
-    await supabase.from("orders").update({ gh_reference: `manual-mtn-${Date.now()}`, status: "processing" }).eq("id", newOrder.id);
-    await sendTelegramMessage(lovableKey, telegramKey, chatId,
-      `✅ MTN Order Created For Manual Delivery!\n\n📱 ${order.networkDisplay} ${order.sizeLabel}\n📞 ${order.phone}\n💰 GHS ${amount}\n🔖 Ref: ${orderRef}`
-    );
-    return;
-  }
 
   // Call GHDataConnect with retries across alternate network keys
   const candidateKeys = FULFILL_NETWORK_KEYS[order.networkId];
