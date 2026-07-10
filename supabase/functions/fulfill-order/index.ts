@@ -11,6 +11,7 @@ const corsHeaders = {
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
 const NETWORK_KEYS: Record<string, string[]> = {
+  mtn: ["MTN", "mtn"],
   telecel: ["TELECEL", "telecel"],
   "at-bigtime": ["AT_BIGTIME", "AT-BIGTIME", "atbigtime", "at_bigtime", "at-bigtime", "AIRTELTIGO_BIGTIME"],
   "at-premium": [
