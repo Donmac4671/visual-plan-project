@@ -111,7 +111,7 @@ serve(async (req) => {
     // ============================================================
     // 🔥 BLOCK manual-delivery products - NEVER go to GHData
     // ============================================================
-    if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkKey)) {
+    if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkKey)) {
       console.log(`🚫 Blocked ${network_id} order ${order_id} from GHData. Setting to processing (manual delivery).`);
 
       await supabase
