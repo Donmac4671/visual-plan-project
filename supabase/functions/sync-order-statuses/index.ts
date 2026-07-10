@@ -127,7 +127,7 @@ serve(async (req) => {
 
     for (const order of orders) {
       const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
-      if (["mtn", "airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
+      if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
         results.push({ order_ref: order.order_ref, skipped: true, reason: "manual delivery network" });
         continue;
       }
