@@ -31,7 +31,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
   const [processing, setProcessing] = useState(false);
-  const [processing, setProcessing] = useState(false);
+
 
   // Re-price cart items against live prices so admin price changes always take effect at checkout
   const { networks: mergedNetworks } = useCustomBundles();
