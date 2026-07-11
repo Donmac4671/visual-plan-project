@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import webpush from "https://esm.sh/web-push@3.6.7";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,34 +55,52 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "title and message are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Resolve recipient user_ids
-    let userIds: string[] = [];
+    // Pull push subscriptions. For "all", do NOT build a huge user_id OR filter:
+    // it can exceed URL limits and silently result in 0 deliveries as the user base grows.
+    type PushSubscriptionRow = {
+      id: string;
+      endpoint: string;
+      p256dh: string;
+      auth: string;
+      user_id: string | null;
+    };
+
+    let subs: PushSubscriptionRow[] = [];
+
     if (audience === "all") {
-      const { data } = await admin.from("profiles").select("user_id");
-      userIds = (data ?? []).map((r) => r.user_id);
+      const { data, error } = await admin
+        .from("push_subscriptions")
+        .select("id, endpoint, p256dh, auth, user_id");
+
+      if (error) throw error;
+      subs = data ?? [];
     } else {
-      const { data } = await admin.from("profiles").select("user_id").eq("tier", audience);
-      userIds = (data ?? []).map((r) => r.user_id);
+      const { data: profiles, error: profileError } = await admin
+        .from("profiles")
+        .select("user_id")
+        .eq("tier", audience);
+
+      if (profileError) throw profileError;
+
+      const userIds = (profiles ?? [])
+        .map((r) => r.user_id)
+        .filter((id): id is string => Boolean(id));
+
+      if (userIds.length > 0) {
+        for (let i = 0; i < userIds.length; i += 100) {
+          const chunk = userIds.slice(i, i + 100);
+          const { data, error } = await admin
+            .from("push_subscriptions")
+            .select("id, endpoint, p256dh, auth, user_id")
+            .in("user_id", chunk);
+
+          if (error) throw error;
+          subs.push(...(data ?? []));
+        }
+      }
     }
 
-    // Pull push subscriptions: tier-matched users + (when audience=all) anonymous subscriptions
-    let subsQuery = admin.from("push_subscriptions").select("id, endpoint, p256dh, auth, user_id");
-    if (audience === "all") {
-      // include rows with user_id IS NULL as well
-      const orFilter = userIds.length > 0
-        ? `user_id.is.null,user_id.in.(${userIds.join(",")})`
-        : `user_id.is.null`;
-      subsQuery = subsQuery.or(orFilter);
-    } else if (userIds.length > 0) {
-      subsQuery = subsQuery.in("user_id", userIds);
-    } else {
-      // No matching tier users — short circuit
-      return new Response(JSON.stringify({ success: true, sent: 0, recipients: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: subs } = await subsQuery;
+    console.info(`broadcast-push audience=${audience} subscriptions=${subs.length}`);
 
     const payload = JSON.stringify({
       title,
