@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useCart } from "@/contexts/CartContext";
-import { formatCurrency, calculatePaystackFee, calculateMashupFee, calculateTelecelVSFee, getBundlePrice } from "@/lib/data";
+import { formatCurrency, calculateMashupFee, calculateTelecelVSFee, getBundlePrice } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingCart, Wallet, CreditCard, X } from "lucide-react";
+import { Trash2, ShoppingCart, Wallet, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { initPaystack } from "@/lib/paystack";
+
 import { useCustomBundles } from "@/hooks/useCustomBundles";
 import { useActivePromo } from "@/hooks/useActivePromo";
 import { useResellerPrices } from "@/hooks/useResellerPrices";
