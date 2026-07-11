@@ -33,10 +33,8 @@ export default function TopUpWallet() {
 
   const tier = profile?.tier ?? "general";
   const minTopUp = getMinTopUp(tier);
-  const quickAmounts = tier === "agent" ? [20, 50, 100, 200, 500] : [5, 10, 20, 50, 100];
   const amt = parseFloat(amount) || 0;
-  const paystackFee = calculatePaystackFee(amt);
-  const paystackTotal = amt + paystackFee;
+
 
   const handleMomoTopUp = () => {
     if (!amt || amt < minTopUp) {
