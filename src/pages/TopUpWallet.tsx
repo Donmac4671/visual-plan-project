@@ -2,17 +2,16 @@ import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, CreditCard, Smartphone, Copy, CheckCircle, Hash, KeyRound, RefreshCw, Sparkles } from "lucide-react";
-import { formatCurrency, calculatePaystackFee, getMinTopUp } from "@/lib/data";
+import { Wallet, Smartphone, Copy, CheckCircle, Hash, KeyRound, RefreshCw, Sparkles } from "lucide-react";
+import { formatCurrency, getMinTopUp } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { initPaystack } from "@/lib/paystack";
 
 export default function TopUpWallet() {
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"momo" | "paystack">("momo");
   const [showMomoDetails, setShowMomoDetails] = useState(false);
+
   const [transactionId, setTransactionId] = useState("");
   const [claiming, setClaiming] = useState(false);
   const { toast } = useToast();
