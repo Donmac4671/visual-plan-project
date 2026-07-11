@@ -30,7 +30,7 @@ export default function Cart() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet");
+  const [processing, setProcessing] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // Re-price cart items against live prices so admin price changes always take effect at checkout
