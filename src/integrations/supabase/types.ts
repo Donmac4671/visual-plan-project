@@ -1066,6 +1066,15 @@ export type Database = {
       register_referral: { Args: { p_code: string }; Returns: undefined }
       run_auto_deliver: { Args: never; Returns: number }
       set_api_webhook: { Args: { p_url: string }; Returns: Json }
+      validate_bundle_amount: {
+        Args: {
+          p_amount: number
+          p_bundle: string
+          p_network: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       verify_api_token: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
