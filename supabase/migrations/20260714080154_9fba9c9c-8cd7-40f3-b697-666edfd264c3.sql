@@ -1,0 +1,3 @@
+CREATE POLICY "Users insert own webhook" ON public.api_webhooks FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own webhook" ON public.api_webhooks FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own webhook" ON public.api_webhooks FOR DELETE TO authenticated USING (auth.uid() = user_id);
