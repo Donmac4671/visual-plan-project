@@ -626,8 +626,11 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
                 <DollarSign className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Wallet Balance</p>
+                <p className="text-sm text-muted-foreground">Users Wallet Balance</p>
                 <p className="text-xl font-bold">{formatCurrency(stats.totalWalletBalance)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admin: <span className="font-semibold text-foreground">{formatCurrency(stats.adminWalletBalance)}</span>
+                </p>
               </div>
             </div>
           </CardContent>
