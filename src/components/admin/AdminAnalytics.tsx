@@ -244,6 +244,15 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [showProfit, setShowProfit] = useState(false);
   const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
   const [dbCostMap, setDbCostMap] = useState<Record<string, Record<string, number>>>({});
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchAdminIds = async () => {
+      const { data } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      if (data) setAdminUserIds(new Set(data.map((r: any) => r.user_id)));
+    };
+    fetchAdminIds();
+  }, []);
 
   useEffect(() => {
     const fetchCustomCosts = async () => {
