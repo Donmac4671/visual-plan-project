@@ -244,6 +244,15 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   const [showProfit, setShowProfit] = useState(false);
   const [customCostMap, setCustomCostMap] = useState<Record<string, Record<string, number>>>({});
   const [dbCostMap, setDbCostMap] = useState<Record<string, Record<string, number>>>({});
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchAdminIds = async () => {
+      const { data } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      if (data) setAdminUserIds(new Set(data.map((r: any) => r.user_id)));
+    };
+    fetchAdminIds();
+  }, []);
 
   useEffect(() => {
     const fetchCustomCosts = async () => {
@@ -344,7 +353,12 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     const completedOrders = filteredOrders.filter((o) => o.status === "completed" || o.status === "delivered").length;
     const failedOrders = filteredOrders.filter((o) => o.status === "failed").length;
     const openComplaints = filteredComplaints.filter((c) => c.status === "open").length;
-    const totalWalletBalance = users.reduce((sum, u) => sum + Number(u.wallet_balance), 0);
+    const totalWalletBalance = users
+      .filter((u) => !adminUserIds.has(u.user_id))
+      .reduce((sum, u) => sum + Number(u.wallet_balance), 0);
+    const adminWalletBalance = users
+      .filter((u) => adminUserIds.has(u.user_id))
+      .reduce((sum, u) => sum + Number(u.wallet_balance), 0);
     const blockedUsers = users.filter((u) => u.is_blocked).length;
     const pendingTopups = filteredTopups.filter((t) => t.status === "pending").length;
 
@@ -375,13 +389,14 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       openComplaints,
       totalComplaints: filteredComplaints.length,
       totalWalletBalance,
+      adminWalletBalance,
       blockedUsers,
       pendingTopups,
       totalCost,
       totalProfit,
       totalCapacityGB,
     };
-  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap, adminUserIds]);
 
   // Profit per day (last 7 days)
   const profitPerDay = useMemo(() => {
@@ -611,8 +626,11 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
                 <DollarSign className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Wallet Balance</p>
+                <p className="text-sm text-muted-foreground">Users Wallet Balance</p>
                 <p className="text-xl font-bold">{formatCurrency(stats.totalWalletBalance)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admin: <span className="font-semibold text-foreground">{formatCurrency(stats.adminWalletBalance)}</span>
+                </p>
               </div>
             </div>
           </CardContent>
