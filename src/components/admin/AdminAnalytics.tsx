@@ -389,13 +389,14 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       openComplaints,
       totalComplaints: filteredComplaints.length,
       totalWalletBalance,
+      adminWalletBalance,
       blockedUsers,
       pendingTopups,
       totalCost,
       totalProfit,
       totalCapacityGB,
     };
-  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap]);
+  }, [users, filteredOrders, filteredTopups, filteredComplaints, mergedCostMap, adminUserIds]);
 
   // Profit per day (last 7 days)
   const profitPerDay = useMemo(() => {
