@@ -141,7 +141,9 @@ export default function Cart() {
         });
       }
 
-      // Handle Data orders - FIXED: Call fulfill-order directly
+      // Handle Data orders — route through place-wallet-order so the RPC + fulfill-order
+      // dispatch happen server-side atomically. Prevents "some MTN orders stuck without
+      // gh_reference" when the client tab closes or network flaps between the two calls.
       if (dataItems.length > 0) {
         const dataPhones = dataItems.map((i) => i.phoneNumber);
         const pendingPhones = await checkPendingOrders(dataPhones);
@@ -156,27 +158,23 @@ export default function Cart() {
           return;
         }
 
-        for (const item of dataItems) {
-          // Step 1: Create order and deduct wallet
-          const { data: orderId, error: orderError } = await supabase.rpc("pay_with_wallet", {
-            p_network: item.network,
-            p_phone: item.phoneNumber,
-            p_bundle: item.bundle.size,
-            p_amount: item.effectivePrice,
-          });
+        const payload = {
+          items: dataItems.map((item) => ({
+            network: item.network,
+            network_id: item.networkId,
+            phone: item.phoneNumber,
+            bundle: item.bundle.size,
+            bundle_size_gb: getBundleSizeGB(item.bundle.size),
+            amount: item.effectivePrice,
+          })),
+        };
 
-          if (orderError) throw new Error(`Order failed: ${orderError.message}`);
+        const { data: resp, error: fnError } = await supabase.functions.invoke("place-wallet-order", {
+          body: payload,
+        });
 
-          // Step 2: Call fulfill-order directly (same as resend button)
-          await supabase.functions.invoke("fulfill-order", {
-            body: {
-              order_id: orderId,
-              network_id: item.networkId,
-              phone: item.phoneNumber,
-              bundle_size_gb: getBundleSizeGB(item.bundle.size),
-            },
-          });
-        }
+        if (fnError) throw new Error(fnError.message || "Failed to place data order(s)");
+        if (resp?.error) throw new Error(resp.error);
 
         toast({ title: "Data Orders Placed!", description: `${dataItems.length} data order(s) are processing.` });
       }
