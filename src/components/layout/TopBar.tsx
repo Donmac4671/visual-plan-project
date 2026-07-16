@@ -3,6 +3,7 @@ import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/data";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +86,7 @@ export default function TopBar({ title }: { title: string }) {
       </div>
 
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <Link to="/cart" className="relative p-2 rounded-lg hover:bg-accent transition-colors">
           <ShoppingCart className="w-5 h-5 text-muted-foreground" />
           {itemCount > 0 && (

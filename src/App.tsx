@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -93,6 +94,7 @@ function ResellerRefCapture() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <TooltipProvider>
       <AuthProvider>
         <CartProvider>
@@ -234,6 +236,7 @@ const App = () => (
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
