@@ -1012,6 +1012,7 @@ export type Database = {
         Returns: boolean
       }
       is_network_enabled: { Args: { p_network: string }; Returns: boolean }
+      is_safe_webhook_url: { Args: { p_url: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
