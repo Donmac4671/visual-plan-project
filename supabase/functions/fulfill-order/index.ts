@@ -166,20 +166,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch order and verify ownership
-    const { data: orderRow, error: orderError } = await supabase
-      .from("orders")
-      .select("order_ref, user_id")
-      .eq("id", order_id)
-      .maybeSingle();
-
-    if (orderError || !orderRow) {
-      console.error("Order fetch error:", orderError);
-      return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const orderRow = authOrder;
 
     // Check admin status
     const userId = user?.id || null;
