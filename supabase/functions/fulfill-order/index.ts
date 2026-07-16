@@ -53,9 +53,9 @@ function isNetworkValidationError(result: any, status: number): boolean {
 
 const RequestSchema = z.object({
   order_id: z.string().uuid(),
-  network_id: z.string(),
-  phone: z.string().min(10).max(13),
-  bundle_size_gb: z.number().positive(),
+  network_id: z.string().optional(),
+  phone: z.string().optional(),
+  bundle_size_gb: z.number().optional(),
 });
 
 serve(async (req) => {
