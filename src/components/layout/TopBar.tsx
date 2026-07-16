@@ -86,6 +86,7 @@ export default function TopBar({ title }: { title: string }) {
       </div>
 
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <Link to="/cart" className="relative p-2 rounded-lg hover:bg-accent transition-colors">
           <ShoppingCart className="w-5 h-5 text-muted-foreground" />
           {itemCount > 0 && (
