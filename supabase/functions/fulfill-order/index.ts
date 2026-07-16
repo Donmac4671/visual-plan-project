@@ -106,7 +106,27 @@ serve(async (req) => {
       );
     }
 
-    const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
+    const { order_id } = parsed.data;
+
+    // Fetch authoritative order values from DB — never trust client-supplied
+    // network/phone/bundle_size for fulfillment.
+    const { data: authOrder, error: authOrderErr } = await supabase
+      .from("orders")
+      .select("order_ref, user_id, network, phone_number, bundle_size")
+      .eq("id", order_id)
+      .maybeSingle();
+
+    if (authOrderErr || !authOrder) {
+      return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const network_id = String(authOrder.network || "");
+    const phone = String(authOrder.phone_number || "");
+    const sizeMatch = String(authOrder.bundle_size || "").match(/(\d+(?:\.\d+)?)/);
+    const bundle_size_gb = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
     const networkKey = normalizeNetworkKey(network_id);
 
     // ============================================================
