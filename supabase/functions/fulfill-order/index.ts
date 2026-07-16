@@ -53,9 +53,9 @@ function isNetworkValidationError(result: any, status: number): boolean {
 
 const RequestSchema = z.object({
   order_id: z.string().uuid(),
-  network_id: z.string(),
-  phone: z.string().min(10).max(13),
-  bundle_size_gb: z.number().positive(),
+  network_id: z.string().optional(),
+  phone: z.string().optional(),
+  bundle_size_gb: z.number().optional(),
 });
 
 serve(async (req) => {
@@ -106,7 +106,27 @@ serve(async (req) => {
       );
     }
 
-    const { order_id, network_id, phone, bundle_size_gb } = parsed.data;
+    const { order_id } = parsed.data;
+
+    // Fetch authoritative order values from DB — never trust client-supplied
+    // network/phone/bundle_size for fulfillment.
+    const { data: authOrder, error: authOrderErr } = await supabase
+      .from("orders")
+      .select("order_ref, user_id, network, phone_number, bundle_size")
+      .eq("id", order_id)
+      .maybeSingle();
+
+    if (authOrderErr || !authOrder) {
+      return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const network_id = String(authOrder.network || "");
+    const phone = String(authOrder.phone_number || "");
+    const sizeMatch = String(authOrder.bundle_size || "").match(/(\d+(?:\.\d+)?)/);
+    const bundle_size_gb = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
     const networkKey = normalizeNetworkKey(network_id);
 
     // ============================================================
@@ -146,20 +166,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch order and verify ownership
-    const { data: orderRow, error: orderError } = await supabase
-      .from("orders")
-      .select("order_ref, user_id")
-      .eq("id", order_id)
-      .maybeSingle();
-
-    if (orderError || !orderRow) {
-      console.error("Order fetch error:", orderError);
-      return new Response(JSON.stringify({ success: false, message: "Order not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const orderRow = authOrder;
 
     // Check admin status
     const userId = user?.id || null;
