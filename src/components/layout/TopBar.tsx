@@ -3,6 +3,7 @@ import { ShoppingCart, User, Wallet, Menu, LayoutDashboard, ShoppingBag, Receipt
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/data";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
