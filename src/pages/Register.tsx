@@ -39,6 +39,14 @@ export default function Register() {
       toast({ title: "Missing Information", description: "All fields are required.", variant: "destructive" });
       return;
     }
+    if (/admin/i.test(trimmedName)) {
+      toast({ title: "Invalid Name", description: "The name you entered is not allowed. Please use your real name.", variant: "destructive" });
+      return;
+    }
+    if (/admin/i.test(trimmedEmail)) {
+      toast({ title: "Invalid Email", description: "This email address is not allowed for registration.", variant: "destructive" });
+      return;
+    }
     if (!/^\d{10}$/.test(trimmedPhone)) {
       toast({ title: "Invalid Phone", description: "Phone number must be exactly 10 digits with no spaces.", variant: "destructive" });
       return;
