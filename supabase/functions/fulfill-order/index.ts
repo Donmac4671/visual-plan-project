@@ -228,7 +228,6 @@ serve(async (req) => {
         const actualRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? reference;
         const nextStatus =
           networkKey === "at-premium" ? "completed"
-          : networkKey === "mtn" ? "pending"
           : networkKey === "telecel" ? "waiting"
           : "processing";
         await supabase
