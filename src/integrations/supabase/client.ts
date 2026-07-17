@@ -8,14 +8,37 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-const noPersist =
-  typeof window !== "undefined" &&
-  window.sessionStorage?.getItem("donmac_no_persist") === "1";
+// Dynamic storage: honors the "donmac_no_persist" flag set by the Login page's
+// "Remember me" checkbox. When the flag is present, tokens live in sessionStorage
+// so the session ends when the browser/tab closes; otherwise localStorage.
+const dynamicAuthStorage = {
+  getItem: (key: string) => {
+    if (typeof window === "undefined") return null;
+    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window === "undefined") return;
+    const noPersist = window.sessionStorage.getItem("donmac_no_persist") === "1";
+    if (noPersist) {
+      window.sessionStorage.setItem(key, value);
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, value);
+      window.sessionStorage.removeItem(key);
+    }
+  },
+  removeItem: (key: string) => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.removeItem(key);
+    window.localStorage.removeItem(key);
+  },
+};
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: noPersist ? sessionStorage : localStorage,
+    storage: dynamicAuthStorage,
     persistSession: true,
     autoRefreshToken: true,
   }
 });
+
