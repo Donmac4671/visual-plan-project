@@ -241,6 +241,17 @@ Deno.serve(async (req) => {
     const { smsBody, source, payloadKeys } = await extractSmsBody(req);
     console.log(`sms-webhook extracted source=${source}, keys=${payloadKeys.join(",") || "none"}, preview=${smsBody.slice(0, 160)}`);
 
+    if (!smsBody && (req.method === "GET" || req.method === "HEAD")) {
+      return new Response(JSON.stringify({
+        status: "ok",
+        message: "SMS webhook reachable",
+        source,
+      }), {
+        status: 200,
+        headers: jsonHeaders,
+      });
+    }
+
     if (!smsBody) {
       return new Response(JSON.stringify({
         error: "No SMS body provided",
