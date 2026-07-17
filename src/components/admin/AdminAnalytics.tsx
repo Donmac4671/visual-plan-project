@@ -280,67 +280,25 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     fetchDbCosts();
   }, []);
 
-const fetchGhBalance = async () => {
-  setGhBalanceLoading(true);
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log("Current session:", session ? "Active" : "None");
-    
-    if (!session) {
-      console.warn("No active session");
-      setGhBalance(null);
-      return;
-    }
-
-    const { data, error } = await supabase.functions.invoke("ghconnect-balance");
-    console.log("Function response:", data, error);
-    
-    // 🔥 ADD THIS: Log the full data structure
-    console.log("Full data structure:", JSON.stringify(data, null, 2));
-    
-    if (error) {
-      console.error("Function error:", error);
-      setGhBalance(null);
-      return;
-    }
-
-    // 🔥 ADD THIS: Check what's inside data.data
-    if (data?.success && data?.data) {
-      console.log("data.data contents:", data.data);
-      console.log("data.data type:", typeof data.data);
-      console.log("data.data keys:", Object.keys(data.data));
-      
-      // Try to find the balance in various places
-      const bal = data.data.balance ?? 
-                  data.data.wallet_balance ?? 
-                  data.data.data?.balance ??
-                  data.data.data?.wallet_balance ??
-                  data.data.result?.balance ??
-                  data.data.result?.wallet_balance;
-      
-      console.log("Extracted balance:", bal);
-      
-      if (bal !== undefined && bal !== null) {
+  const fetchGhBalance = async () => {
+    setGhBalanceLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+      if (error) throw error;
+      if (data?.success && data?.data) {
+        const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
         setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
-      } else {
-        console.warn("No balance found in:", data.data);
-        setGhBalance(null);
       }
-    } else {
-      console.warn("Unexpected response format:", data);
-      setGhBalance(null);
+    } catch (err) {
+      console.error("Failed to fetch GH balance:", err);
+    } finally {
+      setGhBalanceLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to fetch GH balance:", err);
-    setGhBalance(null);
-  } finally {
-    setGhBalanceLoading(false);
-  }
-};
+  };
+
   useEffect(() => {
     fetchGhBalance();
   }, []);
-
 
   // Merge cost sources: DB (admin-editable) overrides hardcoded, then custom_bundles as fallback.
   const mergedCostMap = useMemo(() => {
