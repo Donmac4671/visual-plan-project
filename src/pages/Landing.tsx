@@ -13,7 +13,7 @@ const networks = [
 
 const features = [
   { icon: Zap, title: "Fast Delivery", desc: "Data bundles delivered to your phone within 3–30 minutes of purchase" },
-  { icon: Shield, title: "Secure Payments", desc: "Pay safely via Mobile Money (MoMo) or Paystack. 100% secure" },
+  { icon: Shield, title: "Secure Payments", desc: "Pay safely via Mobile Money (MoMo). 100% secure" },
   { icon: Clock, title: "24/7 Availability", desc: "Buy cheap data bundles anytime, day or night, from anywhere in Ghana" },
   { icon: Star, title: "Lowest Prices", desc: "We guarantee the cheapest data bundle prices in Ghana. Save more!" },
 ];
@@ -21,7 +21,7 @@ const features = [
 const faqs = [
   {
     q: "How do I buy cheap MTN data bundles?",
-    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo or Paystack, choose your MTN data bundle size, enter your phone number, and receive your data within 3–30 minutes. It's the easiest way to buy cheap MTN data in Ghana.",
+    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo, choose your MTN data bundle size, enter your phone number, and receive your data within 3–30 minutes. It's the easiest way to buy cheap MTN data in Ghana.",
   },
   {
     q: "What networks do you support?",
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Is it safe to buy data bundles online?",
-    a: "Absolutely! Donmac Data Hub uses secure payment processing via Paystack and Mobile Money. Your transactions are encrypted and your data is protected.",
+    a: "Absolutely! Donmac Data Hub uses secure payment processing via Mobile Money. Your transactions are encrypted and your data is protected.",
   },
   {
     q: "How fast is the data delivery?",
@@ -179,7 +179,7 @@ export default function Landing() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { step: "1", title: "Create Free Account", desc: "Register on Donmac Data Hub in 30 seconds. No fees, no hidden charges." },
-            { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo) or Paystack. Quick and secure." },
+            { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo). Quick and secure." },
             { step: "3", title: "Buy & Receive Your Data", desc: "Choose your network & bundle size. Data delivered to your phone within 3–30 minutes!" },
           ].map((s) => (
             <div key={s.step} className="bg-card border border-border rounded-xl p-6 text-center">
