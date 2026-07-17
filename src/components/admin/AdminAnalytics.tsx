@@ -652,7 +652,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
         </Card>
       </div>
 
-      {/* GHDataConnect Balance */}
+      {/* GHData Balance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="pt-6">
