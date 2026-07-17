@@ -652,7 +652,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
         </Card>
       </div>
 
-      {/* GHData Balance */}
+      {/* GHDataConnect Balance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="pt-6">
@@ -662,7 +662,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
                   <Wallet className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">GHData Balance</p>
+                  <p className="text-sm text-muted-foreground">GHDataConnect Balance</p>
                   <p className="text-2xl font-bold">
                     {ghBalanceLoading ? "..." : ghBalance !== null ? formatCurrency(ghBalance) : "Not available"}
                   </p>
