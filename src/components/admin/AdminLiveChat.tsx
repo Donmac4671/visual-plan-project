@@ -25,8 +25,26 @@ export default function AdminLiveChat() {
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userResults, setUserResults] = useState<Array<{ user_id: string; full_name: string; email: string; phone: string }>>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showNewChat) return;
+    const q = userSearch.trim();
+    const handle = setTimeout(async () => {
+      let query = supabase.from("profiles").select("user_id, full_name, email, phone").limit(30);
+      if (q) {
+        query = query.or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`);
+      }
+      const { data } = await query.order("created_at", { ascending: false });
+      setUserResults(data || []);
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [userSearch, showNewChat]);
+
 
   useEffect(() => {
     fetchThreads();
