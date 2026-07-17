@@ -161,18 +161,38 @@ export default function AdminLiveChat() {
       t.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const selectedProfile = threads.find((t) => t.user_id === selectedUser);
+  const [selectedProfile, setSelectedProfile] = useState<{ user_id: string; full_name: string; email: string } | null>(null);
+  useEffect(() => {
+    if (!selectedUser) { setSelectedProfile(null); return; }
+    const t = threads.find((x) => x.user_id === selectedUser);
+    if (t) { setSelectedProfile({ user_id: t.user_id, full_name: t.full_name, email: t.email }); return; }
+    supabase.from("profiles").select("user_id, full_name, email").eq("user_id", selectedUser).maybeSingle().then(({ data }) => {
+      if (data) setSelectedProfile(data as any);
+    });
+  }, [selectedUser, threads]);
+
+  const startChatWith = (u: { user_id: string; full_name: string; email: string }) => {
+    setShowNewChat(false);
+    setUserSearch("");
+    setSelectedProfile(u);
+    setSelectedUser(u.user_id);
+    fetchMessages(u.user_id);
+  };
 
   return (
     <div className="flex h-[500px] border border-border rounded-xl overflow-hidden bg-card">
       {/* Thread list */}
       <div className="w-1/3 border-r border-border flex flex-col">
-        <div className="p-2 border-b border-border">
-          <div className="relative">
+        <div className="p-2 border-b border-border flex gap-1.5">
+          <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 text-sm h-9" />
           </div>
+          <Button size="icon" variant="outline" className="h-9 w-9 shrink-0" onClick={() => setShowNewChat(true)} title="Message a user">
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
+
         <div className="flex-1 overflow-y-auto">
           {filteredThreads.length === 0 && (
             <p className="text-center text-muted-foreground text-xs mt-8">No conversations yet</p>
