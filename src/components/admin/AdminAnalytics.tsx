@@ -281,20 +281,34 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   }, []);
 
   const fetchGhBalance = async () => {
-    setGhBalanceLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("ghconnect-balance");
-      if (error) throw error;
-      if (data?.success && data?.data) {
-        const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
-        setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
-      }
-    } catch (err) {
-      console.error("Failed to fetch GH balance:", err);
-    } finally {
-      setGhBalanceLoading(false);
+  setGhBalanceLoading(true);
+
+  try {
+    const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+
+    console.log("Response:", data);
+    console.log("Error:", error);
+
+    if (error) throw error;
+
+    if (data?.success && data?.data) {
+      const bal =
+        data.data.balance ??
+        data.data.wallet_balance ??
+        data.data.data?.balance;
+
+      console.log("Balance:", bal);
+
+      setGhBalance(Number(bal));
+    } else {
+      console.log("Unexpected response:", data);
     }
-  };
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setGhBalanceLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchGhBalance();
