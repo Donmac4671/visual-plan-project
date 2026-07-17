@@ -286,8 +286,11 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
       const { data, error } = await supabase.functions.invoke("ghconnect-balance");
       if (error) throw error;
       if (data?.success && data?.data) {
-        const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
-        setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
+        const raw = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
+        const bal = typeof raw === "number" ? raw : parseFloat(String(raw ?? "").replace(/,/g, ""));
+        setGhBalance(Number.isFinite(bal) ? bal : null);
+      } else {
+        setGhBalance(null);
       }
     } catch (err) {
       console.error("Failed to fetch GH balance:", err);
