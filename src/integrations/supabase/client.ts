@@ -8,9 +8,13 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+const noPersist =
+  typeof window !== "undefined" &&
+  window.sessionStorage?.getItem("donmac_no_persist") === "1";
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: noPersist ? sessionStorage : localStorage,
     persistSession: true,
     autoRefreshToken: true,
   }
