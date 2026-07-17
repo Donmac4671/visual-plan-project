@@ -286,7 +286,7 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
   try {
     const { data, error } = await supabase.functions.invoke("ghconnect-balance");
 
-    console.log("Response:", data);
+    console.log(JSON.stringify(data, null, 2));
     console.log("Error:", error);
 
     if (error) throw error;
