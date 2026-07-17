@@ -21,7 +21,7 @@ const features = [
 const faqs = [
   {
     q: "How do I buy cheap MTN data bundles?",
-    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo or Paystack, choose your MTN data bundle size, enter your phone number, and receive your data within 3–30 minutes. It's the easiest way to buy cheap MTN data in Ghana.",
+    a: "Simply register on Donmac Data Hub, top up your wallet via MoMo, choose your MTN data bundle size, enter your phone number, and receive your data within 3–30 minutes. It's the easiest way to buy cheap MTN data in Ghana.",
   },
   {
     q: "What networks do you support?",
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Is it safe to buy data bundles online?",
-    a: "Absolutely! Donmac Data Hub uses secure payment processing via Paystack and Mobile Money. Your transactions are encrypted and your data is protected.",
+    a: "Absolutely! Donmac Data Hub uses secure payment processing via Mobile Money. Your transactions are encrypted and your data is protected.",
   },
   {
     q: "How fast is the data delivery?",
