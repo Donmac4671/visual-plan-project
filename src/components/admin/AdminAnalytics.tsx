@@ -280,35 +280,35 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
     fetchDbCosts();
   }, []);
 
-  const fetchGhBalance = async () => {
+const fetchGhBalance = async () => {
   setGhBalanceLoading(true);
   try {
-    // Get the current session
+    // Check if we have a session first
     const { data: { session } } = await supabase.auth.getSession();
+    console.log("Current session:", session ? "Active" : "None");
     
     if (!session) {
-      console.warn("No active session, cannot fetch GH balance");
+      console.warn("No active session");
       setGhBalance(null);
       return;
     }
 
-    // Call the function with the session token
-    const { data, error } = await supabase.functions.invoke("ghconnect-balance", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`
-      }
-    });
-
+    const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+    console.log("Function response:", data, error);
+    
     if (error) {
       console.error("Function error:", error);
-      throw error;
+      setGhBalance(null);
+      return;
     }
 
     if (data?.success && data?.data) {
       const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
       setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
+    } else if (data?.success === false) {
+      console.warn("Function returned error:", data.message);
+      setGhBalance(null);
     } else {
-      console.warn("Unexpected response:", data);
       setGhBalance(null);
     }
   } catch (err) {
