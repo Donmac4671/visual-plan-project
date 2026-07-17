@@ -179,7 +179,7 @@ export default function Landing() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { step: "1", title: "Create Free Account", desc: "Register on Donmac Data Hub in 30 seconds. No fees, no hidden charges." },
-            { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo) or Paystack. Quick and secure." },
+            { step: "2", title: "Top Up Your Wallet", desc: "Add funds via Mobile Money (MoMo). Quick and secure." },
             { step: "3", title: "Buy & Receive Your Data", desc: "Choose your network & bundle size. Data delivered to your phone within 3–30 minutes!" },
           ].map((s) => (
             <div key={s.step} className="bg-card border border-border rounded-xl p-6 text-center">
