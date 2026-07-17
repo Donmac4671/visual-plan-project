@@ -282,40 +282,35 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 
   const fetchGhBalance = async () => {
   setGhBalanceLoading(true);
-
   try {
-    const { data, error } = await supabase.functions.invoke("ghconnect-balance");
+    // Get the current session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.warn("No active session, cannot fetch GH balance");
+      setGhBalance(null);
+      return;
+    }
 
-    console.log("GHDataConnect response:", JSON.stringify(data, null, 2));
-    console.log("GHDataConnect error:", error);
+    // Call the function with the session token
+    const { data, error } = await supabase.functions.invoke("ghconnect-balance", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
 
     if (error) {
+      console.error("Function error:", error);
       throw error;
     }
 
     if (data?.success && data?.data) {
-      const balance =
-        data.data.balance ??
-        data.data.wallet_balance ??
-        data.data.available_balance ??
-        data.data.availableBalance ??
-        data.data.amount ??
-        data.data.data?.balance ??
-        data.data.data?.wallet_balance;
-
-      console.log("Detected balance:", balance);
-
-      if (balance !== undefined && balance !== null) {
-        setGhBalance(Number(balance));
-      } else {
-        console.error("No balance field found:", data);
-        setGhBalance(null);
-      }
+      const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
+      setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
     } else {
-      console.error("GHDataConnect returned failure:", data);
+      console.warn("Unexpected response:", data);
       setGhBalance(null);
     }
-
   } catch (err) {
     console.error("Failed to fetch GH balance:", err);
     setGhBalance(null);
