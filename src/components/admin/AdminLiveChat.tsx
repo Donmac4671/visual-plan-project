@@ -180,7 +180,7 @@ export default function AdminLiveChat() {
   };
 
   return (
-    <div className="flex h-[500px] border border-border rounded-xl overflow-hidden bg-card">
+    <div className="relative flex h-[500px] border border-border rounded-xl overflow-hidden bg-card">
       {/* Thread list */}
       <div className="w-1/3 border-r border-border flex flex-col">
         <div className="p-2 border-b border-border flex gap-1.5">
