@@ -283,7 +283,6 @@ export default function AdminAnalytics({ users, orders, topups, complaints }: Ad
 const fetchGhBalance = async () => {
   setGhBalanceLoading(true);
   try {
-    // Check if we have a session first
     const { data: { session } } = await supabase.auth.getSession();
     console.log("Current session:", session ? "Active" : "None");
     
@@ -296,19 +295,39 @@ const fetchGhBalance = async () => {
     const { data, error } = await supabase.functions.invoke("ghconnect-balance");
     console.log("Function response:", data, error);
     
+    // 🔥 ADD THIS: Log the full data structure
+    console.log("Full data structure:", JSON.stringify(data, null, 2));
+    
     if (error) {
       console.error("Function error:", error);
       setGhBalance(null);
       return;
     }
 
+    // 🔥 ADD THIS: Check what's inside data.data
     if (data?.success && data?.data) {
-      const bal = data.data.balance ?? data.data.wallet_balance ?? data.data.data?.balance;
-      setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
-    } else if (data?.success === false) {
-      console.warn("Function returned error:", data.message);
-      setGhBalance(null);
+      console.log("data.data contents:", data.data);
+      console.log("data.data type:", typeof data.data);
+      console.log("data.data keys:", Object.keys(data.data));
+      
+      // Try to find the balance in various places
+      const bal = data.data.balance ?? 
+                  data.data.wallet_balance ?? 
+                  data.data.data?.balance ??
+                  data.data.data?.wallet_balance ??
+                  data.data.result?.balance ??
+                  data.data.result?.wallet_balance;
+      
+      console.log("Extracted balance:", bal);
+      
+      if (bal !== undefined && bal !== null) {
+        setGhBalance(typeof bal === "number" ? bal : parseFloat(bal));
+      } else {
+        console.warn("No balance found in:", data.data);
+        setGhBalance(null);
+      }
     } else {
+      console.warn("Unexpected response format:", data);
       setGhBalance(null);
     }
   } catch (err) {
@@ -318,7 +337,6 @@ const fetchGhBalance = async () => {
     setGhBalanceLoading(false);
   }
 };
-
   useEffect(() => {
     fetchGhBalance();
   }, []);
