@@ -224,6 +224,8 @@ serve(async (req) => {
 
     const idem = crypto.randomUUID();
     const buyResp = await fgPost("/data/buy", FG_API_KEY, FG_SECRET, {
+      network_id: net.id,
+      volume_mb: pkg.volume_mb ?? volumeMb,
       package_id: pkg.id,
       recipient_msisdn: phone,
       reference,
