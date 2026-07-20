@@ -8,67 +8,37 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FG_API_BASE = "https://fgamall.com/api/v2";
+const GH_API_BASE = "https://ghdataconnect.com/api";
+const FULFILL_ENDPOINT = "/v1/purchaseBundle";
 
-// Map internal network keys → fgamall network name (matches GET /networks `name`)
-const FG_NETWORK_NAME: Record<string, string> = {
-  mtn: "MTN",
-  telecel: "Telecel",
-  "at-bigtime": "AirtelTigo",
-  "at-premium": "AirtelTigo",
+// Candidate network keys tried in order (GHData is picky about casing/format)
+const NETWORK_KEYS: Record<string, string[]> = {
+  mtn: ["mtn", "MTN", "MTN_BUNDLE"],
+  telecel: ["telecel", "TELECEL", "vodafone", "VODAFONE"],
+  "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime", "AT_BIGTIME", "AIRTELTIGO_BIGTIME"],
+  "at-premium": [
+    "AT_PREMIUM", "AT-PREMIUM", "AIRTELTIGO_PREMIUM", "AIRTELTIGOPREMIUM",
+    "AT_PREMIUM_BUNDLE", "AIRTELTIGO_PREMIUM_BUNDLE",
+    "premium", "PREMIUM", "atpremium", "at_premium", "at-premium",
+    "airteltigo_premium", "airteltigopremium",
+  ],
 };
 
 function normalizeNetworkKey(networkId: string): string {
   return networkId.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
-async function hmacSha256Hex(secret: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
+function isNetworkValidationError(result: any, status: number): boolean {
+  const message = String(result?.message ?? "").toLowerCase();
+  const networkErrors = Array.isArray(result?.errors?.network)
+    ? result.errors.network.join(" ").toLowerCase()
+    : String(result?.errors?.network ?? "").toLowerCase();
+  return status === 422 && (
+    message.includes("validation") ||
+    networkErrors.includes("network") ||
+    networkErrors.includes("invalid") ||
+    networkErrors.includes("selected")
   );
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function fgGet(path: string, apiKey: string) {
-  const ts = Math.floor(Date.now() / 1000).toString();
-  const res = await fetch(`${FG_API_BASE}${path}`, {
-    method: "GET",
-    headers: { "x-api-key": apiKey, "x-timestamp": ts, Accept: "application/json" },
-  });
-  const text = await res.text();
-  let json: any = {};
-  try { json = JSON.parse(text); } catch { /* ignore */ }
-  return { status: res.status, json, text };
-}
-
-async function fgPost(path: string, apiKey: string, secret: string, body: Record<string, unknown>, idemKey: string) {
-  const ts = Math.floor(Date.now() / 1000).toString();
-  const raw = JSON.stringify(body);
-  const sig = await hmacSha256Hex(secret, `${ts}.${raw}`);
-  const res = await fetch(`${FG_API_BASE}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "x-timestamp": ts,
-      "x-signature": sig,
-      "Idempotency-Key": idemKey,
-      Accept: "application/json",
-    },
-    body: raw,
-  });
-  const text = await res.text();
-  let json: any = {};
-  try { json = JSON.parse(text); } catch { /* ignore */ }
-  return { status: res.status, json, text };
 }
 
 const RequestSchema = z.object({
@@ -79,9 +49,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const FG_API_KEY = Deno.env.get("FGAMALL_API_KEY");
-    const FG_SECRET = Deno.env.get("FGAMALL_SIGNING_SECRET");
-    if (!FG_API_KEY || !FG_SECRET) throw new Error("FGAMALL_API_KEY / FGAMALL_SIGNING_SECRET not configured");
+    const GH_API_KEY = Deno.env.get("GHDATACONNECT_API_KEY");
+    if (!GH_API_KEY) throw new Error("GHDATACONNECT_API_KEY is not configured");
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -128,7 +97,6 @@ serve(async (req) => {
     const phone = String(order.phone_number || "");
     const sizeMatch = String(order.bundle_size || "").match(/(\d+(?:\.\d+)?)/);
     const bundle_size_gb = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
-    const volumeMb = Math.round(bundle_size_gb * 1000);
     const networkKey = normalizeNetworkKey(network_id);
 
     // Manual delivery — never send to provider
@@ -142,8 +110,8 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const targetName = FG_NETWORK_NAME[networkKey];
-    if (!targetName) {
+    const candidateKeys = NETWORK_KEYS[networkKey];
+    if (!candidateKeys) {
       return new Response(JSON.stringify({ success: false, message: `Unknown network: ${network_id}` }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -165,77 +133,51 @@ serve(async (req) => {
     const reference = order.order_ref || `DMH${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     await supabase.from("orders").update({ gh_reference: reference }).eq("id", order_id);
 
-    console.log(`📡 Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB (${volumeMb}MB) → ${phone}`);
+    console.log(`📡 Fulfilling order ${order_id}: ${network_id} ${bundle_size_gb}GB → ${phone}`);
 
-    // Resolve network + package on fgamall
-    const netsResp = await fgGet("/networks", FG_API_KEY);
-    if (!netsResp.json?.success) {
-      console.error("fgamall /networks failed:", netsResp.status, netsResp.text);
-      throw new Error("Failed to fetch fgamall networks");
-    }
-    const nets: Array<{ id: number; name: string; type: string }> = netsResp.json.networks || [];
-    const net = nets.find((n) => n.name.toLowerCase() === targetName.toLowerCase());
-    if (!net) {
-      await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
-      await supabase.rpc("refund_failed_order", { p_order_id: order_id });
-      return new Response(JSON.stringify({ success: false, message: `Network ${targetName} not available at provider` }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    let lastResult: any = null;
+    let lastStatus = 0;
+    let success = false;
+    let actualRef: string = reference;
+    let sawNetworkValidationError = false;
 
-    // iShare path (AirtelTigo)
-    if (net.type === "ishare") {
-      const idem = crypto.randomUUID();
-      const resp = await fgPost("/ishare/send", FG_API_KEY, FG_SECRET, {
-        recipient_msisdn: phone,
-        amount_mb: volumeMb,
-        reference,
-      }, idem);
-      console.log(`📥 fgamall /ishare/send [${resp.status}]:`, resp.text.slice(0, 500));
-      if (resp.json?.success) {
-        const actualRef = resp.json.data?.reference ?? resp.json.transaction_code ?? reference;
-        await supabase.from("orders").update({ gh_reference: String(actualRef), status: "processing" }).eq("id", order_id);
-        return new Response(JSON.stringify({ success: true, reference: actualRef, status: "processing" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    for (const key of candidateKeys) {
+      try {
+        const requestBody = { network: key, reference, msisdn: phone, capacity: bundle_size_gb };
+        const response = await fetch(`${GH_API_BASE}${FULFILL_ENDPOINT}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${GH_API_KEY}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(requestBody),
         });
+        lastStatus = response.status;
+        lastResult = await response.json().catch(() => ({}));
+        console.log(`📥 GHData response (key=${key}, status=${response.status}):`, JSON.stringify(lastResult).slice(0, 500));
+
+        if (isNetworkValidationError(lastResult, response.status)) sawNetworkValidationError = true;
+
+        if (lastResult?.success) {
+          actualRef = lastResult.data?.reference ?? lastResult.data?.id ?? lastResult.reference ?? reference;
+          success = true;
+          break;
+        }
+
+        const msg = String(lastResult?.message ?? "").toLowerCase();
+        const looksLikeNetworkError =
+          msg.includes("network") || msg.includes("invalid") || response.status === 404 || response.status === 422;
+        if (!looksLikeNetworkError) break;
+      } catch (err) {
+        console.error(`GHData fetch error (key=${key}):`, err);
       }
-      await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
-      await supabase.rpc("refund_failed_order", { p_order_id: order_id });
-      return new Response(JSON.stringify({
-        success: false, message: resp.json?.message || "iShare send failed", provider_status: resp.status,
-      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Standard data buy: find package by volume
-    const pkgsResp = await fgGet(`/packages/${net.id}`, FG_API_KEY);
-    const pkgs: Array<{ id: number; volume_mb: number; volume_gb: number; price: number }> =
-      pkgsResp.json?.packages || [];
-    const pkg =
-      pkgs.find((p) => p.volume_mb === volumeMb) ||
-      pkgs.find((p) => Math.abs(p.volume_gb - bundle_size_gb) < 0.01);
-    if (!pkg) {
-      console.error(`No fgamall package for ${targetName} ${bundle_size_gb}GB (${volumeMb}MB)`);
-      await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
-      await supabase.rpc("refund_failed_order", { p_order_id: order_id });
-      return new Response(JSON.stringify({ success: false, message: `No matching package at provider for ${targetName} ${bundle_size_gb}GB` }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const idem = crypto.randomUUID();
-    const buyResp = await fgPost("/data/buy", FG_API_KEY, FG_SECRET, {
-      network_id: net.id,
-      volume_mb: pkg.volume_mb ?? volumeMb,
-      package_id: pkg.id,
-      recipient_msisdn: phone,
-      reference,
-    }, idem);
-    console.log(`📥 fgamall /data/buy [${buyResp.status}]:`, buyResp.text.slice(0, 500));
-
-    if (buyResp.json?.success) {
-      const actualRef = buyResp.json.data?.reference ?? buyResp.json.transaction_code ?? reference;
+    if (success) {
       const nextStatus =
-        networkKey === "at-premium" ? "completed"
+        networkKey === "mtn" ? "pending"
+        : networkKey === "at-premium" ? "completed"
         : networkKey === "telecel" ? "waiting"
         : "processing";
       await supabase.from("orders").update({ gh_reference: String(actualRef), status: nextStatus }).eq("id", order_id);
@@ -244,11 +186,20 @@ serve(async (req) => {
       });
     }
 
-    console.error(`❌ fgamall data/buy failed for order ${order_id}:`, buyResp.text);
+    // AT Premium: don't auto-fail on network validation error — keep waiting for manual review
+    if (networkKey === "at-premium" && sawNetworkValidationError) {
+      await supabase.from("orders").update({ status: "waiting" }).eq("id", order_id);
+      return new Response(JSON.stringify({
+        success: false, status: "waiting",
+        message: "AT Premium held for manual review (provider network validation error)",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    console.error(`❌ GHData purchase failed for order ${order_id}:`, JSON.stringify(lastResult));
     await supabase.from("orders").update({ status: "failed" }).eq("id", order_id);
     await supabase.rpc("refund_failed_order", { p_order_id: order_id });
     return new Response(JSON.stringify({
-      success: false, message: buyResp.json?.message || "Order failed on provider", provider_status: buyResp.status,
+      success: false, message: lastResult?.message || "Order failed on provider", provider_status: lastStatus,
     }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
