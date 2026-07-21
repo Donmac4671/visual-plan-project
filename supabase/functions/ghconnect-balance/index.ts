@@ -10,11 +10,9 @@ const corsHeaders = {
 const GH_API_BASE = "https://ghdataconnect.com/api";
 
 const BALANCE_ENDPOINTS = [
-  "/developer/check-balance",
+  "/v1/getWalletBalance",
   "/v1/checkBalance",
   "/v1/balance",
-  "/v1/wallet-balance",
-  "/wallet-balance",
 ];
 
 function extractBalance(payload: any): number | null {
