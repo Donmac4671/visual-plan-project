@@ -56,14 +56,8 @@ serve(async (req) => {
     if (!GH_API_KEY) throw new Error("GHDATACONNECT_API_KEY is not configured");
 
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Service-role-only authentication
-    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
-    if (authHeader !== `Bearer ${serviceKey}`) {
-      return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization") || "";
+    const isServiceRequest = authHeader === `Bearer ${serviceKey}`;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -71,12 +65,13 @@ serve(async (req) => {
     );
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const unsubmittedCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: unsubmittedOrders, error: unsubmittedError } = await supabase
       .from("orders")
       .select("id, order_ref, network, phone_number, bundle_size, status")
       .in("status", ["processing", "waiting"])
       .is("gh_reference", null)
-      .gte("created_at", sevenDaysAgo)
+      .gte("created_at", unsubmittedCutoff)
       .limit(25);
 
     if (unsubmittedError) throw unsubmittedError;
@@ -84,7 +79,7 @@ serve(async (req) => {
     const submitResults: any[] = [];
     for (const order of unsubmittedOrders ?? []) {
       // Skip manual-delivery networks
-      const netId = String(order.network || "").toLowerCase();
+      const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
       if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) continue;
       try {
         const resp = await fetch(`${Deno.env.get("SUPABASE_URL")!}/functions/v1/fulfill-order`, {
@@ -175,6 +170,11 @@ serve(async (req) => {
     }
 
     console.log(`sync-order-statuses: submitted=${submitResults.length} checked=${orders.length} updated=${updated}`);
+    if (!isServiceRequest) {
+      return new Response(JSON.stringify({ submitted: submitResults.length, checked: orders.length, updated }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify({ submitted: submitResults.length, checked: orders.length, updated, submitResults, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

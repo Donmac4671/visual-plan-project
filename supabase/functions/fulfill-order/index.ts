@@ -13,7 +13,13 @@ const FULFILL_ENDPOINT = "/v1/purchaseBundle";
 
 // Candidate network keys tried in order (GHData is picky about casing/format)
 const NETWORK_KEYS: Record<string, string[]> = {
-  mtn: ["mtn", "MTN", "MTN_BUNDLE"],
+  mtn: [
+    "MTN", "mtn", "MTN_BUNDLE",
+    "MTN_DATA", "mtn_data", "MTN-DATA", "mtn-data",
+    "MTN_SME", "mtn_sme", "MTN-SME", "mtn-sme",
+    "MTN_CG", "mtn_cg", "MTN-CG", "mtn-cg",
+    "MTN-AFA", "MTN_AFA", "mtn-afa", "mtn_afa",
+  ],
   telecel: ["telecel", "TELECEL", "vodafone", "VODAFONE"],
   "at-bigtime": ["atbigtime", "at_bigtime", "at-bigtime", "AT_BIGTIME", "AIRTELTIGO_BIGTIME"],
   "at-premium": [
@@ -186,12 +192,13 @@ serve(async (req) => {
       });
     }
 
-    // AT Premium: don't auto-fail on network validation error — keep waiting for manual review
-    if (networkKey === "at-premium" && sawNetworkValidationError) {
-      await supabase.from("orders").update({ status: "waiting" }).eq("id", order_id);
+    // Provider network-code changes should not auto-fail/refund orders that need manual follow-up.
+    if (["mtn", "at-premium"].includes(networkKey) && sawNetworkValidationError) {
+      const heldStatus = networkKey === "mtn" ? "pending" : "waiting";
+      await supabase.from("orders").update({ status: heldStatus }).eq("id", order_id);
       return new Response(JSON.stringify({
-        success: false, status: "waiting",
-        message: "AT Premium held for manual review (provider network validation error)",
+        success: false, status: heldStatus,
+        message: `${network_id} held for manual review (provider network validation error)`,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
