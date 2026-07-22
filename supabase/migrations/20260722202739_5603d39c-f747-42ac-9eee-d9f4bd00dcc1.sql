@@ -1,0 +1,1 @@
+UPDATE public.custom_bundles SET agent_price = 8.80, general_price = 8.80 WHERE network_id = 'mtn' AND bundle_size = '2GB';
