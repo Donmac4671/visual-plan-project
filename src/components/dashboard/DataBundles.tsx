@@ -17,7 +17,7 @@ import { useActivePromo } from "@/hooks/useActivePromo";
 import { useResellerPrices } from "@/hooks/useResellerPrices";
 import { useHiddenBundles } from "@/hooks/useHiddenBundles";
 import { useProductToggles } from "@/hooks/useProductToggles";
-import MtnMashupPackages from "@/components/dashboard/MtnMashupPackages";
+
 import mtnLogo from "@/assets/networks/mtn.png";
 import telecelLogo from "@/assets/networks/telecel.png";
 import airteltigoLogo from "@/assets/networks/airteltigo.png";
@@ -207,9 +207,6 @@ export default function DataBundles() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <MtnMashupPackages />
-      </div>
 
       {promo && userTier !== "agent" && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4 text-center">

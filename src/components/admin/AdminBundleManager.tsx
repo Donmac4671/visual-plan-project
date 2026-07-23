@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { networks, formatCurrency } from "@/lib/data";
-import { MTN_MASHUP_DATA_PACKAGES, MTN_MASHUP_COMBO_PACKAGES } from "@/components/dashboard/MtnMashupPackages";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -10,23 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2 } from "lucide-react";
-
-const mashupNetworks = [
-  {
-    id: "mashup-data",
-    name: "MTN MASHUP DATA",
-    gradient: "bg-gradient-to-r from-yellow-400 to-amber-500",
-    bundles: MTN_MASHUP_DATA_PACKAGES.map((p) => ({ size: p.size, sizeGB: p.sizeGB, price: p.price, generalPrice: p.price })),
-    readOnly: true,
-  },
-  {
-    id: "mashup-combo",
-    name: "MTN MASHUP MINUTES + DATA",
-    gradient: "bg-gradient-to-r from-amber-500 to-orange-600",
-    bundles: MTN_MASHUP_COMBO_PACKAGES.map((p) => ({ size: p.size, sizeGB: 0, price: p.price, generalPrice: p.price })),
-    readOnly: true,
-  },
-];
 
 interface CustomBundle {
   id: string;
@@ -63,7 +45,7 @@ export default function AdminBundleManager() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const allNetworks = useMemo(() => [...networks, ...mashupNetworks], []);
+  const allNetworks = useMemo(() => [...networks], []);
 
   const getMergedBundles = (networkId: string) => {
     const network = allNetworks.find((n) => n.id === networkId);

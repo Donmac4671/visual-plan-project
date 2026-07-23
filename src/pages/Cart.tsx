@@ -19,7 +19,7 @@ import { Smartphone, Phone as PhoneIcon, MessageSquare } from "lucide-react";
 
 function getNetworkVisual(networkId: string) {
   const id = networkId?.toLowerCase() || "";
-  if (id === "mtn" || id === "mashup" || id === "mashup-data" || id === "mashup-combo") return { logo: mtnLogo, bg: "bg-yellow-400" };
+  if (id === "mtn" || id === "mashup") return { logo: mtnLogo, bg: "bg-yellow-400" };
   if (id === "telecel" || id === "vs") return { logo: telecelLogo, bg: "bg-red-500" };
   if (id.startsWith("at-") || id === "airteltigo") return { logo: airteltigoLogo, bg: "bg-sky-600" };
   return { logo: null, bg: "bg-muted" };
@@ -108,7 +108,7 @@ export default function Cart() {
       return;
     }
 
-    const manualNetworkIds = ["airtime", "mashup", "vs", "mashup-data", "mashup-combo"];
+    const manualNetworkIds = ["airtime", "mashup", "vs"];
     const manualItems = items.filter((i) => manualNetworkIds.includes(i.networkId));
     const dataItems = items.filter((i) => !manualNetworkIds.includes(i.networkId));
 

@@ -5,7 +5,6 @@ const TOGGLE_KEYS = [
   "mashup_enabled",
   "airtime_enabled",
   "vs_enabled",
-  "mashup_data_enabled",
   "mtn_enabled",
   "telecel_enabled",
   "at_premium_enabled",
@@ -16,7 +15,6 @@ export function useProductToggles() {
   const [mashupEnabled, setMashupEnabled] = useState(true);
   const [airtimeEnabled, setAirtimeEnabled] = useState(true);
   const [vsEnabled, setVsEnabled] = useState(true);
-  const [mashupDataEnabled, setMashupDataEnabled] = useState(true);
   const [mtnEnabled, setMtnEnabled] = useState(true);
   const [telecelEnabled, setTelecelEnabled] = useState(true);
   const [atPremiumEnabled, setAtPremiumEnabled] = useState(true);
@@ -33,7 +31,6 @@ export function useProductToggles() {
       if (map.mashup_enabled !== undefined) setMashupEnabled(map.mashup_enabled !== false);
       if (map.airtime_enabled !== undefined) setAirtimeEnabled(map.airtime_enabled !== false);
       if (map.vs_enabled !== undefined) setVsEnabled(map.vs_enabled !== false);
-      if (map.mashup_data_enabled !== undefined) setMashupDataEnabled(map.mashup_data_enabled !== false);
       if (map.mtn_enabled !== undefined) setMtnEnabled(map.mtn_enabled !== false);
       if (map.telecel_enabled !== undefined) setTelecelEnabled(map.telecel_enabled !== false);
       if (map.at_premium_enabled !== undefined) setAtPremiumEnabled(map.at_premium_enabled !== false);
@@ -61,7 +58,6 @@ export function useProductToggles() {
     mashupEnabled,
     airtimeEnabled,
     vsEnabled,
-    mashupDataEnabled,
     mtnEnabled,
     telecelEnabled,
     atPremiumEnabled,
