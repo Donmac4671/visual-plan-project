@@ -106,7 +106,7 @@ serve(async (req) => {
     const networkKey = normalizeNetworkKey(network_id);
 
     // Manual delivery — never send to provider
-    if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkKey)) {
+    if (["airtime", "mashup", "vs"].includes(networkKey)) {
       await supabase.from("orders").update({
         status: "processing",
         gh_reference: `manual-${networkKey}-${Date.now()}`,

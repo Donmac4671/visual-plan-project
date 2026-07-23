@@ -47,7 +47,6 @@ export default function Admin() {
     mashupEnabled,
     airtimeEnabled,
     vsEnabled,
-    mashupDataEnabled,
     mtnEnabled,
     telecelEnabled,
     atPremiumEnabled,
@@ -59,7 +58,6 @@ export default function Admin() {
     | "mashup_enabled"
     | "airtime_enabled"
     | "vs_enabled"
-    | "mashup_data_enabled"
     | "mtn_enabled"
     | "telecel_enabled"
     | "at_premium_enabled"
@@ -72,10 +70,9 @@ export default function Admin() {
       return;
     }
     const labels: Record<ToggleKey, string> = {
-      mashup_enabled: "MTN Mashup Minutes + Data",
+      mashup_enabled: "MashUp",
       airtime_enabled: "Airtime",
       vs_enabled: "Telecel V+D+S",
-      mashup_data_enabled: "MTN Mashup Data",
       mtn_enabled: "MTN",
       telecel_enabled: "Telecel",
       at_premium_enabled: "AirtelTigo Premium",
@@ -626,8 +623,6 @@ export default function Admin() {
                 <SelectItem value="AT BIG TIME">AT Big Time</SelectItem>
                 <SelectItem value="AT PREMIUM">AT Premium</SelectItem>
                 <SelectItem value="MashUp">MashUp</SelectItem>
-                <SelectItem value="MTN Mashup Data">MTN Mashup Data</SelectItem>
-                <SelectItem value="MTN Mashup Combo">MTN Mashup Minutes + Data</SelectItem>
                 <SelectItem value="Telecel V+D+S">Telecel V+D+S</SelectItem>
                 <SelectItem value="Telecel V&S">Telecel V&S (legacy)</SelectItem>
                 <SelectItem value="Airtime">Airtime</SelectItem>
@@ -841,8 +836,7 @@ export default function Admin() {
             <p className="text-xs text-muted-foreground mb-3">Toggle entire product categories on/off for users. (Per-bundle Online/Offline is managed below.)</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { key: "mashup_data_enabled" as const, label: "MTN Mashup Data", value: mashupDataEnabled },
-                { key: "mashup_enabled" as const, label: "MTN Mashup Minutes + Data", value: mashupEnabled },
+                { key: "mashup_enabled" as const, label: "MashUp", value: mashupEnabled },
                 { key: "mtn_enabled" as const, label: "MTN", value: mtnEnabled },
                 { key: "telecel_enabled" as const, label: "TELECEL", value: telecelEnabled },
                 { key: "at_premium_enabled" as const, label: "AIRTELTIGO PREMIUM", value: atPremiumEnabled },

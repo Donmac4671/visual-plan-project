@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     // Block whole-network offline toggles server-side
     const TOGGLE_KEYS = [
       "mtn_enabled","telecel_enabled","at_premium_enabled","at_bigtime_enabled",
-      "airtime_enabled","mashup_enabled","vs_enabled","mashup_data_enabled",
+      "airtime_enabled","mashup_enabled","vs_enabled",
     ];
     const { data: toggles } = await admin.from("app_settings").select("key,value").in("key", TOGGLE_KEYS);
     const enabledMap: Record<string, boolean> = {};
@@ -64,7 +64,6 @@ Deno.serve(async (req) => {
       if (k === "airtime") return "airtime_enabled";
       if (k === "mashup") return "mashup_enabled";
       if (k === "vs") return "vs_enabled";
-      if (k === "mashup-data" || k === "mashup-combo") return "mashup_data_enabled";
       return null;
     };
 
@@ -112,7 +111,7 @@ Deno.serve(async (req) => {
       const networkId = String(item.network_id || "").toLowerCase().trim().replace(/\s+/g, "-");
 
       // Handle MTN, Airtime and Mashup - set to "processing" (manual delivery)
-      if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkId)) {
+      if (["airtime", "mashup", "vs"].includes(networkId)) {
         const { error: updateError } = await supabase
           .from("orders")
           .update({

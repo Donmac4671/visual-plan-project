@@ -20,8 +20,6 @@ const NETWORK_ORDER = [
   "TELECEL",
   "AT BIG TIME",
   "AT PREMIUM",
-  "MTN Mashup Data",
-  "MTN Mashup Combo",
 ];
 
 export default function AdminCostPrices() {

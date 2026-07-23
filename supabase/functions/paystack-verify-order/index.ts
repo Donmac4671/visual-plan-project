@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     // Block whole-network offline toggles server-side
     const TOGGLE_KEYS = [
       "mtn_enabled","telecel_enabled","at_premium_enabled","at_bigtime_enabled",
-      "airtime_enabled","mashup_enabled","vs_enabled","mashup_data_enabled",
+      "airtime_enabled","mashup_enabled","vs_enabled",
     ];
     const { data: toggles } = await admin.from("app_settings").select("key,value").in("key", TOGGLE_KEYS);
     const enabledMap: Record<string, boolean> = {};
@@ -126,7 +126,6 @@ Deno.serve(async (req) => {
       if (k === "airtime") return "airtime_enabled";
       if (k === "mashup") return "mashup_enabled";
       if (k === "vs") return "vs_enabled";
-      if (k === "mashup-data" || k === "mashup-combo") return "mashup_data_enabled";
       return null;
     };
 
@@ -184,7 +183,7 @@ Deno.serve(async (req) => {
         const orderId = String(data);
         orderIds.push(orderId);
         const networkIdRaw = (item.network_id ?? item.network).toLowerCase().trim().replace(/\s+/g, "-");
-        const isNonGh = ["mashup", "airtime", "vs", "mashup-data", "mashup-combo"].includes(networkIdRaw);
+        const isNonGh = ["mashup", "airtime", "vs"].includes(networkIdRaw);
         const bundleSizeGb = item.bundle_size_gb ?? parseFloat(item.bundle.replace(/[^\d.]/g, "")) ?? 0;
         let fulfillment;
         if (isNonGh) {
