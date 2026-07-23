@@ -80,7 +80,7 @@ serve(async (req) => {
     for (const order of unsubmittedOrders ?? []) {
       // Skip manual-delivery networks
       const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
-      if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) continue;
+      if (["airtime", "mashup", "vs"].includes(netId)) continue;
       try {
         const resp = await fetch(`${Deno.env.get("SUPABASE_URL")!}/functions/v1/fulfill-order`, {
           method: "POST",
@@ -122,7 +122,7 @@ serve(async (req) => {
 
     for (const order of orders) {
       const netId = String(order.network || "").toLowerCase().trim().replace(/\s+/g, "-");
-      if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(netId)) {
+      if (["airtime", "mashup", "vs"].includes(netId)) {
         results.push({ order_ref: order.order_ref, skipped: true, reason: "manual delivery network" });
         continue;
       }

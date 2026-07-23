@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       const networkId = String(item.network_id || "").toLowerCase().trim().replace(/\s+/g, "-");
 
       // Handle MTN, Airtime and Mashup - set to "processing" (manual delivery)
-      if (["airtime", "mashup", "vs", "mashup-data", "mashup-combo"].includes(networkId)) {
+      if (["airtime", "mashup", "vs"].includes(networkId)) {
         const { error: updateError } = await supabase
           .from("orders")
           .update({
